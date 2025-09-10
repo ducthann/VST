@@ -1,0 +1,2379 @@
+DIGEST 9a50b6dd7d518e5646a1d52e7aec8b2f
+FVST.concurrency.common.HybridMachine
+R39:47 mathcomp.ssreflect.ssreflect <> <> lib
+R49:51 mathcomp.ssreflect.seq <> <> lib
+R53:59 mathcomp.ssreflect.ssrbool <> <> lib
+R61:66 mathcomp.ssreflect.ssrfun <> <> lib
+R84:104 Coq.Classes.Morphisms <> <> lib
+R123:144 compcert.common.Memory <> <> lib
+R162:180 compcert.common.AST <> <> lib
+R214:235 compcert.common.Values <> <> lib
+R265:290 compcert.common.Globalenvs <> <> lib
+R308:328 compcert.lib.Integers <> <> lib
+R347:360 VST.msl.Axioms <> <> lib
+R378:394 Coq.ZArith.ZArith <> <> lib
+R470:496 VST.sepcomp.event_semantics <> <> lib
+R514:545 VST.concurrency.common.semantics <> <> lib
+R563:591 VST.concurrency.common.lksize <> <> lib
+R609:641 VST.concurrency.common.threadPool <> <> lib
+R660:699 VST.concurrency.common.machine_semantics <> <> lib
+R717:750 VST.concurrency.common.permissions <> <> lib
+R768:801 VST.concurrency.compiler.mem_equiv <> <> lib
+R819:853 VST.concurrency.common.bounded_maps <> <> lib
+R871:909 VST.concurrency.common.addressFiniteMap <> <> lib
+R927:958 VST.concurrency.common.scheduler <> <> lib
+R976:994 Coq.Program.Program <> <> lib
+R1212:1250 VST.concurrency.common.HybridMachineSig <> <> lib
+R1316:1319 compcert.lib.Maps <> <> mod
+mod 1331:1346 <> DryHybridMachine
+R1358:1363 VST.concurrency.common.HybridMachineSig Events <> mod
+R1365:1374 VST.concurrency.common.threadPool ThreadPool <> mod
+inst 1399:1410 DryHybridMachine dryResources
+R1413:1421 VST.concurrency.common.semantics <> Resources class
+R1432:1434 VST.concurrency.common.semantics <> res meth
+R1432:1434 VST.concurrency.common.semantics <> res meth
+R1432:1434 VST.concurrency.common.semantics <> res meth
+R1471:1479 VST.concurrency.common.semantics <> lock_info meth
+R1471:1479 VST.concurrency.common.semantics <> lock_info meth
+R1449:1451 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R1439:1448 VST.concurrency.common.permissions <> access_map def
+R1452:1461 VST.concurrency.common.permissions <> access_map def
+R1494:1496 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R1484:1493 VST.concurrency.common.permissions <> access_map def
+R1497:1506 VST.concurrency.common.permissions <> access_map def
+sec 1523:1538 DryHybridMachine DryHybridMachine
+R1612:1620 VST.concurrency.common.semantics <> Semantics class
+binder 1607:1609 <> Sem:1
+R1645:1665 VST.concurrency.common.threadPool ThreadPool ThreadPool class
+R1667:1678 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R1680:1682 VST.concurrency.common.HybridMachine <> Sem:1 var
+binder 1636:1640 <> tpool:2
+abbrev 1704:1704 DryHybridMachine C
+R1710:1713 VST.concurrency.common.semantics <> semC meth
+R1715:1717 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+abbrev 1734:1734 DryHybridMachine G
+R1740:1743 VST.concurrency.common.semantics <> semG meth
+R1745:1747 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+abbrev 1764:1769 DryHybridMachine semSem
+R1775:1780 VST.concurrency.common.semantics <> semSem meth
+R1782:1784 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+abbrev 1802:1812 DryHybridMachine thread_pool
+R1819:1819 VST.concurrency.common.threadPool ThreadPool t meth
+R1821:1832 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R1834:1836 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+def 1874:1880 DryHybridMachine richMem
+R1890:1892 compcert.common.Memory <> mem abbrev
+def 1910:1915 DryHybridMachine dryMem
+R1925:1928 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1918:1924 VST.concurrency.common.HybridMachine DryHybridMachine richMem def
+R1929:1931 compcert.common.Memory <> mem abbrev
+binder 1939:1939 <> x:3
+R1944:1944 VST.concurrency.common.HybridMachine <> x:3 var
+rec 2008:2021 DryHybridMachine mem_compatible
+proj 2061:2069 DryHybridMachine compat_th
+proj 2241:2249 DryHybridMachine compat_lp
+proj 2438:2451 DryHybridMachine lockRes_blocks
+R2028:2038 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 2024:2025 <> tp:4
+binder 2041:2041 <> m:5
+binder 2082:2084 <> tid:7
+R2093:2106 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R2111:2113 VST.concurrency.common.HybridMachine <> tid:7 var
+R2108:2109 VST.concurrency.common.HybridMachine <> tp:4 var
+binder 2088:2090 <> cnt:8
+R2172:2187 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2129:2137 VST.concurrency.common.permissions <> permMapLt def
+R2159:2168 VST.concurrency.common.permissions <> getMaxPerm def
+R2170:2170 VST.concurrency.common.HybridMachine <> m:5 var
+R2139:2139 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R2154:2156 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R2140:2149 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R2151:2153 VST.concurrency.common.HybridMachine <> cnt:8 var
+R2188:2196 VST.concurrency.common.permissions <> permMapLt def
+R2218:2227 VST.concurrency.common.permissions <> getMaxPerm def
+R2229:2229 VST.concurrency.common.HybridMachine <> m:5 var
+R2198:2198 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R2213:2215 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R2199:2208 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R2210:2212 VST.concurrency.common.HybridMachine <> cnt:8 var
+binder 2260:2260 <> l:10
+binder 2262:2266 <> pmaps:11
+R2294:2328 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2281:2283 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2269:2275 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R2280:2280 VST.concurrency.common.HybridMachine <> l:10 var
+R2277:2278 VST.concurrency.common.HybridMachine <> tp:4 var
+R2284:2287 Coq.Init.Datatypes <> Some constr
+R2289:2293 VST.concurrency.common.HybridMachine <> pmaps:11 var
+R2361:2395 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2329:2337 VST.concurrency.common.permissions <> permMapLt def
+R2348:2357 VST.concurrency.common.permissions <> getMaxPerm def
+R2359:2359 VST.concurrency.common.HybridMachine <> m:5 var
+R2344:2345 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R2339:2343 VST.concurrency.common.HybridMachine <> pmaps:11 var
+R2396:2404 VST.concurrency.common.permissions <> permMapLt def
+R2415:2424 VST.concurrency.common.permissions <> getMaxPerm def
+R2426:2426 VST.concurrency.common.HybridMachine <> m:5 var
+R2411:2412 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R2406:2410 VST.concurrency.common.HybridMachine <> pmaps:11 var
+binder 2461:2461 <> l:13
+binder 2463:2466 <> rmap:14
+R2493:2530 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2481:2483 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2469:2475 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R2480:2480 VST.concurrency.common.HybridMachine <> l:13 var
+R2477:2478 VST.concurrency.common.HybridMachine <> tp:4 var
+R2484:2487 Coq.Init.Datatypes <> Some constr
+R2489:2492 VST.concurrency.common.HybridMachine <> rmap:14 var
+R2531:2545 compcert.common.Memory Mem valid_block def
+R2547:2547 VST.concurrency.common.HybridMachine <> m:5 var
+R2550:2551 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R2549:2549 VST.concurrency.common.HybridMachine <> l:13 var
+prf 2574:2596 DryHybridMachine mem_compat_restrPermMap
+binder 2614:2614 <> m:16
+binder 2616:2620 <> perms:17
+binder 2622:2623 <> st:18
+R2647:2655 VST.concurrency.common.permissions <> permMapLt def
+R2664:2673 VST.concurrency.common.permissions <> getMaxPerm def
+R2675:2675 VST.concurrency.common.HybridMachine <> m:16 var
+R2657:2661 VST.concurrency.common.HybridMachine <> perms:17 var
+binder 2636:2644 <> permMapLt:19
+R2690:2690 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2710:2725 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2768:2768 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2691:2704 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R2706:2707 VST.concurrency.common.HybridMachine <> st:18 var
+R2709:2709 VST.concurrency.common.HybridMachine <> m:16 var
+R2726:2739 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R2741:2742 VST.concurrency.common.HybridMachine <> st:18 var
+R2745:2756 VST.concurrency.common.permissions <> restrPermMap def
+R2758:2766 VST.concurrency.common.HybridMachine <> permMapLt:19 var
+R2860:2880 VST.concurrency.common.permissions <> permMapLt def
+R2929:2940 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R2929:2940 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R2929:2940 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R2929:2940 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R2929:2940 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3000:3020 VST.concurrency.common.permissions <> permMapLt def
+R3069:3080 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3069:3080 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3069:3080 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3069:3080 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3069:3080 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R3147:3164 VST.concurrency.common.permissions <> restrPermMap_valid thm
+R3147:3164 VST.concurrency.common.permissions <> restrPermMap_valid thm
+rec 3328:3336 DryHybridMachine invariant
+proj 3367:3377 DryHybridMachine no_race_thr
+proj 3628:3637 DryHybridMachine no_race_lr
+proj 3911:3917 DryHybridMachine no_race
+proj 4277:4296 DryHybridMachine thread_data_lock_coh
+proj 4625:4643 DryHybridMachine locks_data_lock_coh
+proj 4981:4993 DryHybridMachine lockRes_valid
+R3343:3353 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 3339:3340 <> tp:20
+binder 3398:3398 <> i:22
+binder 3400:3400 <> j:23
+R3409:3422 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R3427:3427 VST.concurrency.common.HybridMachine <> i:22 var
+R3424:3425 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 3403:3406 <> cnti:24
+R3437:3450 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R3455:3455 VST.concurrency.common.HybridMachine <> j:23 var
+R3452:3453 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 3431:3434 <> cntj:25
+R3478:3481 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3477:3477 VST.concurrency.common.HybridMachine <> i:22 var
+R3482:3482 VST.concurrency.common.HybridMachine <> j:23 var
+binder 3471:3474 <> Hneq:26
+R3498:3514 VST.concurrency.common.permissions <> permMapsDisjoint2 def
+R3565:3574 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R3576:3579 VST.concurrency.common.HybridMachine <> cntj:25 var
+R3517:3526 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R3528:3531 VST.concurrency.common.HybridMachine <> cnti:24 var
+binder 3657:3662 <> laddr1:28
+binder 3664:3669 <> laddr2:29
+binder 3671:3675 <> rmap1:30
+binder 3677:3681 <> rmap2:31
+R3708:3711 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3702:3707 VST.concurrency.common.HybridMachine <> laddr1:28 var
+R3712:3717 VST.concurrency.common.HybridMachine <> laddr2:29 var
+binder 3696:3699 <> Hneq:32
+R3757:3759 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3740:3746 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R3751:3756 VST.concurrency.common.HybridMachine <> laddr1:28 var
+R3748:3749 VST.concurrency.common.HybridMachine <> tp:20 var
+R3760:3763 Coq.Init.Datatypes <> Some constr
+R3765:3769 VST.concurrency.common.HybridMachine <> rmap1:30 var
+binder 3733:3737 <> Hres1:33
+R3809:3811 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3792:3798 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R3803:3808 VST.concurrency.common.HybridMachine <> laddr2:29 var
+R3800:3801 VST.concurrency.common.HybridMachine <> tp:20 var
+R3812:3815 Coq.Init.Datatypes <> Some constr
+R3817:3821 VST.concurrency.common.HybridMachine <> rmap2:31 var
+binder 3785:3789 <> Hres2:34
+R3837:3853 VST.concurrency.common.permissions <> permMapsDisjoint2 def
+R3861:3865 VST.concurrency.common.HybridMachine <> rmap2:31 var
+R3855:3859 VST.concurrency.common.HybridMachine <> rmap1:30 var
+binder 3937:3937 <> i:36
+binder 3939:3943 <> laddr:37
+R3952:3965 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R3970:3970 VST.concurrency.common.HybridMachine <> i:36 var
+R3967:3968 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 3946:3949 <> cnti:38
+binder 3973:3976 <> rmap:39
+R4013:4015 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3997:4003 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R4008:4012 VST.concurrency.common.HybridMachine <> laddr:37 var
+R4005:4006 VST.concurrency.common.HybridMachine <> tp:20 var
+R4016:4019 Coq.Init.Datatypes <> Some constr
+R4021:4024 VST.concurrency.common.HybridMachine <> rmap:39 var
+binder 3991:3994 <> Hres:40
+R4040:4056 VST.concurrency.common.permissions <> permMapsDisjoint2 def
+R4076:4079 VST.concurrency.common.HybridMachine <> rmap:39 var
+R4059:4068 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R4070:4073 VST.concurrency.common.HybridMachine <> cnti:38 var
+binder 4316:4316 <> i:42
+R4325:4338 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R4343:4343 VST.concurrency.common.HybridMachine <> i:42 var
+R4340:4341 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 4319:4322 <> cnti:43
+R4359:4359 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4470:4487 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4614:4614 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+binder 4367:4367 <> j:44
+R4376:4389 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R4394:4394 VST.concurrency.common.HybridMachine <> j:44 var
+R4391:4392 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 4370:4373 <> cntj:45
+R4414:4429 VST.concurrency.common.permissions <> permMapCoherence def
+R4451:4451 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4467:4469 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4452:4461 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R4463:4466 VST.concurrency.common.HybridMachine <> cnti:43 var
+R4431:4431 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4447:4449 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4432:4441 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R4443:4446 VST.concurrency.common.HybridMachine <> cntj:45 var
+binder 4495:4499 <> laddr:46
+binder 4501:4504 <> rmap:47
+R4551:4570 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4539:4541 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4523:4529 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R4534:4538 VST.concurrency.common.HybridMachine <> laddr:46 var
+R4531:4532 VST.concurrency.common.HybridMachine <> tp:20 var
+R4542:4545 Coq.Init.Datatypes <> Some constr
+R4547:4550 VST.concurrency.common.HybridMachine <> rmap:47 var
+R4571:4586 VST.concurrency.common.permissions <> permMapCoherence def
+R4595:4595 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4611:4613 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4596:4605 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R4607:4610 VST.concurrency.common.HybridMachine <> cnti:43 var
+R4592:4593 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4588:4591 VST.concurrency.common.HybridMachine <> rmap:47 var
+binder 4663:4667 <> laddr:49
+binder 4669:4672 <> rmap:50
+R4709:4711 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4693:4699 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R4704:4708 VST.concurrency.common.HybridMachine <> laddr:49 var
+R4701:4702 VST.concurrency.common.HybridMachine <> tp:20 var
+R4712:4715 Coq.Init.Datatypes <> Some constr
+R4717:4720 VST.concurrency.common.HybridMachine <> rmap:50 var
+binder 4687:4690 <> Hres:51
+R4736:4736 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4834:4851 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4970:4970 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+binder 4744:4744 <> j:52
+R4753:4766 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R4771:4771 VST.concurrency.common.HybridMachine <> j:52 var
+R4768:4769 VST.concurrency.common.HybridMachine <> tp:20 var
+binder 4747:4750 <> cntj:53
+R4791:4806 VST.concurrency.common.permissions <> permMapCoherence def
+R4832:4833 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4828:4831 VST.concurrency.common.HybridMachine <> rmap:50 var
+R4808:4808 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4824:4826 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4809:4818 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R4820:4823 VST.concurrency.common.HybridMachine <> cntj:53 var
+binder 4859:4864 <> laddr':54
+binder 4866:4870 <> rmap':55
+R4919:4938 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4906:4908 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4889:4895 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R4900:4905 VST.concurrency.common.HybridMachine <> laddr':54 var
+R4897:4898 VST.concurrency.common.HybridMachine <> tp:20 var
+R4909:4912 Coq.Init.Datatypes <> Some constr
+R4914:4918 VST.concurrency.common.HybridMachine <> rmap':55 var
+R4939:4954 VST.concurrency.common.permissions <> permMapCoherence def
+R4968:4969 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R4964:4967 VST.concurrency.common.HybridMachine <> rmap:50 var
+R4961:4962 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R4956:4960 VST.concurrency.common.HybridMachine <> rmap':55 var
+R4996:5003 VST.concurrency.common.threadPool ThreadPool lr_valid meth
+R5006:5012 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R5014:5015 VST.concurrency.common.HybridMachine <> tp:20 var
+ind 5080:5087 DryHybridMachine dry_step
+constr 5245:5252 DryHybridMachine step_dry
+binder 5090:5093 <> tid0:58
+binder 5095:5096 <> tp:59
+binder 5098:5098 <> m:60
+R5107:5120 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R5125:5128 VST.concurrency.common.HybridMachine <> tid0:58 var
+R5122:5123 VST.concurrency.common.HybridMachine <> tp:59 var
+binder 5102:5104 <> cnt:61
+R5159:5172 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R5174:5175 VST.concurrency.common.HybridMachine <> tp:59 var
+R5177:5177 VST.concurrency.common.HybridMachine <> m:60 var
+binder 5146:5156 <> Hcompatible:62
+R5199:5202 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5188:5198 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+R5206:5209 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5203:5205 compcert.common.Memory <> mem abbrev
+R5227:5230 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5210:5216 mathcomp.ssreflect.seq <> seq abbrev
+R5218:5226 VST.sepcomp.event_semantics <> mem_event ind
+R5276:5286 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 5272:5274 <> tp':65
+binder 5289:5289 <> c:66
+binder 5291:5292 <> m1:67
+binder 5294:5295 <> m':68
+R5303:5303 VST.concurrency.common.HybridMachine DryHybridMachine C abbrev
+binder 5298:5299 <> c':69
+binder 5306:5307 <> ev:70
+R5449:5451 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5412:5423 VST.concurrency.common.permissions <> restrPermMap def
+R5425:5425 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R5446:5448 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R5426:5436 VST.concurrency.common.HybridMachine <> Hcompatible:62 var
+R5438:5441 VST.concurrency.common.HybridMachine <> tid0:58 var
+R5443:5445 VST.concurrency.common.HybridMachine <> cnt:61 var
+R5452:5453 VST.concurrency.common.HybridMachine <> m1:67 var
+binder 5396:5409 <> Hrestrict_pmap:71
+R5473:5481 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R5483:5484 VST.concurrency.common.HybridMachine <> tp:59 var
+binder 5467:5470 <> Hinv:72
+R5519:5521 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5505:5514 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R5516:5518 VST.concurrency.common.HybridMachine <> cnt:61 var
+R5522:5525 VST.concurrency.common.threadPool <> Krun constr
+R5527:5527 VST.concurrency.common.HybridMachine <> c:66 var
+binder 5498:5502 <> Hcode:73
+R5552:5558 VST.sepcomp.event_semantics <> ev_step proj
+R5578:5579 VST.concurrency.common.HybridMachine <> m':68 var
+R5575:5576 VST.concurrency.common.HybridMachine <> c':69 var
+R5572:5573 VST.concurrency.common.HybridMachine <> ev:70 var
+R5569:5570 VST.concurrency.common.HybridMachine <> m1:67 var
+R5567:5567 VST.concurrency.common.HybridMachine <> c:66 var
+R5560:5565 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+binder 5541:5549 <> Hcorestep:74
+R5740:5742 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5737:5739 VST.concurrency.common.HybridMachine <> tp':65 var
+R5743:5751 VST.concurrency.common.threadPool ThreadPool updThread meth
+R5767:5767 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5781:5782 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5801:5801 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5768:5777 VST.concurrency.common.permissions <> getCurPerm def
+R5779:5780 VST.concurrency.common.HybridMachine <> m':68 var
+R5783:5783 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R5798:5800 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R5784:5793 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R5795:5797 VST.concurrency.common.HybridMachine <> cnt:61 var
+R5758:5761 VST.concurrency.common.threadPool <> Krun constr
+R5763:5764 VST.concurrency.common.HybridMachine <> c':69 var
+R5753:5755 VST.concurrency.common.HybridMachine <> cnt:61 var
+binder 5731:5734 <> Htp':75
+R5815:5822 VST.concurrency.common.HybridMachine <> dry_step:63 ind
+R5847:5848 VST.concurrency.common.HybridMachine <> ev:70 var
+R5844:5845 VST.concurrency.common.HybridMachine <> m':68 var
+R5840:5842 VST.concurrency.common.HybridMachine <> tp':65 var
+R5828:5838 VST.concurrency.common.HybridMachine <> Hcompatible:62 var
+R5824:5826 VST.concurrency.common.HybridMachine <> cnt:61 var
+scheme 5080:5087 DryHybridMachine dry_step_ind
+scheme 5080:5087 DryHybridMachine dry_step_sind
+def 5867:5881 DryHybridMachine option_function
+binder 5884:5884 <> A:76
+binder 5886:5886 <> B:77
+R5897:5902 Coq.Init.Datatypes <> option ind
+R5906:5909 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5905:5905 VST.concurrency.common.HybridMachine <> A:76 var
+R5910:5910 VST.concurrency.common.HybridMachine <> B:77 var
+binder 5890:5894 <> opt_f:78
+R5917:5917 VST.concurrency.common.HybridMachine <> A:76 var
+binder 5915:5915 <> x:79
+R5921:5926 Coq.Init.Datatypes <> option ind
+R5928:5928 VST.concurrency.common.HybridMachine <> B:77 var
+R5944:5948 VST.concurrency.common.HybridMachine <> opt_f:78 var
+R5963:5966 Coq.Init.Datatypes <> Some constr
+R5973:5976 Coq.Init.Datatypes <> Some constr
+R5981:5981 VST.concurrency.common.HybridMachine <> x:79 var
+R5992:5995 Coq.Init.Datatypes <> None constr
+R6000:6003 Coq.Init.Datatypes <> None constr
+R6034:6048 VST.concurrency.common.HybridMachine DryHybridMachine option_function def
+not 6026:6026 DryHybridMachine.DryHybridMachine :::x_'??'_x
+def 6102:6120 DryHybridMachine build_delta_content
+R6127:6135 VST.concurrency.common.permissions <> delta_map def
+binder 6123:6124 <> dm:81
+R6141:6143 compcert.common.Memory <> mem abbrev
+binder 6139:6139 <> m:82
+R6147:6159 VST.concurrency.common.HybridMachineSig Events delta_content def
+R6170:6178 compcert.lib.Maps PTree map def
+R6479:6480 VST.concurrency.common.HybridMachine <> dm:81 var
+binder 6185:6185 <> b:83
+binder 6187:6190 <> dm_f:84
+binder 6218:6220 <> ofs:85
+R6252:6255 VST.concurrency.common.HybridMachine <> dm_f:84 var
+R6257:6259 VST.concurrency.common.HybridMachine <> ofs:85 var
+R6289:6292 Coq.Init.Datatypes <> None constr
+R6296:6299 Coq.Init.Datatypes <> Some constr
+R6302:6305 Coq.Init.Datatypes <> None constr
+R6332:6335 Coq.Init.Datatypes <> Some constr
+R6338:6341 Coq.Init.Datatypes <> Some constr
+R6343:6350 compcert.common.Memtype <> Nonempty constr
+R6356:6359 Coq.Init.Datatypes <> None constr
+R6356:6359 Coq.Init.Datatypes <> None constr
+R6356:6359 Coq.Init.Datatypes <> None constr
+R6384:6387 Coq.Init.Datatypes <> Some constr
+R6394:6397 Coq.Init.Datatypes <> Some constr
+R6400:6407 compcert.lib.Maps ZMap get def
+R6414:6426 compcert.lib.Maps PMap get def
+R6431:6446 compcert.common.Memory Mem mem_contents proj
+R6448:6448 VST.concurrency.common.HybridMachine <> m:82 var
+R6428:6428 VST.concurrency.common.HybridMachine <> b:83 var
+R6409:6411 VST.concurrency.common.HybridMachine <> ofs:85 var
+ind 6514:6521 DryHybridMachine ext_step
+constr 6681:6692 DryHybridMachine step_acquire
+constr 9489:9500 DryHybridMachine step_release
+constr 12459:12469 DryHybridMachine step_create
+constr 14481:14491 DryHybridMachine step_mklock
+constr 16526:16538 DryHybridMachine step_freelock
+constr 18870:18881 DryHybridMachine step_acqfail
+R6533:6536 Coq.Init.Datatypes <> bool ind
+binder 6524:6531 <> isCoarse:86
+binder 6540:6543 <> tid0:87
+binder 6545:6546 <> tp:88
+binder 6548:6548 <> m:89
+R6571:6584 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R6589:6592 VST.concurrency.common.HybridMachine <> tid0:87 var
+R6586:6587 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 6566:6569 <> cnt0:90
+R6603:6616 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R6618:6619 VST.concurrency.common.HybridMachine <> tp:88 var
+R6621:6621 VST.concurrency.common.HybridMachine <> m:89 var
+binder 6595:6601 <> Hcompat:91
+R6642:6645 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6631:6641 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+R6649:6652 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6646:6648 compcert.common.Memory <> mem abbrev
+R6663:6666 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6653:6662 VST.concurrency.common.HybridMachineSig Events sync_event ind
+R6721:6731 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 6712:6714 <> tp':94
+binder 6716:6719 <> tp'':95
+binder 6734:6737 <> marg:96
+binder 6739:6740 <> m0:97
+binder 6742:6743 <> m1:98
+binder 6745:6745 <> c:99
+binder 6747:6748 <> m':100
+binder 6750:6750 <> b:101
+binder 6752:6754 <> ofs:102
+R6774:6782 VST.concurrency.common.semantics <> lock_info meth
+binder 6767:6770 <> pmap:103
+R6808:6817 VST.concurrency.common.permissions <> access_map def
+binder 6796:6804 <> pmap_tid':104
+R6855:6857 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R6846:6854 VST.concurrency.common.permissions <> delta_map def
+R6858:6866 VST.concurrency.common.permissions <> delta_map def
+binder 6831:6842 <> virtueThread:105
+R6890:6892 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6901:6931 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R7039:7089 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6893:6900 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R6971:6999 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R6932:6938 VST.concurrency.common.bounded_maps <> sub_map def
+R6955:6955 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R6968:6970 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R6956:6965 VST.concurrency.common.permissions <> getMaxPerm def
+R6967:6967 VST.concurrency.common.HybridMachine <> m:89 var
+R6952:6953 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R6940:6951 VST.concurrency.common.HybridMachine <> virtueThread:105 var
+R7000:7006 VST.concurrency.common.bounded_maps <> sub_map def
+R7023:7023 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7036:7038 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7024:7033 VST.concurrency.common.permissions <> getMaxPerm def
+R7035:7035 VST.concurrency.common.HybridMachine <> m:89 var
+R7020:7021 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7008:7019 VST.concurrency.common.HybridMachine <> virtueThread:105 var
+R7090:7093 Coq.Init.Logic <> True ind
+binder 6880:6887 <> Hbounded:106
+R7129:7129 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7175:7208 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7254:7254 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7130:7139 VST.concurrency.common.permissions <> computeMap def
+R7173:7174 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R7161:7172 VST.concurrency.common.HybridMachine <> virtueThread:105 var
+R7141:7141 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R7157:7159 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R7142:7151 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R7153:7156 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R7209:7218 VST.concurrency.common.permissions <> computeMap def
+R7252:7253 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7240:7251 VST.concurrency.common.HybridMachine <> virtueThread:105 var
+R7220:7220 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7236:7238 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7221:7230 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R7232:7235 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 7112:7124 <> newThreadPerm:107
+R7296:7304 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R7306:7307 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 7289:7292 <> Hinv:108
+R7345:7347 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7330:7339 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R7341:7344 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R7348:7355 VST.concurrency.common.threadPool <> Kblocked constr
+R7357:7357 VST.concurrency.common.HybridMachine <> c:99 var
+binder 7323:7327 <> Hcode:109
+R7550:7552 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7516:7527 VST.concurrency.common.permissions <> restrPermMap def
+R7529:7529 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R7547:7549 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R7530:7536 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R7538:7541 VST.concurrency.common.HybridMachine <> tid0:87 var
+R7543:7546 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R7553:7556 VST.concurrency.common.HybridMachine <> marg:96 var
+binder 7496:7513 <> Hrestrict_pmap_arg:110
+R7621:7623 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7586:7606 VST.sepcomp.semantics <> at_external proj
+R7617:7620 VST.concurrency.common.HybridMachine <> marg:96 var
+R7615:7615 VST.concurrency.common.HybridMachine <> c:99 var
+R7608:7613 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R7624:7627 Coq.Init.Datatypes <> Some constr
+R7629:7629 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7634:7635 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7651:7651 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R7630:7633 VST.concurrency.common.HybridMachineSig <> LOCK abbrev
+R7646:7647 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R7636:7639 compcert.common.Values <> Vptr constr
+R7641:7641 VST.concurrency.common.HybridMachine <> b:101 var
+R7643:7645 VST.concurrency.common.HybridMachine <> ofs:102 var
+R7648:7650 Coq.Init.Datatypes <> nil constr
+binder 7572:7583 <> Hat_external:111
+R7787:7789 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7753:7764 VST.concurrency.common.permissions <> restrPermMap def
+R7766:7766 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7784:7786 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R7767:7773 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R7775:7778 VST.concurrency.common.HybridMachine <> tid0:87 var
+R7780:7783 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R7790:7791 VST.concurrency.common.HybridMachine <> m0:97 var
+binder 7736:7750 <> Hrestrict_pmap0:112
+R7903:7916 compcert.common.Memory Mem range_perm def
+R7918:7919 VST.concurrency.common.HybridMachine <> m0:97 var
+R7921:7921 VST.concurrency.common.HybridMachine <> b:101 var
+R7924:7936 compcert.lib.Integers Ptrofs intval proj
+R7938:7940 VST.concurrency.common.HybridMachine <> ofs:102 var
+R7944:7944 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R7962:7965 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R7945:7957 compcert.lib.Integers Ptrofs intval proj
+R7959:7961 VST.concurrency.common.HybridMachine <> ofs:102 var
+R7966:7971 VST.concurrency.common.lksize <> LKSIZE def
+R7974:7976 compcert.common.Memtype <> Cur constr
+R7978:7985 compcert.common.Memtype <> Readable constr
+binder 7894:7900 <> Haccess:113
+R8090:8092 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8052:8059 compcert.common.Memory Mem load def
+R8061:8064 compcert.common.AST <> Mptr def
+R8066:8067 VST.concurrency.common.HybridMachine <> m0:97 var
+R8069:8069 VST.concurrency.common.HybridMachine <> b:101 var
+R8072:8084 compcert.lib.Integers Ptrofs intval proj
+R8086:8088 VST.concurrency.common.HybridMachine <> ofs:102 var
+R8093:8096 Coq.Init.Datatypes <> Some constr
+R8099:8105 compcert.common.Values <> Vptrofs def
+R8107:8116 compcert.lib.Integers Ptrofs one def
+binder 8045:8049 <> Hload:114
+R8366:8368 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8246:8257 VST.concurrency.common.permissions <> setPermBlock def
+R8356:8365 VST.concurrency.common.lksize <> LKSIZE_nat def
+R8335:8335 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R8351:8353 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R8336:8345 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R8347:8350 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R8315:8327 compcert.lib.Integers Ptrofs intval proj
+R8329:8331 VST.concurrency.common.HybridMachine <> ofs:102 var
+R8312:8312 VST.concurrency.common.HybridMachine <> b:101 var
+R8260:8263 Coq.Init.Datatypes <> Some constr
+R8265:8272 compcert.common.Memtype <> Writable constr
+R8369:8377 VST.concurrency.common.HybridMachine <> pmap_tid':104 var
+binder 8235:8243 <> Hset_perm:115
+R8399:8407 VST.concurrency.common.permissions <> permMapLt def
+R8420:8429 VST.concurrency.common.permissions <> getMaxPerm def
+R8431:8431 VST.concurrency.common.HybridMachine <> m:89 var
+R8409:8417 VST.concurrency.common.HybridMachine <> pmap_tid':104 var
+binder 8393:8396 <> Hlt':116
+R8457:8459 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R8468:8498 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R8616:8643 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R8460:8467 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R8543:8571 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R8499:8507 VST.concurrency.common.permissions <> permMapLt def
+R8530:8539 VST.concurrency.common.permissions <> getMaxPerm def
+R8541:8541 VST.concurrency.common.HybridMachine <> m:89 var
+R8510:8512 Coq.Init.Datatypes <> fst def
+R8514:8526 VST.concurrency.common.HybridMachine <> newThreadPerm:107 var
+R8572:8580 VST.concurrency.common.permissions <> permMapLt def
+R8603:8612 VST.concurrency.common.permissions <> getMaxPerm def
+R8614:8614 VST.concurrency.common.HybridMachine <> m:89 var
+R8583:8585 Coq.Init.Datatypes <> snd def
+R8587:8599 VST.concurrency.common.HybridMachine <> newThreadPerm:107 var
+R8644:8647 Coq.Init.Logic <> True ind
+binder 8448:8454 <> Hlt_new:117
+R8697:8699 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8680:8691 VST.concurrency.common.permissions <> restrPermMap def
+R8693:8696 VST.concurrency.common.HybridMachine <> Hlt':116 var
+R8700:8701 VST.concurrency.common.HybridMachine <> m1:98 var
+binder 8664:8677 <> Hrestrict_pmap:118
+R8821:8823 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8760:8768 compcert.common.Memory Mem store def
+R8770:8773 compcert.common.AST <> Mptr def
+R8775:8776 VST.concurrency.common.HybridMachine <> m1:98 var
+R8778:8778 VST.concurrency.common.HybridMachine <> b:101 var
+R8781:8793 compcert.lib.Integers Ptrofs intval proj
+R8795:8797 VST.concurrency.common.HybridMachine <> ofs:102 var
+R8801:8807 compcert.common.Values <> Vptrofs def
+R8809:8819 compcert.lib.Integers Ptrofs zero def
+R8824:8827 Coq.Init.Datatypes <> Some constr
+R8829:8830 VST.concurrency.common.HybridMachine <> m':100 var
+binder 8752:8757 <> Hstore:119
+R8888:8890 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8855:8861 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R8866:8866 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R8868:8869 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R8887:8887 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R8867:8867 VST.concurrency.common.HybridMachine <> b:101 var
+R8870:8882 compcert.lib.Integers Ptrofs intval proj
+R8884:8886 VST.concurrency.common.HybridMachine <> ofs:102 var
+R8863:8864 VST.concurrency.common.HybridMachine <> tp:88 var
+R8891:8894 Coq.Init.Datatypes <> Some constr
+R8896:8899 VST.concurrency.common.HybridMachine <> pmap:103 var
+binder 8846:8852 <> HisLock:120
+R8924:8934 VST.concurrency.common.permissions <> permMapJoin def
+R8976:8977 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R8963:8975 VST.concurrency.common.HybridMachine <> newThreadPerm:107 var
+R8943:8943 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R8959:8961 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R8944:8953 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R8955:8958 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R8940:8941 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R8936:8939 VST.concurrency.common.HybridMachine <> pmap:103 var
+binder 8915:8921 <> Hangel1:121
+R9002:9012 VST.concurrency.common.permissions <> permMapJoin def
+R9054:9055 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9041:9053 VST.concurrency.common.HybridMachine <> newThreadPerm:107 var
+R9021:9021 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9037:9039 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9022:9031 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R9033:9036 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R9018:9019 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9014:9017 VST.concurrency.common.HybridMachine <> pmap:103 var
+binder 8993:8999 <> Hangel2:122
+R9080:9082 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9077:9079 VST.concurrency.common.HybridMachine <> tp':94 var
+R9083:9091 VST.concurrency.common.threadPool ThreadPool updThread meth
+R9117:9129 VST.concurrency.common.HybridMachine <> newThreadPerm:107 var
+R9099:9105 VST.concurrency.common.threadPool <> Kresume constr
+R9109:9114 compcert.common.Values <> Vundef constr
+R9107:9107 VST.concurrency.common.HybridMachine <> c:99 var
+R9093:9096 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 9071:9074 <> Htp':123
+R9239:9241 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9235:9238 VST.concurrency.common.HybridMachine <> tp'':95 var
+R9242:9251 VST.concurrency.common.threadPool ThreadPool updLockSet meth
+R9280:9280 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9290:9291 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9301:9301 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9281:9289 VST.concurrency.common.permissions <> empty_map def
+R9292:9300 VST.concurrency.common.permissions <> empty_map def
+R9257:9257 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9259:9260 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9278:9278 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9258:9258 VST.concurrency.common.HybridMachine <> b:101 var
+R9261:9273 compcert.lib.Integers Ptrofs intval proj
+R9275:9277 VST.concurrency.common.HybridMachine <> ofs:102 var
+R9253:9255 VST.concurrency.common.HybridMachine <> tp':94 var
+binder 9228:9232 <> Htp'':124
+R9317:9324 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R9369:9375 VST.concurrency.common.HybridMachineSig Events acquire constr
+R9377:9377 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9379:9380 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9398:9398 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R9378:9378 VST.concurrency.common.HybridMachine <> b:101 var
+R9381:9393 compcert.lib.Integers Ptrofs intval proj
+R9395:9397 VST.concurrency.common.HybridMachine <> ofs:102 var
+R9431:9434 Coq.Init.Datatypes <> Some constr
+R9437:9455 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R9458:9460 Coq.Init.Datatypes <> fst def
+R9462:9473 VST.concurrency.common.HybridMachine <> virtueThread:105 var
+R9476:9477 VST.concurrency.common.HybridMachine <> m':100 var
+R9344:9345 VST.concurrency.common.HybridMachine <> m':100 var
+R9339:9342 VST.concurrency.common.HybridMachine <> tp'':95 var
+R9331:9337 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R9326:9329 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R9529:9539 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 9520:9522 <> tp':125
+binder 9524:9527 <> tp'':126
+binder 9542:9545 <> marg:127
+binder 9547:9548 <> m0:128
+binder 9550:9551 <> m1:129
+binder 9553:9553 <> c:130
+binder 9555:9556 <> m':131
+binder 9558:9558 <> b:132
+binder 9560:9562 <> ofs:133
+binder 9564:9575 <> virtueThread:134
+binder 9577:9584 <> virtueLP:135
+binder 9586:9594 <> pmap_tid':136
+binder 9596:9599 <> rmap:137
+R9622:9624 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9633:9663 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9771:9821 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9625:9632 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R9703:9731 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9664:9670 VST.concurrency.common.bounded_maps <> sub_map def
+R9687:9687 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9700:9702 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9688:9697 VST.concurrency.common.permissions <> getMaxPerm def
+R9699:9699 VST.concurrency.common.HybridMachine <> m:89 var
+R9684:9685 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R9672:9683 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R9732:9738 VST.concurrency.common.bounded_maps <> sub_map def
+R9755:9755 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9768:9770 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9756:9765 VST.concurrency.common.permissions <> getMaxPerm def
+R9767:9767 VST.concurrency.common.HybridMachine <> m:89 var
+R9752:9753 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9740:9751 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R9822:9825 Coq.Init.Logic <> True ind
+binder 9612:9619 <> Hbounded:138
+R9852:9854 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9863:9895 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R10111:10165 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9855:9862 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R9920:9950 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9896:9908 VST.concurrency.common.bounded_maps <> map_empty_def def
+R9918:9919 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R9910:9917 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R9975:10005 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9951:9963 VST.concurrency.common.bounded_maps <> map_empty_def def
+R9973:9974 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R9965:9972 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R10043:10073 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R10006:10012 VST.concurrency.common.bounded_maps <> sub_map def
+R10027:10027 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10040:10042 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10028:10037 VST.concurrency.common.permissions <> getMaxPerm def
+R10039:10039 VST.concurrency.common.HybridMachine <> m:89 var
+R10024:10025 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10022:10023 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10014:10021 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R10074:10080 VST.concurrency.common.bounded_maps <> sub_map def
+R10095:10095 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10108:10110 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10096:10105 VST.concurrency.common.permissions <> getMaxPerm def
+R10107:10107 VST.concurrency.common.HybridMachine <> m:89 var
+R10092:10093 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10090:10091 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10082:10089 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R10166:10169 Coq.Init.Logic <> True ind
+binder 9840:9849 <> HboundedLP:139
+R10205:10205 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10251:10284 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10330:10330 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10206:10215 VST.concurrency.common.permissions <> computeMap def
+R10249:10250 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10237:10248 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R10217:10217 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10233:10235 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10218:10227 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R10229:10232 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R10285:10294 VST.concurrency.common.permissions <> computeMap def
+R10328:10329 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10316:10327 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R10296:10296 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10312:10314 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10297:10306 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R10308:10311 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 10188:10200 <> newThreadPerm:140
+R10372:10380 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R10382:10383 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 10365:10368 <> Hinv:141
+R10421:10423 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10406:10415 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R10417:10420 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R10424:10431 VST.concurrency.common.threadPool <> Kblocked constr
+R10433:10433 VST.concurrency.common.HybridMachine <> c:130 var
+binder 10399:10403 <> Hcode:142
+R10626:10628 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10592:10603 VST.concurrency.common.permissions <> restrPermMap def
+R10605:10605 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10623:10625 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R10606:10612 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R10614:10617 VST.concurrency.common.HybridMachine <> tid0:87 var
+R10619:10622 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R10629:10632 VST.concurrency.common.HybridMachine <> marg:127 var
+binder 10572:10589 <> Hrestrict_pmap_arg:143
+R10697:10726 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10662:10682 VST.sepcomp.semantics <> at_external proj
+R10693:10696 VST.concurrency.common.HybridMachine <> marg:127 var
+R10691:10691 VST.concurrency.common.HybridMachine <> c:130 var
+R10684:10689 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R10727:10730 Coq.Init.Datatypes <> Some constr
+R10732:10732 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10739:10740 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10756:10756 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R10733:10738 VST.concurrency.common.HybridMachineSig <> UNLOCK abbrev
+R10751:10752 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R10741:10744 compcert.common.Values <> Vptr constr
+R10746:10746 VST.concurrency.common.HybridMachine <> b:132 var
+R10748:10750 VST.concurrency.common.HybridMachine <> ofs:133 var
+R10753:10755 Coq.Init.Datatypes <> nil constr
+binder 10648:10659 <> Hat_external:144
+R10893:10895 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10859:10870 VST.concurrency.common.permissions <> restrPermMap def
+R10872:10872 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10890:10892 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R10873:10879 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R10881:10884 VST.concurrency.common.HybridMachine <> tid0:87 var
+R10886:10889 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R10896:10897 VST.concurrency.common.HybridMachine <> m0:128 var
+binder 10842:10856 <> Hrestrict_pmap0:145
+R11009:11022 compcert.common.Memory Mem range_perm def
+R11024:11025 VST.concurrency.common.HybridMachine <> m0:128 var
+R11027:11027 VST.concurrency.common.HybridMachine <> b:132 var
+R11030:11042 compcert.lib.Integers Ptrofs intval proj
+R11044:11046 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11050:11050 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R11068:11071 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R11051:11063 compcert.lib.Integers Ptrofs intval proj
+R11065:11067 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11072:11077 VST.concurrency.common.lksize <> LKSIZE def
+R11080:11082 compcert.common.Memtype <> Cur constr
+R11084:11091 compcert.common.Memtype <> Readable constr
+binder 11000:11006 <> Haccess:146
+R11152:11154 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11114:11121 compcert.common.Memory Mem load def
+R11123:11126 compcert.common.AST <> Mptr def
+R11128:11129 VST.concurrency.common.HybridMachine <> m0:128 var
+R11131:11131 VST.concurrency.common.HybridMachine <> b:132 var
+R11134:11146 compcert.lib.Integers Ptrofs intval proj
+R11148:11150 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11155:11158 Coq.Init.Datatypes <> Some constr
+R11161:11167 compcert.common.Values <> Vptrofs def
+R11169:11179 compcert.lib.Integers Ptrofs zero def
+binder 11107:11111 <> Hload:147
+R11406:11408 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11286:11297 VST.concurrency.common.permissions <> setPermBlock def
+R11396:11405 VST.concurrency.common.lksize <> LKSIZE_nat def
+R11375:11375 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11391:11393 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11376:11385 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R11387:11390 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R11355:11367 compcert.lib.Integers Ptrofs intval proj
+R11369:11371 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11352:11352 VST.concurrency.common.HybridMachine <> b:132 var
+R11300:11303 Coq.Init.Datatypes <> Some constr
+R11305:11312 compcert.common.Memtype <> Writable constr
+R11409:11417 VST.concurrency.common.HybridMachine <> pmap_tid':136 var
+binder 11275:11283 <> Hset_perm:148
+R11439:11447 VST.concurrency.common.permissions <> permMapLt def
+R11460:11469 VST.concurrency.common.permissions <> getMaxPerm def
+R11471:11471 VST.concurrency.common.HybridMachine <> m:89 var
+R11449:11457 VST.concurrency.common.HybridMachine <> pmap_tid':136 var
+binder 11433:11436 <> Hlt':149
+R11521:11523 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11504:11515 VST.concurrency.common.permissions <> restrPermMap def
+R11517:11520 VST.concurrency.common.HybridMachine <> Hlt':149 var
+R11524:11525 VST.concurrency.common.HybridMachine <> m1:129 var
+binder 11488:11501 <> Hrestrict_pmap:150
+R11645:11647 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11585:11593 compcert.common.Memory Mem store def
+R11595:11598 compcert.common.AST <> Mptr def
+R11600:11601 VST.concurrency.common.HybridMachine <> m1:129 var
+R11603:11603 VST.concurrency.common.HybridMachine <> b:132 var
+R11606:11618 compcert.lib.Integers Ptrofs intval proj
+R11620:11622 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11626:11632 compcert.common.Values <> Vptrofs def
+R11634:11643 compcert.lib.Integers Ptrofs one def
+R11648:11651 Coq.Init.Datatypes <> Some constr
+R11653:11654 VST.concurrency.common.HybridMachine <> m':131 var
+binder 11577:11582 <> Hstore:151
+R11712:11714 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11679:11685 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R11690:11690 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R11692:11693 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R11711:11711 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R11691:11691 VST.concurrency.common.HybridMachine <> b:132 var
+R11694:11706 compcert.lib.Integers Ptrofs intval proj
+R11708:11710 VST.concurrency.common.HybridMachine <> ofs:133 var
+R11687:11688 VST.concurrency.common.HybridMachine <> tp:88 var
+R11715:11718 Coq.Init.Datatypes <> Some constr
+R11720:11723 VST.concurrency.common.HybridMachine <> rmap:137 var
+binder 11670:11676 <> HisLock:152
+binder 11753:11753 <> b:153
+binder 11755:11757 <> ofs:154
+R11782:11785 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R11775:11777 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11766:11769 compcert.lib.Maps <> :::x_'!!'_x not
+R11771:11774 compcert.lib.Maps <> :::x_'!!'_x not
+R11770:11770 VST.concurrency.common.HybridMachine <> b:153 var
+R11764:11765 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R11760:11763 VST.concurrency.common.HybridMachine <> rmap:137 var
+R11772:11774 VST.concurrency.common.HybridMachine <> ofs:154 var
+R11778:11781 Coq.Init.Datatypes <> None constr
+R11801:11803 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11792:11795 compcert.lib.Maps <> :::x_'!!'_x not
+R11797:11800 compcert.lib.Maps <> :::x_'!!'_x not
+R11796:11796 VST.concurrency.common.HybridMachine <> b:153 var
+R11790:11791 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11786:11789 VST.concurrency.common.HybridMachine <> rmap:137 var
+R11798:11800 VST.concurrency.common.HybridMachine <> ofs:154 var
+R11804:11807 Coq.Init.Datatypes <> None constr
+binder 11739:11743 <> Hrmap:155
+R11832:11842 VST.concurrency.common.permissions <> permMapJoin def
+R11871:11871 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R11887:11889 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R11872:11881 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R11883:11886 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R11868:11869 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R11860:11867 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R11857:11858 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R11844:11856 VST.concurrency.common.HybridMachine <> newThreadPerm:140 var
+binder 11823:11829 <> Hangel1:156
+R11914:11924 VST.concurrency.common.permissions <> permMapJoin def
+R11953:11953 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11969:11971 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11954:11963 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R11965:11968 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R11950:11951 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11942:11949 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R11939:11940 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R11926:11938 VST.concurrency.common.HybridMachine <> newThreadPerm:140 var
+binder 11905:11911 <> Hangel2:157
+R11996:11998 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11993:11995 VST.concurrency.common.HybridMachine <> tp':125 var
+R11999:12007 VST.concurrency.common.threadPool ThreadPool updThread meth
+R12068:12068 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12114:12151 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12197:12197 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12069:12078 VST.concurrency.common.permissions <> computeMap def
+R12112:12113 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R12100:12111 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R12080:12080 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R12096:12098 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R12081:12090 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R12092:12095 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R12152:12161 VST.concurrency.common.permissions <> computeMap def
+R12195:12196 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12183:12194 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R12163:12163 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12179:12181 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12164:12173 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R12175:12178 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R12015:12021 VST.concurrency.common.threadPool <> Kresume constr
+R12025:12030 compcert.common.Values <> Vundef constr
+R12023:12023 VST.concurrency.common.HybridMachine <> c:130 var
+R12009:12012 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 11987:11990 <> Htp':158
+R12224:12226 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R12220:12223 VST.concurrency.common.HybridMachine <> tp'':126 var
+R12227:12236 VST.concurrency.common.threadPool ThreadPool updLockSet meth
+R12265:12272 VST.concurrency.common.HybridMachine <> virtueLP:135 var
+R12242:12242 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12244:12245 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12263:12263 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12243:12243 VST.concurrency.common.HybridMachine <> b:132 var
+R12246:12258 compcert.lib.Integers Ptrofs intval proj
+R12260:12262 VST.concurrency.common.HybridMachine <> ofs:133 var
+R12238:12240 VST.concurrency.common.HybridMachine <> tp':125 var
+binder 12213:12217 <> Htp'':159
+R12288:12295 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R12340:12346 VST.concurrency.common.HybridMachineSig Events release constr
+R12348:12348 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12350:12351 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12369:12369 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12349:12349 VST.concurrency.common.HybridMachine <> b:132 var
+R12352:12364 compcert.lib.Integers Ptrofs intval proj
+R12366:12368 VST.concurrency.common.HybridMachine <> ofs:133 var
+R12402:12405 Coq.Init.Datatypes <> Some constr
+R12408:12426 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R12429:12431 Coq.Init.Datatypes <> fst def
+R12433:12444 VST.concurrency.common.HybridMachine <> virtueThread:134 var
+R12447:12448 VST.concurrency.common.HybridMachine <> m':131 var
+R12315:12316 VST.concurrency.common.HybridMachine <> m':131 var
+R12310:12313 VST.concurrency.common.HybridMachine <> tp'':126 var
+R12302:12308 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R12297:12300 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R12500:12510 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 12489:12494 <> tp_upd:160
+binder 12496:12498 <> tp':161
+binder 12513:12513 <> c:162
+binder 12515:12518 <> marg:163
+binder 12520:12520 <> b:164
+binder 12522:12524 <> ofs:165
+binder 12526:12528 <> arg:166
+binder 12530:12536 <> virtue1:167
+binder 12538:12544 <> virtue2:168
+R12567:12569 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12578:12608 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12706:12756 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12570:12577 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R12643:12671 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12609:12615 VST.concurrency.common.bounded_maps <> sub_map def
+R12627:12627 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12640:12642 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12628:12637 VST.concurrency.common.permissions <> getMaxPerm def
+R12639:12639 VST.concurrency.common.HybridMachine <> m:89 var
+R12624:12625 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R12617:12623 VST.concurrency.common.HybridMachine <> virtue1:167 var
+R12672:12678 VST.concurrency.common.bounded_maps <> sub_map def
+R12690:12690 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12703:12705 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12691:12700 VST.concurrency.common.permissions <> getMaxPerm def
+R12702:12702 VST.concurrency.common.HybridMachine <> m:89 var
+R12687:12688 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12680:12686 VST.concurrency.common.HybridMachine <> virtue1:167 var
+R12757:12760 Coq.Init.Logic <> True ind
+binder 12557:12564 <> Hbounded:169
+R12789:12791 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12800:12834 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12936:12994 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12792:12799 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R12869:12901 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12835:12841 VST.concurrency.common.bounded_maps <> sub_map def
+R12853:12853 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12866:12868 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12854:12863 VST.concurrency.common.permissions <> getMaxPerm def
+R12865:12865 VST.concurrency.common.HybridMachine <> m:89 var
+R12850:12851 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R12843:12849 VST.concurrency.common.HybridMachine <> virtue2:168 var
+R12902:12908 VST.concurrency.common.bounded_maps <> sub_map def
+R12920:12920 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12933:12935 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12921:12930 VST.concurrency.common.permissions <> getMaxPerm def
+R12932:12932 VST.concurrency.common.HybridMachine <> m:89 var
+R12917:12918 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R12910:12916 VST.concurrency.common.HybridMachine <> virtue2:168 var
+R12995:12998 Coq.Init.Logic <> True ind
+binder 12775:12786 <> Hbounded_new:170
+R13032:13032 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13073:13104 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13145:13145 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13033:13042 VST.concurrency.common.permissions <> computeMap def
+R13071:13072 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13064:13070 VST.concurrency.common.HybridMachine <> virtue1:167 var
+R13044:13044 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13060:13062 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13045:13054 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R13056:13059 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R13105:13114 VST.concurrency.common.permissions <> computeMap def
+R13143:13144 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R13136:13142 VST.concurrency.common.HybridMachine <> virtue1:167 var
+R13116:13116 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R13132:13134 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R13117:13126 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R13128:13131 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 13017:13027 <> threadPerm':171
+R13181:13181 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13212:13245 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13276:13276 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13182:13191 VST.concurrency.common.permissions <> computeMap def
+R13210:13211 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13203:13209 VST.concurrency.common.HybridMachine <> virtue2:168 var
+R13193:13201 VST.concurrency.common.permissions <> empty_map def
+R13246:13255 VST.concurrency.common.permissions <> computeMap def
+R13274:13275 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R13267:13273 VST.concurrency.common.HybridMachine <> virtue2:168 var
+R13257:13265 VST.concurrency.common.permissions <> empty_map def
+binder 13164:13176 <> newThreadPerm:172
+R13318:13326 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R13328:13329 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 13311:13314 <> Hinv:173
+R13367:13369 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13352:13361 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R13363:13366 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R13370:13377 VST.concurrency.common.threadPool <> Kblocked constr
+R13379:13379 VST.concurrency.common.HybridMachine <> c:162 var
+binder 13345:13349 <> Hcode:174
+R13572:13574 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13538:13549 VST.concurrency.common.permissions <> restrPermMap def
+R13551:13551 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13569:13571 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13552:13558 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R13560:13563 VST.concurrency.common.HybridMachine <> tid0:87 var
+R13565:13568 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R13575:13578 VST.concurrency.common.HybridMachine <> marg:163 var
+binder 13518:13535 <> Hrestrict_pmap_arg:175
+R13643:13645 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13608:13628 VST.sepcomp.semantics <> at_external proj
+R13639:13642 VST.concurrency.common.HybridMachine <> marg:163 var
+R13637:13637 VST.concurrency.common.HybridMachine <> c:162 var
+R13630:13635 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R13646:13649 Coq.Init.Datatypes <> Some constr
+R13651:13651 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13658:13659 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13680:13680 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13652:13657 VST.concurrency.common.HybridMachineSig <> CREATE abbrev
+R13670:13671 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R13660:13663 compcert.common.Values <> Vptr constr
+R13665:13665 VST.concurrency.common.HybridMachine <> b:164 var
+R13667:13669 VST.concurrency.common.HybridMachine <> ofs:165 var
+R13675:13676 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R13672:13674 VST.concurrency.common.HybridMachine <> arg:166 var
+R13677:13679 Coq.Init.Datatypes <> nil constr
+binder 13594:13605 <> Hat_external:176
+R13934:13944 VST.concurrency.common.permissions <> permMapJoin def
+R13976:13976 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13992:13994 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13977:13986 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R13988:13991 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R13973:13974 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13962:13972 VST.concurrency.common.HybridMachine <> threadPerm':171 var
+R13959:13960 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R13946:13958 VST.concurrency.common.HybridMachine <> newThreadPerm:172 var
+binder 13925:13931 <> Hangel1:177
+R14019:14029 VST.concurrency.common.permissions <> permMapJoin def
+R14061:14061 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R14077:14079 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R14062:14071 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R14073:14076 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R14058:14059 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R14047:14057 VST.concurrency.common.HybridMachine <> threadPerm':171 var
+R14044:14045 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R14031:14043 VST.concurrency.common.HybridMachine <> newThreadPerm:172 var
+binder 14010:14016 <> Hangel2:178
+R14110:14112 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14104:14109 VST.concurrency.common.HybridMachine <> tp_upd:160 var
+R14113:14121 VST.concurrency.common.threadPool ThreadPool updThread meth
+R14147:14157 VST.concurrency.common.HybridMachine <> threadPerm':171 var
+R14129:14135 VST.concurrency.common.threadPool <> Kresume constr
+R14139:14144 compcert.common.Values <> Vundef constr
+R14137:14137 VST.concurrency.common.HybridMachine <> c:162 var
+R14123:14126 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 14095:14101 <> Htp_upd:179
+R14182:14184 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14179:14181 VST.concurrency.common.HybridMachine <> tp':161 var
+R14185:14193 VST.concurrency.common.threadPool ThreadPool addThread meth
+R14219:14231 VST.concurrency.common.HybridMachine <> newThreadPerm:172 var
+R14215:14217 VST.concurrency.common.HybridMachine <> arg:166 var
+R14203:14206 compcert.common.Values <> Vptr constr
+R14208:14208 VST.concurrency.common.HybridMachine <> b:164 var
+R14210:14212 VST.concurrency.common.HybridMachine <> ofs:165 var
+R14195:14200 VST.concurrency.common.HybridMachine <> tp_upd:160 var
+binder 14173:14176 <> Htp':180
+R14247:14254 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R14297:14301 VST.concurrency.common.HybridMachineSig Events spawn constr
+R14303:14303 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14305:14306 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14324:14324 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14304:14304 VST.concurrency.common.HybridMachine <> b:164 var
+R14307:14319 compcert.lib.Integers Ptrofs intval proj
+R14321:14323 VST.concurrency.common.HybridMachine <> ofs:165 var
+R14355:14358 Coq.Init.Datatypes <> Some constr
+R14361:14379 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R14382:14384 Coq.Init.Datatypes <> fst def
+R14386:14392 VST.concurrency.common.HybridMachine <> virtue1:167 var
+R14395:14395 VST.concurrency.common.HybridMachine <> m:89 var
+R14428:14431 Coq.Init.Datatypes <> Some constr
+R14434:14452 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R14455:14457 Coq.Init.Datatypes <> fst def
+R14459:14465 VST.concurrency.common.HybridMachine <> virtue2:168 var
+R14468:14468 VST.concurrency.common.HybridMachine <> m:89 var
+R14273:14273 VST.concurrency.common.HybridMachine <> m:89 var
+R14269:14271 VST.concurrency.common.HybridMachine <> tp':161 var
+R14261:14267 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R14256:14259 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R14522:14532 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 14512:14514 <> tp':181
+binder 14516:14519 <> tp'':182
+binder 14535:14538 <> marg:183
+binder 14540:14541 <> m1:184
+binder 14543:14543 <> c:185
+binder 14545:14546 <> m':186
+binder 14548:14548 <> b:187
+binder 14550:14552 <> ofs:188
+binder 14554:14562 <> pmap_tid':189
+R14592:14601 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R14603:14606 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R14648:14656 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R14658:14659 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 14641:14644 <> Hinv:190
+R14697:14699 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14682:14691 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R14693:14696 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R14700:14707 VST.concurrency.common.threadPool <> Kblocked constr
+R14709:14709 VST.concurrency.common.HybridMachine <> c:185 var
+binder 14675:14679 <> Hcode:191
+R14902:14904 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14868:14879 VST.concurrency.common.permissions <> restrPermMap def
+R14881:14881 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R14899:14901 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R14882:14888 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R14890:14893 VST.concurrency.common.HybridMachine <> tid0:87 var
+R14895:14898 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R14905:14908 VST.concurrency.common.HybridMachine <> marg:183 var
+binder 14848:14865 <> Hrestrict_pmap_arg:192
+R14973:14975 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14938:14958 VST.sepcomp.semantics <> at_external proj
+R14969:14972 VST.concurrency.common.HybridMachine <> marg:183 var
+R14967:14967 VST.concurrency.common.HybridMachine <> c:185 var
+R14960:14965 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R14976:14979 Coq.Init.Datatypes <> Some constr
+R14981:14981 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14988:14989 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15005:15005 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14982:14987 VST.concurrency.common.HybridMachineSig <> MKLOCK abbrev
+R15000:15001 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R14990:14993 compcert.common.Values <> Vptr constr
+R14995:14995 VST.concurrency.common.HybridMachine <> b:187 var
+R14997:14999 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15002:15004 Coq.Init.Datatypes <> nil constr
+binder 14924:14935 <> Hat_external:193
+R15127:15129 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15093:15104 VST.concurrency.common.permissions <> restrPermMap def
+R15106:15106 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R15124:15126 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R15107:15113 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R15115:15118 VST.concurrency.common.HybridMachine <> tid0:87 var
+R15120:15123 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R15130:15131 VST.concurrency.common.HybridMachine <> m1:184 var
+binder 15077:15090 <> Hrestrict_pmap:194
+R15244:15257 compcert.common.Memory Mem range_perm def
+R15259:15260 VST.concurrency.common.HybridMachine <> m1:184 var
+R15262:15262 VST.concurrency.common.HybridMachine <> b:187 var
+R15265:15277 compcert.lib.Integers Ptrofs intval proj
+R15279:15281 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15285:15285 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R15303:15306 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R15286:15298 compcert.lib.Integers Ptrofs intval proj
+R15300:15302 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15307:15312 VST.concurrency.common.lksize <> LKSIZE def
+R15315:15317 compcert.common.Memtype <> Cur constr
+R15319:15326 compcert.common.Memtype <> Writable constr
+binder 15233:15241 <> Hfreeable:195
+R15463:15465 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15402:15410 compcert.common.Memory Mem store def
+R15412:15415 compcert.common.AST <> Mptr def
+R15417:15418 VST.concurrency.common.HybridMachine <> m1:184 var
+R15420:15420 VST.concurrency.common.HybridMachine <> b:187 var
+R15423:15435 compcert.lib.Integers Ptrofs intval proj
+R15437:15439 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15443:15449 compcert.common.Values <> Vptrofs def
+R15451:15461 compcert.lib.Integers Ptrofs zero def
+R15466:15469 Coq.Init.Datatypes <> Some constr
+R15471:15472 VST.concurrency.common.HybridMachine <> m':186 var
+binder 15394:15399 <> Hstore:196
+R15775:15777 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15568:15579 VST.concurrency.common.permissions <> setPermBlock def
+R15765:15774 VST.concurrency.common.lksize <> LKSIZE_nat def
+R15735:15736 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R15681:15693 compcert.lib.Integers Ptrofs intval proj
+R15695:15697 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15651:15651 VST.concurrency.common.HybridMachine <> b:187 var
+R15609:15612 Coq.Init.Datatypes <> Some constr
+R15614:15621 compcert.common.Memtype <> Nonempty constr
+R15787:15788 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R15778:15786 VST.concurrency.common.HybridMachine <> pmap_tid':189 var
+binder 15556:15565 <> Hdata_perm:197
+R16078:16080 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15871:15882 VST.concurrency.common.permissions <> setPermBlock def
+R16068:16077 VST.concurrency.common.lksize <> LKSIZE_nat def
+R16038:16039 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R15984:15996 compcert.lib.Integers Ptrofs intval proj
+R15998:16000 VST.concurrency.common.HybridMachine <> ofs:188 var
+R15954:15954 VST.concurrency.common.HybridMachine <> b:187 var
+R15912:15915 Coq.Init.Datatypes <> Some constr
+R15917:15924 compcert.common.Memtype <> Writable constr
+R16090:16091 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R16081:16089 VST.concurrency.common.HybridMachine <> pmap_tid':189 var
+binder 15859:15868 <> Hlock_perm:198
+R16221:16223 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R16188:16194 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R16199:16199 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16201:16202 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16220:16220 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16200:16200 VST.concurrency.common.HybridMachine <> b:187 var
+R16203:16215 compcert.lib.Integers Ptrofs intval proj
+R16217:16219 VST.concurrency.common.HybridMachine <> ofs:188 var
+R16196:16197 VST.concurrency.common.HybridMachine <> tp:88 var
+R16224:16227 Coq.Init.Datatypes <> None constr
+binder 16178:16185 <> HlockRes:199
+R16252:16254 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R16249:16251 VST.concurrency.common.HybridMachine <> tp':181 var
+R16255:16263 VST.concurrency.common.threadPool ThreadPool updThread meth
+R16289:16297 VST.concurrency.common.HybridMachine <> pmap_tid':189 var
+R16271:16277 VST.concurrency.common.threadPool <> Kresume constr
+R16281:16286 compcert.common.Values <> Vundef constr
+R16279:16279 VST.concurrency.common.HybridMachine <> c:185 var
+R16265:16268 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 16243:16246 <> Htp':200
+R16379:16381 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R16375:16378 VST.concurrency.common.HybridMachine <> tp'':182 var
+R16382:16391 VST.concurrency.common.threadPool ThreadPool updLockSet meth
+R16420:16420 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16430:16431 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16441:16441 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16421:16429 VST.concurrency.common.permissions <> empty_map def
+R16432:16440 VST.concurrency.common.permissions <> empty_map def
+R16397:16397 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16399:16400 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16418:16418 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16398:16398 VST.concurrency.common.HybridMachine <> b:187 var
+R16401:16413 compcert.lib.Integers Ptrofs intval proj
+R16415:16417 VST.concurrency.common.HybridMachine <> ofs:188 var
+R16393:16395 VST.concurrency.common.HybridMachine <> tp':181 var
+binder 16368:16372 <> Htp'':201
+R16457:16464 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R16488:16493 VST.concurrency.common.HybridMachineSig Events mklock constr
+R16495:16495 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16497:16498 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16516:16516 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16496:16496 VST.concurrency.common.HybridMachine <> b:187 var
+R16499:16511 compcert.lib.Integers Ptrofs intval proj
+R16513:16515 VST.concurrency.common.HybridMachine <> ofs:188 var
+R16484:16485 VST.concurrency.common.HybridMachine <> m':186 var
+R16479:16482 VST.concurrency.common.HybridMachine <> tp'':182 var
+R16471:16477 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R16466:16469 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R16569:16579 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 16559:16561 <> tp':202
+binder 16563:16566 <> tp'':203
+binder 16582:16582 <> c:204
+binder 16584:16587 <> marg:205
+binder 16589:16589 <> b:206
+binder 16591:16593 <> ofs:207
+binder 16595:16603 <> pmap_tid':208
+binder 16605:16606 <> m1:209
+binder 16608:16612 <> pdata:210
+binder 16614:16617 <> rmap:211
+R16641:16643 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R16652:16683 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R16731:16783 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R16644:16651 VST.concurrency.common.HybridMachine <> isCoarse:86 var
+R16684:16713 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R16721:16730 VST.concurrency.common.lksize <> LKSIZE_nat def
+R16715:16719 VST.concurrency.common.HybridMachine <> pdata:210 var
+R16784:16787 Coq.Init.Logic <> True ind
+binder 16631:16638 <> Hbounded:212
+R16819:16828 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R16830:16833 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R16874:16882 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R16884:16885 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 16868:16871 <> Hinv:213
+R16923:16925 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R16908:16917 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R16919:16922 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R16926:16933 VST.concurrency.common.threadPool <> Kblocked constr
+R16935:16935 VST.concurrency.common.HybridMachine <> c:204 var
+binder 16901:16905 <> Hcode:214
+R17128:17130 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17094:17105 VST.concurrency.common.permissions <> restrPermMap def
+R17107:17107 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R17125:17127 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R17108:17114 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R17116:17119 VST.concurrency.common.HybridMachine <> tid0:87 var
+R17121:17124 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R17131:17134 VST.concurrency.common.HybridMachine <> marg:205 var
+binder 17074:17091 <> Hrestrict_pmap_arg:215
+R17199:17201 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17164:17184 VST.sepcomp.semantics <> at_external proj
+R17195:17198 VST.concurrency.common.HybridMachine <> marg:205 var
+R17193:17193 VST.concurrency.common.HybridMachine <> c:204 var
+R17186:17191 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R17202:17205 Coq.Init.Datatypes <> Some constr
+R17207:17207 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17217:17218 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17234:17234 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17208:17216 VST.concurrency.common.HybridMachineSig <> FREE_LOCK abbrev
+R17229:17230 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R17219:17222 compcert.common.Values <> Vptr constr
+R17224:17224 VST.concurrency.common.HybridMachine <> b:206 var
+R17226:17228 VST.concurrency.common.HybridMachine <> ofs:207 var
+R17231:17233 Coq.Init.Datatypes <> nil constr
+binder 17150:17161 <> Hat_external:216
+R17339:17341 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17304:17310 VST.concurrency.common.threadPool ThreadPool lockRes meth
+R17315:17315 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17317:17319 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17337:17338 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17316:17316 VST.concurrency.common.HybridMachine <> b:206 var
+R17320:17332 compcert.lib.Integers Ptrofs intval proj
+R17334:17336 VST.concurrency.common.HybridMachine <> ofs:207 var
+R17312:17313 VST.concurrency.common.HybridMachine <> tp:88 var
+R17342:17345 Coq.Init.Datatypes <> Some constr
+R17347:17350 VST.concurrency.common.HybridMachine <> rmap:211 var
+binder 17294:17301 <> His_lock:217
+binder 17421:17421 <> b:218
+binder 17423:17425 <> ofs:219
+R17450:17453 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R17443:17445 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17434:17437 compcert.lib.Maps <> :::x_'!!'_x not
+R17439:17442 compcert.lib.Maps <> :::x_'!!'_x not
+R17438:17438 VST.concurrency.common.HybridMachine <> b:218 var
+R17432:17433 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R17428:17431 VST.concurrency.common.HybridMachine <> rmap:211 var
+R17440:17442 VST.concurrency.common.HybridMachine <> ofs:219 var
+R17446:17449 Coq.Init.Datatypes <> None constr
+R17469:17471 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17460:17463 compcert.lib.Maps <> :::x_'!!'_x not
+R17465:17468 compcert.lib.Maps <> :::x_'!!'_x not
+R17464:17464 VST.concurrency.common.HybridMachine <> b:218 var
+R17458:17459 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R17454:17457 VST.concurrency.common.HybridMachine <> rmap:211 var
+R17466:17468 VST.concurrency.common.HybridMachine <> ofs:219 var
+R17472:17475 Coq.Init.Datatypes <> None constr
+binder 17407:17411 <> Hrmap:220
+R17597:17599 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17563:17574 VST.concurrency.common.permissions <> restrPermMap def
+R17576:17576 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R17594:17596 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R17577:17583 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R17585:17588 VST.concurrency.common.HybridMachine <> tid0:87 var
+R17590:17593 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R17600:17601 VST.concurrency.common.HybridMachine <> m1:209 var
+binder 17547:17560 <> Hrestrict_pmap:221
+R17708:17721 compcert.common.Memory Mem range_perm def
+R17723:17724 VST.concurrency.common.HybridMachine <> m1:209 var
+R17726:17726 VST.concurrency.common.HybridMachine <> b:206 var
+R17729:17741 compcert.lib.Integers Ptrofs intval proj
+R17743:17745 VST.concurrency.common.HybridMachine <> ofs:207 var
+R17749:17749 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R17767:17770 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R17750:17762 compcert.lib.Integers Ptrofs intval proj
+R17764:17766 VST.concurrency.common.HybridMachine <> ofs:207 var
+R17771:17776 VST.concurrency.common.lksize <> LKSIZE def
+R17779:17781 compcert.common.Memtype <> Cur constr
+R17783:17790 compcert.common.Memtype <> Writable constr
+binder 17697:17705 <> Hfreeable:222
+R18085:18087 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17889:17900 VST.concurrency.common.permissions <> setPermBlock def
+R18075:18084 VST.concurrency.common.lksize <> LKSIZE_nat def
+R18045:18046 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R17991:18003 compcert.lib.Integers Ptrofs intval proj
+R18005:18007 VST.concurrency.common.HybridMachine <> ofs:207 var
+R17961:17961 VST.concurrency.common.HybridMachine <> b:206 var
+R17929:17932 Coq.Init.Datatypes <> None constr
+R18097:18098 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R18088:18096 VST.concurrency.common.HybridMachine <> pmap_tid':208 var
+binder 17877:17886 <> Hlock_perm:223
+binder 18209:18209 <> i:224
+R18256:18275 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R18230:18233 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x_'<'_x not
+R18244:18246 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x_'<'_x not
+R18234:18241 Coq.ZArith.BinInt Z of_nat def
+R18243:18243 VST.concurrency.common.HybridMachine <> i:224 var
+R18234:18241 Coq.ZArith.BinInt Z of_nat def
+R18243:18243 VST.concurrency.common.HybridMachine <> i:224 var
+R18247:18252 VST.concurrency.common.lksize <> LKSIZE def
+R18276:18291 compcert.common.Memory Mem perm_order'' def
+R18294:18298 VST.concurrency.common.HybridMachine <> pdata:210 var
+R18301:18301 Coq.Init.Datatypes <> S constr
+R18303:18303 VST.concurrency.common.HybridMachine <> i:224 var
+R18308:18311 Coq.Init.Datatypes <> Some constr
+R18313:18320 compcert.common.Memtype <> Writable constr
+binder 18190:18199 <> Hneq_perms:225
+R18635:18637 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18412:18427 VST.concurrency.common.permissions <> setPermBlock_var def
+R18625:18634 VST.concurrency.common.lksize <> LKSIZE_nat def
+R18595:18596 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R18541:18553 compcert.lib.Integers Ptrofs intval proj
+R18555:18557 VST.concurrency.common.HybridMachine <> ofs:207 var
+R18511:18511 VST.concurrency.common.HybridMachine <> b:206 var
+R18478:18482 VST.concurrency.common.HybridMachine <> pdata:210 var
+R18647:18648 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R18638:18646 VST.concurrency.common.HybridMachine <> pmap_tid':208 var
+binder 18400:18409 <> Hdata_perm:226
+R18673:18675 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18670:18672 VST.concurrency.common.HybridMachine <> tp':202 var
+R18676:18684 VST.concurrency.common.threadPool ThreadPool updThread meth
+R18710:18718 VST.concurrency.common.HybridMachine <> pmap_tid':208 var
+R18692:18698 VST.concurrency.common.threadPool <> Kresume constr
+R18702:18707 compcert.common.Values <> Vundef constr
+R18700:18700 VST.concurrency.common.HybridMachine <> c:204 var
+R18686:18689 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 18664:18667 <> Htp':227
+R18745:18747 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18741:18744 VST.concurrency.common.HybridMachine <> tp'':203 var
+R18748:18757 VST.concurrency.common.threadPool ThreadPool remLockSet meth
+R18763:18763 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18765:18766 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18784:18784 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18764:18764 VST.concurrency.common.HybridMachine <> b:206 var
+R18767:18779 compcert.lib.Integers Ptrofs intval proj
+R18781:18783 VST.concurrency.common.HybridMachine <> ofs:207 var
+R18759:18761 VST.concurrency.common.HybridMachine <> tp':202 var
+binder 18734:18738 <> Htp'':228
+R18800:18807 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R18831:18838 VST.concurrency.common.HybridMachineSig Events freelock constr
+R18840:18840 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18842:18843 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18861:18861 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R18841:18841 VST.concurrency.common.HybridMachine <> b:206 var
+R18844:18856 compcert.lib.Integers Ptrofs intval proj
+R18858:18860 VST.concurrency.common.HybridMachine <> ofs:207 var
+R18828:18828 VST.concurrency.common.HybridMachine <> m:89 var
+R18823:18826 VST.concurrency.common.HybridMachine <> tp'':203 var
+R18814:18820 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R18809:18812 VST.concurrency.common.HybridMachine <> cnt0:90 var
+binder 18901:18901 <> c:229
+binder 18903:18903 <> b:230
+binder 18905:18907 <> ofs:231
+binder 18909:18912 <> marg:232
+binder 18914:18915 <> m1:233
+R18936:18944 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R18946:18947 VST.concurrency.common.HybridMachine <> tp:88 var
+binder 18929:18932 <> Hinv:234
+R18984:18986 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18969:18978 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R18980:18983 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R18987:18994 VST.concurrency.common.threadPool <> Kblocked constr
+R18996:18996 VST.concurrency.common.HybridMachine <> c:229 var
+binder 18962:18966 <> Hcode:235
+R19187:19189 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19153:19164 VST.concurrency.common.permissions <> restrPermMap def
+R19166:19166 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R19184:19186 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R19167:19173 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R19175:19178 VST.concurrency.common.HybridMachine <> tid0:87 var
+R19180:19183 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R19190:19193 VST.concurrency.common.HybridMachine <> marg:232 var
+binder 19133:19150 <> Hrestrict_pmap_arg:236
+R19257:19259 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19222:19242 VST.sepcomp.semantics <> at_external proj
+R19253:19256 VST.concurrency.common.HybridMachine <> marg:232 var
+R19251:19251 VST.concurrency.common.HybridMachine <> c:229 var
+R19244:19249 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R19260:19263 Coq.Init.Datatypes <> Some constr
+R19265:19265 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19270:19271 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19287:19287 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19266:19269 VST.concurrency.common.HybridMachineSig <> LOCK abbrev
+R19282:19283 mathcomp.ssreflect.seq <> ::seq_scope:x_'::'_x not
+R19272:19275 compcert.common.Values <> Vptr constr
+R19277:19277 VST.concurrency.common.HybridMachine <> b:230 var
+R19279:19281 VST.concurrency.common.HybridMachine <> ofs:231 var
+R19284:19286 Coq.Init.Datatypes <> nil constr
+binder 19208:19219 <> Hat_external:237
+R19407:19409 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19373:19384 VST.concurrency.common.permissions <> restrPermMap def
+R19386:19386 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R19404:19406 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R19387:19393 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R19395:19398 VST.concurrency.common.HybridMachine <> tid0:87 var
+R19400:19403 VST.concurrency.common.HybridMachine <> cnt0:90 var
+R19410:19411 VST.concurrency.common.HybridMachine <> m1:233 var
+binder 19357:19370 <> Hrestrict_pmap:238
+R19521:19534 compcert.common.Memory Mem range_perm def
+R19536:19537 VST.concurrency.common.HybridMachine <> m1:233 var
+R19539:19539 VST.concurrency.common.HybridMachine <> b:230 var
+R19542:19554 compcert.lib.Integers Ptrofs intval proj
+R19556:19558 VST.concurrency.common.HybridMachine <> ofs:231 var
+R19562:19562 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R19580:19583 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R19563:19575 compcert.lib.Integers Ptrofs intval proj
+R19577:19579 VST.concurrency.common.HybridMachine <> ofs:231 var
+R19584:19589 VST.concurrency.common.lksize <> LKSIZE def
+R19592:19594 compcert.common.Memtype <> Cur constr
+R19596:19603 compcert.common.Memtype <> Readable constr
+binder 19512:19518 <> Haccess:239
+R19706:19708 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19668:19675 compcert.common.Memory Mem load def
+R19677:19680 compcert.common.AST <> Mptr def
+R19682:19683 VST.concurrency.common.HybridMachine <> m1:233 var
+R19685:19685 VST.concurrency.common.HybridMachine <> b:230 var
+R19688:19700 compcert.lib.Integers Ptrofs intval proj
+R19702:19704 VST.concurrency.common.HybridMachine <> ofs:231 var
+R19709:19712 Coq.Init.Datatypes <> Some constr
+R19715:19721 compcert.common.Values <> Vptrofs def
+R19723:19733 compcert.lib.Integers Ptrofs zero def
+binder 19661:19665 <> Hload:240
+R19748:19755 VST.concurrency.common.HybridMachine <> ext_step:92 ind
+R19776:19782 VST.concurrency.common.HybridMachineSig Events failacq constr
+R19784:19784 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19786:19787 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19805:19805 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R19785:19785 VST.concurrency.common.HybridMachine <> b:230 var
+R19788:19800 compcert.lib.Integers Ptrofs intval proj
+R19802:19804 VST.concurrency.common.HybridMachine <> ofs:231 var
+R19773:19773 VST.concurrency.common.HybridMachine <> m:89 var
+R19770:19771 VST.concurrency.common.HybridMachine <> tp:88 var
+R19762:19768 VST.concurrency.common.HybridMachine <> Hcompat:91 var
+R19757:19760 VST.concurrency.common.HybridMachine <> cnt0:90 var
+scheme 6514:6521 DryHybridMachine ext_step_ind
+scheme 6514:6521 DryHybridMachine ext_step_sind
+def 19825:19834 DryHybridMachine threadStep
+binder 19845:19848 <> tid0:241
+binder 19850:19851 <> ms:242
+binder 19853:19853 <> m:243
+R19887:19890 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19865:19878 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R19883:19886 VST.concurrency.common.HybridMachine <> tid0:241 var
+R19880:19881 VST.concurrency.common.HybridMachine <> ms:242 var
+R19910:19921 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19891:19904 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R19906:19907 VST.concurrency.common.HybridMachine <> ms:242 var
+R19909:19909 VST.concurrency.common.HybridMachine <> m:243 var
+R19933:19936 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19922:19932 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+R19940:19943 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19937:19939 compcert.common.Memory <> mem abbrev
+R19961:19964 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19944:19950 mathcomp.ssreflect.seq <> seq abbrev
+R19952:19960 VST.sepcomp.event_semantics <> mem_event ind
+R19979:19986 VST.concurrency.common.HybridMachine DryHybridMachine dry_step ind
+prf 20000:20017 DryHybridMachine threadStep_at_Krun
+binder 20033:20033 <> i:244
+binder 20035:20036 <> tp:245
+binder 20038:20038 <> m:246
+binder 20040:20042 <> cnt:247
+binder 20044:20047 <> cmpt:248
+binder 20049:20051 <> tp':249
+binder 20053:20054 <> m':250
+binder 20056:20057 <> tr:251
+R20105:20117 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20163:20163 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20069:20078 VST.concurrency.common.HybridMachine DryHybridMachine threadStep def
+R20080:20080 VST.concurrency.common.HybridMachine <> i:244 var
+R20082:20083 VST.concurrency.common.HybridMachine <> tp:245 var
+R20085:20085 VST.concurrency.common.HybridMachine <> m:246 var
+R20087:20089 VST.concurrency.common.HybridMachine <> cnt:247 var
+R20091:20094 VST.concurrency.common.HybridMachine <> cmpt:248 var
+R20096:20098 VST.concurrency.common.HybridMachine <> tp':249 var
+R20100:20101 VST.concurrency.common.HybridMachine <> m':250 var
+R20103:20104 VST.concurrency.common.HybridMachine <> tr:251 var
+R20118:20124 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R20126:20127 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 20125:20125 <> q:252
+R20154:20156 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20129:20138 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R20146:20146 VST.concurrency.common.HybridMachine <> i:244 var
+R20148:20149 VST.concurrency.common.HybridMachine <> tp:245 var
+R20151:20153 VST.concurrency.common.HybridMachine <> cnt:247 var
+R20157:20160 VST.concurrency.common.threadPool <> Krun constr
+R20162:20162 VST.concurrency.common.HybridMachine <> q:252 var
+prf 20260:20279 DryHybridMachine threadStep_equal_run
+binder 20295:20295 <> i:253
+binder 20297:20298 <> tp:254
+binder 20300:20300 <> m:255
+binder 20302:20304 <> cnt:256
+binder 20306:20309 <> cmpt:257
+binder 20311:20313 <> tp':258
+binder 20315:20316 <> m':259
+binder 20318:20319 <> tr:260
+R20367:20378 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20331:20340 VST.concurrency.common.HybridMachine DryHybridMachine threadStep def
+R20342:20342 VST.concurrency.common.HybridMachine <> i:253 var
+R20344:20345 VST.concurrency.common.HybridMachine <> tp:254 var
+R20347:20347 VST.concurrency.common.HybridMachine <> m:255 var
+R20349:20351 VST.concurrency.common.HybridMachine <> cnt:256 var
+R20353:20356 VST.concurrency.common.HybridMachine <> cmpt:257 var
+R20358:20360 VST.concurrency.common.HybridMachine <> tp':258 var
+R20362:20363 VST.concurrency.common.HybridMachine <> m':259 var
+R20365:20366 VST.concurrency.common.HybridMachine <> tr:260 var
+binder 20386:20386 <> j:261
+R20399:20399 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R20451:20467 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R20524:20524 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R20400:20406 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R20413:20414 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 20407:20410 <> cntj:262
+binder 20412:20412 <> q:263
+R20442:20444 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20416:20425 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R20433:20433 VST.concurrency.common.HybridMachine <> j:261 var
+R20435:20436 VST.concurrency.common.HybridMachine <> tp:254 var
+R20438:20441 VST.concurrency.common.HybridMachine <> cntj:262 var
+R20445:20448 VST.concurrency.common.threadPool <> Krun constr
+R20450:20450 VST.concurrency.common.HybridMachine <> q:263 var
+R20468:20474 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R20483:20484 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 20475:20479 <> cntj':264
+binder 20481:20482 <> q':265
+R20514:20516 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20486:20495 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R20503:20503 VST.concurrency.common.HybridMachine <> j:261 var
+R20505:20507 VST.concurrency.common.HybridMachine <> tp':258 var
+R20509:20513 VST.concurrency.common.HybridMachine <> cntj':264 var
+R20517:20520 VST.concurrency.common.threadPool <> Krun constr
+R20522:20523 VST.concurrency.common.HybridMachine <> q':265 var
+R20727:20735 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R20747:20747 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20761:20762 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20781:20781 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20748:20757 VST.concurrency.common.permissions <> getCurPerm def
+R20763:20763 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R20778:20780 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R20764:20773 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R20738:20741 VST.concurrency.common.threadPool <> Krun constr
+R20727:20735 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R20747:20747 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20761:20762 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20781:20781 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R20748:20757 VST.concurrency.common.permissions <> getCurPerm def
+R20763:20763 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R20778:20780 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R20764:20773 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R20738:20741 VST.concurrency.common.threadPool <> Krun constr
+R20846:20862 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R20846:20862 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R20918:20930 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R20918:20930 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R20918:20930 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R20985:20997 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R20985:20997 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R20985:20997 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R20985:20997 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R21153:21156 VST.concurrency.common.threadPool <> Krun constr
+R21165:21165 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21179:21180 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21199:21199 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21166:21175 VST.concurrency.common.permissions <> getCurPerm def
+R21181:21181 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R21196:21198 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R21182:21191 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R21134:21143 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R21153:21156 VST.concurrency.common.threadPool <> Krun constr
+R21165:21165 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21179:21180 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21199:21199 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R21166:21175 VST.concurrency.common.permissions <> getCurPerm def
+R21181:21181 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R21196:21198 compcert.common.Globalenvs <> ::pair_scope:x_'#2' not
+R21182:21191 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R21134:21143 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R21257:21273 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R21257:21273 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R21373:21379 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R21373:21379 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R21421:21433 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R21421:21433 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R21421:21433 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+def 21478:21485 DryHybridMachine syncStep
+R21497:21500 Coq.Init.Datatypes <> bool ind
+binder 21488:21495 <> isCoarse:266
+binder 21519:21522 <> tid0:267
+binder 21524:21525 <> ms:268
+binder 21527:21527 <> m:269
+R21561:21564 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21539:21552 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R21557:21560 VST.concurrency.common.HybridMachine <> tid0:267 var
+R21554:21555 VST.concurrency.common.HybridMachine <> ms:268 var
+R21584:21595 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21565:21578 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R21580:21581 VST.concurrency.common.HybridMachine <> ms:268 var
+R21583:21583 VST.concurrency.common.HybridMachine <> m:269 var
+R21607:21610 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21596:21606 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+R21614:21617 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21611:21613 compcert.common.Memory <> mem abbrev
+R21628:21631 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21618:21627 VST.concurrency.common.HybridMachineSig Events sync_event ind
+R21646:21653 VST.concurrency.common.HybridMachine DryHybridMachine ext_step ind
+R21655:21662 VST.concurrency.common.HybridMachine <> isCoarse:266 var
+prf 21676:21693 DryHybridMachine syncstep_equal_run
+binder 21709:21709 <> b:270
+binder 21711:21711 <> i:271
+binder 21713:21714 <> tp:272
+binder 21716:21716 <> m:273
+binder 21718:21720 <> cnt:274
+binder 21722:21725 <> cmpt:275
+binder 21727:21729 <> tp':276
+binder 21731:21732 <> m':277
+binder 21734:21735 <> tr:278
+R21783:21794 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21747:21754 VST.concurrency.common.HybridMachine DryHybridMachine syncStep def
+R21756:21756 VST.concurrency.common.HybridMachine <> b:270 var
+R21758:21758 VST.concurrency.common.HybridMachine <> i:271 var
+R21760:21761 VST.concurrency.common.HybridMachine <> tp:272 var
+R21763:21763 VST.concurrency.common.HybridMachine <> m:273 var
+R21765:21767 VST.concurrency.common.HybridMachine <> cnt:274 var
+R21769:21772 VST.concurrency.common.HybridMachine <> cmpt:275 var
+R21774:21776 VST.concurrency.common.HybridMachine <> tp':276 var
+R21778:21779 VST.concurrency.common.HybridMachine <> m':277 var
+R21781:21782 VST.concurrency.common.HybridMachine <> tr:278 var
+binder 21802:21802 <> j:279
+R21815:21815 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R21867:21883 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R21940:21940 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R21816:21822 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R21829:21830 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 21823:21826 <> cntj:280
+binder 21828:21828 <> q:281
+R21858:21860 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21832:21841 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R21849:21849 VST.concurrency.common.HybridMachine <> j:279 var
+R21851:21852 VST.concurrency.common.HybridMachine <> tp:272 var
+R21854:21857 VST.concurrency.common.HybridMachine <> cntj:280 var
+R21861:21864 VST.concurrency.common.threadPool <> Krun constr
+R21866:21866 VST.concurrency.common.HybridMachine <> q:281 var
+R21884:21890 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R21899:21900 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 21891:21895 <> cntj':282
+binder 21897:21898 <> q':283
+R21930:21932 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21902:21911 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R21919:21919 VST.concurrency.common.HybridMachine <> j:279 var
+R21921:21923 VST.concurrency.common.HybridMachine <> tp':276 var
+R21925:21929 VST.concurrency.common.HybridMachine <> cntj':282 var
+R21933:21936 VST.concurrency.common.threadPool <> Krun constr
+R21938:21939 VST.concurrency.common.HybridMachine <> q':283 var
+R22061:22077 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R22061:22077 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R22231:22233 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R22216:22225 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R22234:22241 VST.concurrency.common.threadPool <> Kblocked constr
+R22231:22233 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R22216:22225 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R22234:22241 VST.concurrency.common.threadPool <> Kblocked constr
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22306:22312 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R22495:22504 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R22537:22545 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22548:22554 VST.concurrency.common.threadPool <> Kresume constr
+R22558:22563 compcert.common.Values <> Vundef constr
+R22495:22504 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R22537:22545 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22548:22554 VST.concurrency.common.threadPool <> Kresume constr
+R22558:22563 compcert.common.Values <> Vundef constr
+R22638:22649 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22638:22649 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22638:22649 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22670:22678 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22670:22678 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22745:22757 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R22745:22757 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R22745:22757 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R22794:22803 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R22838:22846 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22849:22855 VST.concurrency.common.threadPool <> Kresume constr
+R22859:22864 compcert.common.Values <> Vundef constr
+R22794:22803 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R22838:22846 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22849:22855 VST.concurrency.common.threadPool <> Kresume constr
+R22859:22864 compcert.common.Values <> Vundef constr
+R22903:22914 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22903:22914 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22903:22914 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R22935:22943 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R22935:22943 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23010:23022 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23010:23022 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23010:23022 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23057:23062 VST.concurrency.common.threadPool ThreadPool cntAdd meth
+R23093:23101 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23104:23110 VST.concurrency.common.threadPool <> Kresume constr
+R23114:23119 compcert.common.Values <> Vundef constr
+R23057:23062 VST.concurrency.common.threadPool ThreadPool cntAdd meth
+R23093:23101 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23104:23110 VST.concurrency.common.threadPool <> Kresume constr
+R23114:23119 compcert.common.Values <> Vundef constr
+R23158:23167 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R23158:23167 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R23158:23167 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R23191:23203 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23191:23203 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23191:23203 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23240:23249 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R23284:23292 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23295:23301 VST.concurrency.common.threadPool <> Kresume constr
+R23305:23310 compcert.common.Values <> Vundef constr
+R23240:23249 VST.concurrency.common.threadPool ThreadPool cntUpdateL meth
+R23284:23292 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23295:23301 VST.concurrency.common.threadPool <> Kresume constr
+R23305:23310 compcert.common.Values <> Vundef constr
+R23349:23360 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R23349:23360 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R23349:23360 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R23381:23389 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23381:23389 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23456:23468 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23456:23468 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23456:23468 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23505:23514 VST.concurrency.common.threadPool ThreadPool cntRemoveL meth
+R23547:23555 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23558:23564 VST.concurrency.common.threadPool <> Kresume constr
+R23568:23573 compcert.common.Values <> Vundef constr
+R23505:23514 VST.concurrency.common.threadPool ThreadPool cntRemoveL meth
+R23547:23555 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23558:23564 VST.concurrency.common.threadPool <> Kresume constr
+R23568:23573 compcert.common.Values <> Vundef constr
+R23612:23626 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R23612:23626 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R23612:23626 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R23647:23655 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23647:23655 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R23722:23734 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23722:23734 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23722:23734 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R23843:23859 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R23843:23859 VST.concurrency.common.scheduler NatTID eq_tid_dec thm
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24011:24022 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24097:24109 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24038:24048 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R24245:24251 VST.concurrency.common.threadPool ThreadPool cntAdd' meth
+R24245:24251 VST.concurrency.common.threadPool ThreadPool cntAdd' meth
+R24364:24366 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24349:24358 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R24367:24376 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R24410:24419 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R24364:24366 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24349:24358 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R24367:24376 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R24410:24419 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R24410:24419 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R24496:24508 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24496:24508 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24496:24508 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24573:24582 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R24573:24582 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R24573:24582 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R24573:24582 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R24685:24694 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R24705:24715 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R24685:24694 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R24705:24715 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R24787:24797 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R24757:24771 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R24787:24797 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R24757:24771 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R24787:24797 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R24757:24771 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R24839:24851 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24839:24851 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R24839:24851 VST.concurrency.common.threadPool ThreadPool gssThreadCode meth
+R25091:25100 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25111:25121 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25091:25100 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25111:25121 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25190:25201 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25190:25201 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25190:25201 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25223:25233 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25223:25233 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25283:25295 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25283:25295 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25283:25295 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25324:25333 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25343:25353 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25324:25333 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25343:25353 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25404:25410 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25404:25410 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25404:25410 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25478:25487 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25498:25508 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25478:25487 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25498:25508 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25577:25588 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25577:25588 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25577:25588 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R25610:25620 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25610:25620 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25670:25682 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25670:25682 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25670:25682 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R25711:25720 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25730:25740 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25711:25720 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R25730:25740 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R25791:25797 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25791:25797 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25791:25797 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R25931:25937 VST.concurrency.common.threadPool ThreadPool cntAdd' meth
+R25931:25937 VST.concurrency.common.threadPool ThreadPool cntAdd' meth
+R26011:26020 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26011:26020 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26130:26139 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R26130:26139 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R26130:26139 VST.concurrency.common.threadPool ThreadPool gsoAddCode meth
+R26182:26194 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26182:26194 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26182:26194 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26270:26279 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R26270:26279 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R26270:26279 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R26270:26279 VST.concurrency.common.threadPool ThreadPool gssAddCode meth
+R26334:26343 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26354:26364 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26334:26343 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26354:26364 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26433:26444 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R26433:26444 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R26433:26444 VST.concurrency.common.threadPool ThreadPool gLockSetCode meth
+R26466:26476 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26466:26476 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26526:26538 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26526:26538 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26526:26538 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26567:26576 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26586:26596 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26567:26576 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26586:26596 VST.concurrency.common.threadPool ThreadPool cntUpdateL' meth
+R26647:26653 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R26647:26653 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R26647:26653 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R26722:26731 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26742:26752 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R26722:26731 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26742:26752 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R26821:26835 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R26821:26835 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R26821:26835 VST.concurrency.common.threadPool ThreadPool gRemLockSetCode meth
+R26858:26868 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R26858:26868 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R26920:26932 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26920:26932 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26920:26932 VST.concurrency.common.threadPool ThreadPool gsoThreadCode meth
+R26962:26971 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26981:26991 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R26962:26971 VST.concurrency.common.threadPool ThreadPool cntUpdate' meth
+R26981:26991 VST.concurrency.common.threadPool ThreadPool cntRemoveL' meth
+R27044:27050 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27044:27050 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27044:27050 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27190:27198 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+R27190:27198 VST.concurrency.common.threadPool ThreadPool cntUpdate meth
+prf 27246:27265 DryHybridMachine syncstep_not_running
+binder 27281:27281 <> b:284
+binder 27283:27283 <> i:285
+binder 27285:27286 <> tp:286
+binder 27288:27288 <> m:287
+binder 27290:27292 <> cnt:288
+binder 27294:27297 <> cmpt:289
+binder 27299:27301 <> tp':290
+binder 27303:27304 <> m':291
+binder 27306:27307 <> tr:292
+R27355:27366 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R27319:27326 VST.concurrency.common.HybridMachine DryHybridMachine syncStep def
+R27328:27328 VST.concurrency.common.HybridMachine <> b:284 var
+R27330:27330 VST.concurrency.common.HybridMachine <> i:285 var
+R27332:27333 VST.concurrency.common.HybridMachine <> tp:286 var
+R27335:27335 VST.concurrency.common.HybridMachine <> m:287 var
+R27337:27339 VST.concurrency.common.HybridMachine <> cnt:288 var
+R27341:27344 VST.concurrency.common.HybridMachine <> cmpt:289 var
+R27346:27348 VST.concurrency.common.HybridMachine <> tp':290 var
+R27350:27351 VST.concurrency.common.HybridMachine <> m':291 var
+R27353:27354 VST.concurrency.common.HybridMachine <> tr:292 var
+binder 27374:27377 <> cntj:293
+binder 27379:27379 <> q:294
+R27382:27383 Coq.Init.Logic <> ::type_scope:'~'_x not
+R27411:27413 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R27385:27394 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R27402:27402 VST.concurrency.common.HybridMachine <> i:285 var
+R27404:27405 VST.concurrency.common.HybridMachine <> tp:286 var
+R27407:27410 VST.concurrency.common.HybridMachine <> cntj:293 var
+R27414:27417 VST.concurrency.common.threadPool <> Krun constr
+R27419:27419 VST.concurrency.common.HybridMachine <> q:294 var
+R27520:27522 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R27505:27514 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R27520:27522 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R27505:27514 VST.concurrency.common.threadPool ThreadPool getThreadC meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+R27555:27561 VST.concurrency.common.threadPool ThreadPool cnt_irr meth
+def 27661:27675 DryHybridMachine initial_machine
+binder 27677:27680 <> pmap:295
+binder 27682:27682 <> c:296
+R27687:27692 VST.concurrency.common.threadPool ThreadPool mkPool meth
+R27703:27703 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27708:27709 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27719:27719 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27704:27707 VST.concurrency.common.HybridMachine <> pmap:295 var
+R27710:27718 VST.concurrency.common.permissions <> empty_map def
+R27695:27698 VST.concurrency.common.threadPool <> Krun constr
+R27700:27700 VST.concurrency.common.HybridMachine <> c:296 var
+def 27767:27775 DryHybridMachine init_mach
+R27785:27790 Coq.Init.Datatypes <> option ind
+R27792:27794 VST.concurrency.common.semantics <> res meth
+binder 27778:27781 <> pmap:297
+R27801:27803 compcert.common.Memory <> mem abbrev
+binder 27798:27798 <> m:298
+R27825:27835 VST.concurrency.common.HybridMachine DryHybridMachine thread_pool abbrev
+binder 27822:27823 <> ms:299
+R27844:27846 compcert.common.Memory <> mem abbrev
+binder 27839:27840 <> m':300
+R27852:27854 compcert.common.Values <> val ind
+binder 27850:27850 <> v:301
+R27863:27866 Coq.Init.Datatypes <> list ind
+R27868:27870 compcert.common.Values <> val ind
+binder 27858:27861 <> args:302
+R27889:27895 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R27897:27898 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 27896:27896 <> c:303
+R27944:27958 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R27899:27920 VST.sepcomp.semantics <> initial_core proj
+R27940:27943 VST.concurrency.common.HybridMachine <> args:302 var
+R27938:27938 VST.concurrency.common.HybridMachine <> v:301 var
+R27935:27936 VST.concurrency.common.HybridMachine <> m':300 var
+R27933:27933 VST.concurrency.common.HybridMachine <> c:303 var
+R27931:27931 VST.concurrency.common.HybridMachine <> m:298 var
+R27922:27927 VST.concurrency.common.HybridMachine DryHybridMachine semSem abbrev
+R27961:27963 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R27959:27960 VST.concurrency.common.HybridMachine <> ms:299 var
+R27964:27969 VST.concurrency.common.threadPool ThreadPool mkPool meth
+R27980:27980 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27994:27995 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R28005:28005 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27981:27990 VST.concurrency.common.permissions <> getCurPerm def
+R27992:27993 VST.concurrency.common.HybridMachine <> m':300 var
+R27996:28004 VST.concurrency.common.permissions <> empty_map def
+R27972:27975 VST.concurrency.common.threadPool <> Krun constr
+R27977:27977 VST.concurrency.common.HybridMachine <> c:303 var
+def 28057:28068 DryHybridMachine install_perm
+binder 28070:28071 <> tp:304
+binder 28073:28073 <> m:305
+binder 28075:28077 <> tid:306
+R28087:28100 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R28102:28103 VST.concurrency.common.HybridMachine <> tp:304 var
+R28105:28105 VST.concurrency.common.HybridMachine <> m:305 var
+binder 28080:28084 <> Hcmpt:307
+R28115:28128 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R28133:28135 VST.concurrency.common.HybridMachine <> tid:306 var
+R28130:28131 VST.concurrency.common.HybridMachine <> tp:304 var
+binder 28109:28112 <> Hcnt:308
+binder 28138:28139 <> m':309
+R28152:28154 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R28150:28151 VST.concurrency.common.HybridMachine <> m':309 var
+R28155:28166 VST.concurrency.common.permissions <> restrPermMap def
+R28168:28168 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R28183:28185 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R28169:28173 VST.concurrency.common.HybridMachine <> Hcmpt:307 var
+R28175:28177 VST.concurrency.common.HybridMachine <> tid:306 var
+R28179:28182 VST.concurrency.common.HybridMachine <> Hcnt:308 var
+def 28204:28212 DryHybridMachine add_block
+binder 28214:28215 <> tp:310
+binder 28217:28217 <> m:311
+binder 28219:28221 <> tid:312
+R28231:28244 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R28246:28247 VST.concurrency.common.HybridMachine <> tp:310 var
+R28249:28249 VST.concurrency.common.HybridMachine <> m:311 var
+binder 28224:28228 <> Hcmpt:313
+R28259:28272 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R28277:28279 VST.concurrency.common.HybridMachine <> tid:312 var
+R28274:28275 VST.concurrency.common.HybridMachine <> tp:310 var
+binder 28253:28256 <> Hcnt:314
+binder 28282:28283 <> m':315
+R28294:28294 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R28308:28309 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R28329:28329 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R28295:28304 VST.concurrency.common.permissions <> getCurPerm def
+R28306:28307 VST.concurrency.common.HybridMachine <> m':315 var
+R28310:28310 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R28326:28328 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R28311:28320 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R28322:28325 VST.concurrency.common.HybridMachine <> Hcnt:314 var
+inst 28499:28517 DryHybridMachine DryHybridMachineSig
+R28521:28547 VST.concurrency.common.HybridMachineSig HybridMachineSig MachineSig class
+R28549:28560 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R28562:28564 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+R28566:28570 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.tpool var
+R28583:28615 VST.concurrency.common.HybridMachineSig HybridMachineSig Build_MachineSig constr
+R28617:28628 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R28630:28632 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.Sem var
+R28634:28638 VST.concurrency.common.HybridMachine <> DryHybridMachine.DryHybridMachine.tpool var
+R28669:28675 VST.concurrency.common.HybridMachine DryHybridMachine richMem def
+R28706:28711 VST.concurrency.common.HybridMachine DryHybridMachine dryMem def
+R28742:28755 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R28786:28794 VST.concurrency.common.HybridMachine DryHybridMachine invariant rec
+R28825:28836 VST.concurrency.common.HybridMachine DryHybridMachine install_perm def
+R28867:28875 VST.concurrency.common.HybridMachine DryHybridMachine add_block def
+R28908:28917 VST.concurrency.common.HybridMachine DryHybridMachine threadStep def
+R28949:28966 VST.concurrency.common.HybridMachine DryHybridMachine threadStep_at_Krun thm
+R28997:29016 VST.concurrency.common.HybridMachine DryHybridMachine threadStep_equal_run thm
+R29049:29056 VST.concurrency.common.HybridMachine DryHybridMachine syncStep def
+R29088:29105 VST.concurrency.common.HybridMachine DryHybridMachine syncstep_equal_run thm
+R29136:29155 VST.concurrency.common.HybridMachine DryHybridMachine syncstep_not_running thm
+R29186:29194 VST.concurrency.common.HybridMachine DryHybridMachine init_mach def
+R29217:29232 VST.concurrency.common.HybridMachine DryHybridMachine.DryHybridMachine <> sec
+sec 29252:29270 DryHybridMachine HybDryMachineLemmas
+prf 29344:29368 DryHybridMachine build_delta_content_restr
+binder 29378:29378 <> d:316
+binder 29380:29380 <> m:317
+binder 29382:29382 <> p:318
+binder 29384:29386 <> Hlt:319
+R29442:29444 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29397:29415 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R29417:29417 VST.concurrency.common.HybridMachine <> d:316 var
+R29421:29432 VST.concurrency.common.permissions <> restrPermMap def
+R29434:29434 VST.concurrency.common.HybridMachine <> p:318 var
+R29436:29436 VST.concurrency.common.HybridMachine <> m:317 var
+R29438:29440 VST.concurrency.common.HybridMachine <> Hlt:319 var
+R29445:29463 VST.concurrency.common.HybridMachine DryHybridMachine build_delta_content def
+R29465:29465 VST.concurrency.common.HybridMachine <> d:316 var
+R29467:29467 VST.concurrency.common.HybridMachine <> m:317 var
+R29582:29590 VST.concurrency.common.semantics <> Semantics class
+binder 29577:29579 <> Sem:320
+R29615:29635 VST.concurrency.common.threadPool ThreadPool ThreadPool class
+R29637:29648 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R29650:29652 VST.concurrency.common.HybridMachine <> Sem:320 var
+binder 29606:29610 <> tpool:321
+prf 29734:29750 DryHybridMachine threads_canonical
+binder 29768:29769 <> ds:322
+binder 29771:29771 <> m:323
+binder 29773:29773 <> i:324
+R29780:29793 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R29798:29798 VST.concurrency.common.HybridMachine <> i:324 var
+R29795:29796 VST.concurrency.common.HybridMachine <> ds:322 var
+binder 29776:29778 <> cnt:325
+R29831:29844 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R29812:29825 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R29827:29828 VST.concurrency.common.HybridMachine <> ds:322 var
+R29830:29830 VST.concurrency.common.HybridMachine <> m:323 var
+R29875:29888 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R29845:29855 VST.concurrency.common.permissions <> isCanonical def
+R29857:29857 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R29872:29874 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R29858:29867 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R29869:29871 VST.concurrency.common.HybridMachine <> cnt:325 var
+R29889:29899 VST.concurrency.common.permissions <> isCanonical def
+R29901:29901 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R29916:29918 Coq.ssr.ssrfun <> ::pair_scope:x_'.2' not
+R29902:29911 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+R29913:29915 VST.concurrency.common.HybridMachine <> cnt:325 var
+R29955:29963 VST.concurrency.common.HybridMachine DryHybridMachine compat_th proj
+R29999:30010 VST.concurrency.common.permissions <> canonical_lt thm
+R29955:29963 VST.concurrency.common.HybridMachine DryHybridMachine compat_th proj
+R29999:30010 VST.concurrency.common.permissions <> canonical_lt thm
+abbrev 30228:30239 DryHybridMachine thread_perms
+R30253:30255 Coq.Init.Datatypes <> fst def
+R30259:30268 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+abbrev 30301:30310 DryHybridMachine lock_perms
+R30324:30326 Coq.Init.Datatypes <> snd def
+R30330:30339 VST.concurrency.common.threadPool ThreadPool getThreadR meth
+rec 30371:30383 DryHybridMachine thread_compat
+proj 30439:30445 DryHybridMachine th_comp
+proj 30505:30513 DryHybridMachine lock_comp
+binder 30385:30386 <> st:326
+binder 30388:30388 <> i:327
+R30406:30419 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R30424:30424 VST.concurrency.common.HybridMachine <> i:327 var
+R30421:30422 VST.concurrency.common.HybridMachine <> st:326 var
+binder 30402:30404 <> cnt:328
+binder 30427:30427 <> m:329
+R30448:30456 VST.concurrency.common.permissions <> permMapLt def
+R30482:30491 VST.concurrency.common.permissions <> getMaxPerm def
+R30493:30493 VST.concurrency.common.HybridMachine <> m:329 var
+R30459:30470 VST.concurrency.common.HybridMachine DryHybridMachine thread_perms abbrev
+R30476:30478 VST.concurrency.common.HybridMachine <> cnt:328 var
+R30516:30524 VST.concurrency.common.permissions <> permMapLt def
+R30548:30557 VST.concurrency.common.permissions <> getMaxPerm def
+R30559:30559 VST.concurrency.common.HybridMachine <> m:329 var
+R30527:30536 VST.concurrency.common.HybridMachine DryHybridMachine lock_perms abbrev
+R30542:30544 VST.concurrency.common.HybridMachine <> cnt:328 var
+inst 30587:30606 DryHybridMachine thread_compat_proper
+binder 30608:30609 <> st:333
+binder 30611:30611 <> i:334
+R30622:30627 Coq.Classes.Morphisms <> Proper class
+R30664:30676 VST.concurrency.common.HybridMachine DryHybridMachine thread_compat rec
+R30678:30679 VST.concurrency.common.HybridMachine <> st:333 var
+R30681:30681 VST.concurrency.common.HybridMachine <> i:334 var
+R30638:30642 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R30630:30637 Coq.Init.Logic <> eq ind
+R30652:30656 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R30643:30651 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R30657:30659 Coq.Init.Logic <> iff def
+R30790:30804 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30851:30865 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30790:30804 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30790:30804 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30790:30804 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30790:30804 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30851:30865 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+R30851:30865 VST.concurrency.compiler.mem_equiv <> permMapLt_equiv inst
+prf 30911:30938 DryHybridMachine mem_compatible_thread_compat
+R30961:30972 VST.concurrency.common.threadPool ThreadPool t meth
+binder 30955:30957 <> st1:335
+R30981:30983 compcert.common.Memory <> mem abbrev
+binder 30976:30977 <> m1:336
+R30993:30995 Coq.Init.Datatypes <> nat ind
+binder 30987:30989 <> tid:337
+R31014:31027 VST.concurrency.common.threadPool ThreadPool containsThread meth
+R31033:31035 VST.concurrency.common.HybridMachine <> tid:337 var
+R31029:31031 VST.concurrency.common.HybridMachine <> st1:335 var
+binder 31007:31010 <> cnt1:338
+R31068:31071 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R31047:31060 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R31062:31064 VST.concurrency.common.HybridMachine <> st1:335 var
+R31066:31067 VST.concurrency.common.HybridMachine <> m1:336 var
+R31072:31084 VST.concurrency.common.HybridMachine DryHybridMachine thread_compat rec
+R31090:31093 VST.concurrency.common.HybridMachine <> cnt1:338 var
+R31095:31096 VST.concurrency.common.HybridMachine <> m1:336 var
+prf 31159:31172 DryHybridMachine mem_compat_Max
+binder 31190:31192 <> Sem:339
+binder 31194:31195 <> Tp:340
+binder 31197:31198 <> st:341
+binder 31200:31200 <> m:342
+binder 31202:31203 <> m':343
+R31230:31243 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R31216:31224 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R31226:31226 VST.concurrency.common.HybridMachine <> m:342 var
+R31228:31229 VST.concurrency.common.HybridMachine <> m':343 var
+R31278:31291 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R31259:31261 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R31244:31256 compcert.common.Memory Mem nextblock proj
+R31258:31258 VST.concurrency.common.HybridMachine <> m:342 var
+R31262:31274 compcert.common.Memory Mem nextblock proj
+R31276:31277 VST.concurrency.common.HybridMachine <> m':343 var
+R31319:31332 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R31293:31306 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R31308:31310 VST.concurrency.common.HybridMachine <> Sem:339 var
+R31312:31313 VST.concurrency.common.HybridMachine <> Tp:340 var
+R31315:31316 VST.concurrency.common.HybridMachine <> st:341 var
+R31318:31318 VST.concurrency.common.HybridMachine <> m:342 var
+R31334:31347 VST.concurrency.common.HybridMachine DryHybridMachine mem_compatible rec
+R31349:31351 VST.concurrency.common.HybridMachine <> Sem:339 var
+R31353:31354 VST.concurrency.common.HybridMachine <> Tp:340 var
+R31356:31357 VST.concurrency.common.HybridMachine <> st:341 var
+R31359:31360 VST.concurrency.common.HybridMachine <> m':343 var
+R31427:31442 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R31445:31454 VST.concurrency.common.permissions <> getMaxPerm def
+R31460:31469 VST.concurrency.common.permissions <> getMaxPerm def
+R31427:31442 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R31445:31454 VST.concurrency.common.permissions <> getMaxPerm def
+R31460:31469 VST.concurrency.common.permissions <> getMaxPerm def
+R31612:31626 compcert.common.Memory Mem valid_block def
+R31690:31708 VST.concurrency.common.HybridMachine DryHybridMachine.HybDryMachineLemmas <> sec
+R31720:31735 VST.concurrency.common.HybridMachine DryHybridMachine <> mod
+R31746:31761 VST.concurrency.common.HybridMachine DryHybridMachine <> mod

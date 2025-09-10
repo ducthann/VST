@@ -1,0 +1,767 @@
+DIGEST a7970b5785e2042c50fdf42c260539ad
+FVST.concurrency.juicy.semax_conc
+R15:37 VST.veric.juicy_extspec <> <> lib
+R55:79 VST.veric.SeparationLogic <> <> lib
+R97:121 compcert.cfrontend.Ctypes <> <> lib
+R139:152 VST.veric.expr <> <> lib
+R170:198 VST.concurrency.common.lksize <> <> lib
+R216:252 VST.concurrency.juicy.semax_conc_pred <> <> lib
+R270:292 VST.floyd.client_lemmas <> <> lib
+R310:327 VST.floyd.field_at <> <> lib
+R381:390 compcert.export.Clightdefs <> <> mod
+R400:405 Ltac2.String <> <> mod
+def 420:435 <> voidstar_funtype
+R440:448 compcert.cfrontend.Ctypes <> Tfunction constr
+R451:455 compcert.cfrontend.Ctypes <> Tcons constr
+R458:461 compcert.export.Ctypesdefs <> tptr def
+R463:467 compcert.export.Ctypesdefs <> tvoid def
+R470:473 compcert.cfrontend.Ctypes <> Tnil constr
+R477:480 compcert.export.Ctypesdefs <> tptr def
+R482:486 compcert.export.Ctypesdefs <> tvoid def
+R489:498 compcert.common.AST <> cc_default def
+def 562:566 <> tlock
+R572:577 compcert.cfrontend.Ctypes <> Tarray constr
+R580:587 compcert.cfrontend.Ctypes <> Tpointer constr
+R589:600 compcert.cfrontend.Ctypes <> Tvoid constr
+R602:607 compcert.cfrontend.Ctypes <> noattr def
+R612:617 compcert.cfrontend.Ctypes <> noattr def
+def 622:679 <> Unnamed_thm
+R627:634 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R650:652 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R641:649 VST.veric.compspecs <> compspecs class
+binder 635:638 <> cenv:1
+R671:673 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R654:659 VST.veric.expr <> sizeof def
+R661:664 VST.concurrency.juicy.semax_conc <> cenv:1 var
+R666:670 VST.concurrency.juicy.semax_conc <> tlock def
+R674:679 VST.concurrency.common.lksize <> LKSIZE def
+sec 716:720 <> mpred
+R735:739 VST.veric.semax <> VSTGS class
+binder 741:745 <> OK_ty:2
+binder 747:748 <> Σ:3
+binder 734:748 <> VSTGS0:4
+def 764:775 <> selflock_fun
+binder 777:777 <> Q:5
+binder 779:780 <> sh:6
+binder 782:782 <> p:7
+R791:794 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R786:790 VST.veric.mpred <> mpred def
+R795:799 VST.veric.mpred <> mpred def
+binder 810:810 <> R:8
+R817:821 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R816:816 VST.concurrency.juicy.semax_conc <> Q:5 var
+R822:824 iris.bi.interface <> ::bi_scope:'▷'_x not
+R825:832 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R834:835 VST.concurrency.juicy.semax_conc <> sh:6 var
+R837:837 VST.concurrency.juicy.semax_conc <> p:7 var
+R839:839 VST.concurrency.juicy.semax_conc <> R:8 var
+inst 863:882 <> selflock_contractive
+binder 884:884 <> Q:9
+binder 886:887 <> sh:10
+binder 889:889 <> p:11
+R893:903 iris.algebra.ofe <> Contractive abbrev
+R906:917 VST.concurrency.juicy.semax_conc <> selflock_fun def
+R919:919 VST.concurrency.juicy.semax_conc <> Q:9 var
+R921:922 VST.concurrency.juicy.semax_conc <> sh:10 var
+R924:924 VST.concurrency.juicy.semax_conc <> p:11 var
+R961:972 VST.concurrency.juicy.semax_conc <> selflock_fun def
+R961:972 VST.concurrency.juicy.semax_conc <> selflock_fun def
+R961:972 VST.concurrency.juicy.semax_conc <> selflock_fun def
+R1013:1029 iris_ora.logic.oupred <> later_contractive inst
+R1013:1029 iris_ora.logic.oupred <> later_contractive inst
+R1058:1069 iris.algebra.ofe <> dist_later_0 thm
+R1058:1069 iris.algebra.ofe <> dist_later_0 thm
+R1084:1095 iris.algebra.ofe <> dist_later_S thm
+R1084:1095 iris.algebra.ofe <> dist_later_S thm
+R1084:1095 iris.algebra.ofe <> dist_later_S thm
+R1084:1095 iris.algebra.ofe <> dist_later_S thm
+R1084:1095 iris.algebra.ofe <> dist_later_S thm
+def 1142:1149 <> selflock
+binder 1151:1151 <> Q:12
+binder 1153:1154 <> sh:13
+binder 1156:1156 <> p:14
+R1160:1164 VST.veric.mpred <> mpred def
+R1169:1176 iris.algebra.ofe <> fixpoint def
+R1179:1190 VST.concurrency.juicy.semax_conc <> selflock_fun def
+R1192:1192 VST.concurrency.juicy.semax_conc <> Q:12 var
+R1194:1195 VST.concurrency.juicy.semax_conc <> sh:13 var
+R1197:1197 VST.concurrency.juicy.semax_conc <> p:14 var
+prf 1208:1218 <> selflock_eq
+binder 1220:1220 <> Q:15
+binder 1222:1223 <> sh:16
+binder 1225:1225 <> p:17
+R1244:1252 iris.bi.interface <> ::stdpp_scope:x_'⊣⊢'_x not
+R1293:1293 iris.bi.interface <> ::stdpp_scope:x_'⊣⊢'_x not
+R1229:1236 VST.concurrency.juicy.semax_conc <> selflock def
+R1238:1238 VST.concurrency.juicy.semax_conc <> Q:15 var
+R1240:1241 VST.concurrency.juicy.semax_conc <> sh:16 var
+R1243:1243 VST.concurrency.juicy.semax_conc <> p:17 var
+R1254:1258 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R1253:1253 VST.concurrency.juicy.semax_conc <> Q:15 var
+R1259:1261 iris.bi.interface <> ::bi_scope:'▷'_x not
+R1262:1269 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R1271:1272 VST.concurrency.juicy.semax_conc <> sh:16 var
+R1274:1274 VST.concurrency.juicy.semax_conc <> p:17 var
+R1277:1284 VST.concurrency.juicy.semax_conc <> selflock def
+R1286:1286 VST.concurrency.juicy.semax_conc <> Q:15 var
+R1288:1289 VST.concurrency.juicy.semax_conc <> sh:16 var
+R1291:1291 VST.concurrency.juicy.semax_conc <> p:17 var
+R1317:1324 VST.concurrency.juicy.semax_conc <> selflock def
+R1326:1340 iris.algebra.ofe <> fixpoint_unfold thm
+R1317:1324 VST.concurrency.juicy.semax_conc <> selflock def
+R1317:1324 VST.concurrency.juicy.semax_conc <> selflock def
+R1326:1340 iris.algebra.ofe <> fixpoint_unfold thm
+R1326:1340 iris.algebra.ofe <> fixpoint_unfold thm
+def 3673:3688 <> acquire_arg_type
+R3691:3698 VST.veric.mpred <> TypeTree ind
+R3703:3710 VST.veric.mpred <> ProdType constr
+R3713:3721 VST.veric.mpred <> ConstType constr
+R3727:3729 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R3724:3726 compcert.common.Values <> val ind
+R3730:3734 VST.msl.shares <> share def
+R3738:3742 VST.veric.mpred <> Mpred constr
+inst 3774:3786 <> monPred_at_ne
+R3790:3801 iris.algebra.ofe <> NonExpansive abbrev
+R3839:3842 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3844:3848 iris.algebra.ofe <> :::x_'-d>'_x not
+R3805:3814 iris.bi.monpred <> monPred_at proj
+R3816:3828 VST.veric.mpred <> environ_index def
+R3830:3834 VST.veric.mpred <> mpred def
+inst 3899:3916 <> monPred_at_args_ne
+R3920:3931 iris.algebra.ofe <> NonExpansive abbrev
+R3973:3976 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3978:3982 iris.algebra.ofe <> :::x_'-d>'_x not
+R3935:3944 iris.bi.monpred <> monPred_at proj
+R3946:3962 VST.veric.mpred <> argsEnviron_index def
+R3964:3968 VST.veric.mpred <> mpred def
+def 4033:4044 <> acquire_spec
+R4051:4055 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4072:4077 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4079:4081 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4083:4084 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4087:4089 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4091:4092 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4094:4096 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4098:4106 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4117:4124 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4192:4201 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4207:4214 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4107:4110 compcert.export.Ctypesdefs <> tptr def
+R4112:4116 compcert.export.Ctypesdefs <> tvoid def
+R4202:4206 compcert.export.Ctypesdefs <> tvoid def
+R4056:4071 VST.concurrency.juicy.semax_conc <> acquire_arg_type def
+binder 4078:4078 <> v:18
+binder 4085:4086 <> sh:19
+binder 4093:4093 <> R:20
+R4125:4130 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R4148:4154 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R4131:4144 VST.veric.shares <> readable_share def
+R4146:4147 VST.concurrency.juicy.semax_conc <> sh:19 var
+R4155:4162 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R4164:4170 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R4163:4163 VST.concurrency.juicy.semax_conc <> v:18 var
+R4171:4175 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4191:4191 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4176:4183 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R4185:4186 VST.concurrency.juicy.semax_conc <> sh:19 var
+R4188:4188 VST.concurrency.juicy.semax_conc <> v:18 var
+R4190:4190 VST.concurrency.juicy.semax_conc <> R:20 var
+binder 4078:4078 <> v:21
+binder 4085:4086 <> sh:22
+binder 4093:4093 <> R:23
+R4215:4227 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R4228:4241 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R4242:4246 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4262:4263 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4265:4265 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4247:4254 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R4256:4257 VST.concurrency.juicy.semax_conc <> sh:22 var
+R4259:4259 VST.concurrency.juicy.semax_conc <> v:21 var
+R4261:4261 VST.concurrency.juicy.semax_conc <> R:23 var
+R4264:4264 VST.concurrency.juicy.semax_conc <> R:23 var
+def 4506:4521 <> release_arg_type
+R4524:4531 VST.veric.mpred <> TypeTree ind
+R4536:4543 VST.veric.mpred <> ProdType constr
+R4546:4554 VST.veric.mpred <> ConstType constr
+R4560:4562 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R4557:4559 compcert.common.Values <> val ind
+R4563:4567 VST.msl.shares <> share def
+R4571:4575 VST.veric.mpred <> Mpred constr
+def 4598:4609 <> release_spec
+R4616:4620 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4637:4642 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4644:4646 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4648:4649 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4652:4654 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4656:4657 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4659:4661 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4663:4671 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4682:4689 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4788:4797 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4803:4810 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R4672:4675 compcert.export.Ctypesdefs <> tptr def
+R4677:4681 compcert.export.Ctypesdefs <> tvoid def
+R4798:4802 compcert.export.Ctypesdefs <> tvoid def
+R4621:4636 VST.concurrency.juicy.semax_conc <> release_arg_type def
+binder 4643:4643 <> v:24
+binder 4650:4651 <> sh:25
+binder 4658:4658 <> R:26
+R4690:4695 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R4713:4719 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R4696:4709 VST.veric.shares <> readable_share def
+R4711:4712 VST.concurrency.juicy.semax_conc <> sh:25 var
+R4720:4727 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R4729:4735 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R4728:4728 VST.concurrency.juicy.semax_conc <> v:24 var
+R4736:4740 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4767:4768 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4784:4785 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4787:4787 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4741:4749 iris.bi.derived_connectives <> ::bi_scope:'<affine>'_x not
+R4750:4764 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R4766:4766 VST.concurrency.juicy.semax_conc <> R:26 var
+R4769:4776 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R4778:4779 VST.concurrency.juicy.semax_conc <> sh:25 var
+R4781:4781 VST.concurrency.juicy.semax_conc <> v:24 var
+R4783:4783 VST.concurrency.juicy.semax_conc <> R:26 var
+R4786:4786 VST.concurrency.juicy.semax_conc <> R:26 var
+binder 4643:4643 <> v:27
+binder 4650:4651 <> sh:28
+binder 4658:4658 <> R:29
+R4811:4823 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R4824:4837 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R4838:4842 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4858:4858 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R4843:4850 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R4852:4853 VST.concurrency.juicy.semax_conc <> sh:28 var
+R4855:4855 VST.concurrency.juicy.semax_conc <> v:27 var
+R4857:4857 VST.concurrency.juicy.semax_conc <> R:29 var
+R4963:4977 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R4963:4977 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R4963:4977 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R5093:5107 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R5093:5107 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R5093:5107 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+def 5141:5153 <> makelock_spec
+R5161:5169 VST.veric.compspecs <> compspecs class
+binder 5156:5157 <> cs:30
+R5174:5180 VST.veric.mpred <> funspec def
+R5187:5191 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5232:5237 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5239:5241 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5243:5244 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5247:5249 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5251:5252 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5254:5256 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5258:5266 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5277:5283 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5353:5362 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5368:5374 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5267:5270 compcert.export.Ctypesdefs <> tptr def
+R5272:5276 compcert.export.Ctypesdefs <> tvoid def
+R5363:5367 compcert.export.Ctypesdefs <> tvoid def
+R5192:5199 VST.veric.mpred <> ProdType constr
+R5202:5210 VST.veric.mpred <> ConstType constr
+R5216:5218 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R5213:5215 compcert.common.Values <> val ind
+R5219:5223 VST.msl.shares <> share def
+R5227:5231 VST.veric.mpred <> Mpred constr
+binder 5238:5238 <> v:31
+binder 5245:5246 <> sh:32
+binder 5253:5253 <> R:33
+R5284:5289 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R5307:5312 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R5290:5303 VST.veric.shares <> writable_share def
+R5305:5306 VST.concurrency.juicy.semax_conc <> sh:32 var
+R5313:5320 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R5322:5327 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R5321:5321 VST.concurrency.juicy.semax_conc <> v:31 var
+R5328:5332 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5352:5352 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5333:5340 VST.floyd.field_at <> data_at_ def
+R5342:5343 VST.concurrency.juicy.semax_conc <> sh:32 var
+R5345:5349 VST.concurrency.juicy.semax_conc <> tlock def
+R5351:5351 VST.concurrency.juicy.semax_conc <> v:31 var
+binder 5238:5238 <> v:34
+binder 5245:5246 <> sh:35
+binder 5253:5253 <> R:36
+R5375:5386 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R5387:5399 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R5400:5404 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5420:5420 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5405:5412 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R5414:5415 VST.concurrency.juicy.semax_conc <> sh:35 var
+R5417:5417 VST.concurrency.juicy.semax_conc <> v:34 var
+R5419:5419 VST.concurrency.juicy.semax_conc <> R:36 var
+def 5662:5674 <> freelock_spec
+R5682:5690 VST.veric.compspecs <> compspecs class
+binder 5677:5678 <> cs:37
+R5695:5701 VST.veric.mpred <> funspec def
+R5708:5712 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5753:5758 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5760:5762 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5764:5765 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5768:5770 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5772:5773 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5775:5777 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5779:5787 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5798:5804 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5892:5901 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5907:5913 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R5788:5791 compcert.export.Ctypesdefs <> tptr def
+R5793:5797 compcert.export.Ctypesdefs <> tvoid def
+R5902:5906 compcert.export.Ctypesdefs <> tvoid def
+R5713:5720 VST.veric.mpred <> ProdType constr
+R5723:5731 VST.veric.mpred <> ConstType constr
+R5737:5739 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R5734:5736 compcert.common.Values <> val ind
+R5740:5744 VST.msl.shares <> share def
+R5748:5752 VST.veric.mpred <> Mpred constr
+binder 5759:5759 <> v:38
+binder 5766:5767 <> sh:39
+binder 5774:5774 <> R:40
+R5805:5810 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R5828:5833 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R5811:5824 VST.veric.shares <> writable_share def
+R5826:5827 VST.concurrency.juicy.semax_conc <> sh:39 var
+R5834:5841 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R5843:5848 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R5842:5842 VST.concurrency.juicy.semax_conc <> v:38 var
+R5849:5853 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5871:5872 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5888:5889 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5891:5891 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5854:5868 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R5870:5870 VST.concurrency.juicy.semax_conc <> R:40 var
+R5873:5880 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R5882:5883 VST.concurrency.juicy.semax_conc <> sh:39 var
+R5885:5885 VST.concurrency.juicy.semax_conc <> v:38 var
+R5887:5887 VST.concurrency.juicy.semax_conc <> R:40 var
+R5890:5890 VST.concurrency.juicy.semax_conc <> R:40 var
+binder 5759:5759 <> v:41
+binder 5766:5767 <> sh:42
+binder 5774:5774 <> R:43
+R5914:5925 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R5926:5938 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R5939:5943 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5963:5964 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5966:5966 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R5944:5951 VST.floyd.field_at <> data_at_ def
+R5953:5954 VST.concurrency.juicy.semax_conc <> sh:42 var
+R5956:5960 VST.concurrency.juicy.semax_conc <> tlock def
+R5962:5962 VST.concurrency.juicy.semax_conc <> v:41 var
+R5965:5965 VST.concurrency.juicy.semax_conc <> R:43 var
+R6072:6086 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6072:6086 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6072:6086 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+prf 6272:6283 <> selflock_rec
+R6287:6293 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R6300:6301 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+binder 6294:6295 <> sh:44
+binder 6297:6297 <> v:45
+binder 6299:6299 <> R:46
+R6302:6304 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R6305:6311 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R6313:6314 VST.concurrency.juicy.semax_conc <> sh:44 var
+R6316:6316 VST.concurrency.juicy.semax_conc <> v:45 var
+R6318:6318 VST.concurrency.juicy.semax_conc <> R:46 var
+R6321:6328 VST.concurrency.juicy.semax_conc <> selflock def
+R6330:6330 VST.concurrency.juicy.semax_conc <> R:46 var
+R6332:6333 VST.concurrency.juicy.semax_conc <> sh:44 var
+R6335:6335 VST.concurrency.juicy.semax_conc <> v:45 var
+R6363:6369 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R6386:6396 VST.concurrency.juicy.semax_conc <> selflock_eq thm
+R6386:6396 VST.concurrency.juicy.semax_conc <> selflock_eq thm
+R6386:6396 VST.concurrency.juicy.semax_conc <> selflock_eq thm
+R6407:6422 iris.bi.derived_laws bi wand_iff_refl thm
+R6407:6422 iris.bi.derived_laws bi wand_iff_refl thm
+def 6450:6463 <> freelock2_spec
+R6471:6479 VST.veric.compspecs <> compspecs class
+binder 6466:6467 <> cs:47
+R6484:6490 VST.veric.mpred <> funspec def
+R6497:6501 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6567:6574 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6576:6578 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6580:6581 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6584:6586 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6588:6589 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6593:6595 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6597:6598 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6600:6602 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6604:6605 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6607:6609 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6611:6619 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6630:6636 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6740:6749 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6755:6761 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R6620:6623 compcert.export.Ctypesdefs <> tptr def
+R6625:6629 compcert.export.Ctypesdefs <> tvoid def
+R6750:6754 compcert.export.Ctypesdefs <> tvoid def
+R6502:6509 VST.veric.mpred <> ProdType constr
+R6512:6519 VST.veric.mpred <> ProdType constr
+R6522:6530 VST.veric.mpred <> ConstType constr
+R6544:6546 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R6536:6538 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R6533:6535 compcert.common.Values <> val ind
+R6539:6543 VST.msl.shares <> share def
+R6547:6551 VST.msl.shares <> share def
+R6555:6559 VST.veric.mpred <> Mpred constr
+R6562:6566 VST.veric.mpred <> Mpred constr
+binder 6575:6575 <> v:48
+binder 6582:6583 <> sh:49
+binder 6590:6592 <> sh':50
+binder 6599:6599 <> Q:51
+binder 6606:6606 <> R:52
+R6637:6642 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R6660:6665 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R6643:6656 VST.veric.shares <> writable_share def
+R6658:6659 VST.concurrency.juicy.semax_conc <> sh:49 var
+R6666:6673 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R6675:6680 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R6674:6674 VST.concurrency.juicy.semax_conc <> v:48 var
+R6681:6685 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6703:6704 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6722:6723 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6739:6739 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6686:6700 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6702:6702 VST.concurrency.juicy.semax_conc <> R:52 var
+R6705:6711 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R6713:6715 VST.concurrency.juicy.semax_conc <> sh':50 var
+R6717:6717 VST.concurrency.juicy.semax_conc <> v:48 var
+R6719:6719 VST.concurrency.juicy.semax_conc <> Q:51 var
+R6721:6721 VST.concurrency.juicy.semax_conc <> R:52 var
+R6724:6731 VST.concurrency.juicy.semax_conc_pred <> lock_inv def
+R6733:6734 VST.concurrency.juicy.semax_conc <> sh:49 var
+R6736:6736 VST.concurrency.juicy.semax_conc <> v:48 var
+R6738:6738 VST.concurrency.juicy.semax_conc <> R:52 var
+binder 6575:6575 <> v:53
+binder 6582:6583 <> sh:54
+binder 6590:6592 <> sh':55
+binder 6599:6599 <> Q:56
+binder 6606:6606 <> R:57
+R6762:6773 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R6774:6786 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R6787:6791 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6811:6811 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R6792:6799 VST.floyd.field_at <> data_at_ def
+R6801:6802 VST.concurrency.juicy.semax_conc <> sh:54 var
+R6804:6808 VST.concurrency.juicy.semax_conc <> tlock def
+R6810:6810 VST.concurrency.juicy.semax_conc <> v:53 var
+R6946:6960 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6963:6969 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R6946:6960 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6946:6960 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R6963:6969 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R6963:6969 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+def 7147:7159 <> release2_spec
+R7162:7168 VST.veric.mpred <> funspec def
+R7175:7179 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7237:7244 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7246:7248 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7250:7251 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7254:7256 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7258:7259 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7261:7263 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7265:7266 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7268:7270 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7272:7280 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7291:7297 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7386:7395 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7401:7407 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R7281:7284 compcert.export.Ctypesdefs <> tptr def
+R7286:7290 compcert.export.Ctypesdefs <> tvoid def
+R7396:7400 compcert.export.Ctypesdefs <> tvoid def
+R7180:7187 VST.veric.mpred <> ProdType constr
+R7190:7197 VST.veric.mpred <> ProdType constr
+R7200:7208 VST.veric.mpred <> ConstType constr
+R7214:7216 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R7211:7213 compcert.common.Values <> val ind
+R7217:7221 VST.msl.shares <> share def
+R7225:7229 VST.veric.mpred <> Mpred constr
+R7232:7236 VST.veric.mpred <> Mpred constr
+binder 7245:7245 <> v:58
+binder 7252:7253 <> sh:59
+binder 7260:7260 <> Q:60
+binder 7267:7267 <> R:61
+R7298:7303 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R7321:7326 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R7304:7317 VST.veric.shares <> readable_share def
+R7319:7320 VST.concurrency.juicy.semax_conc <> sh:59 var
+R7327:7334 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R7336:7341 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R7335:7335 VST.concurrency.juicy.semax_conc <> v:58 var
+R7342:7346 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R7364:7365 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R7382:7383 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R7385:7385 VST.floyd.canon <> ::assert4:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R7347:7361 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R7363:7363 VST.concurrency.juicy.semax_conc <> R:61 var
+R7366:7372 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R7374:7375 VST.concurrency.juicy.semax_conc <> sh:59 var
+R7377:7377 VST.concurrency.juicy.semax_conc <> v:58 var
+R7379:7379 VST.concurrency.juicy.semax_conc <> Q:60 var
+R7381:7381 VST.concurrency.juicy.semax_conc <> R:61 var
+R7384:7384 VST.concurrency.juicy.semax_conc <> R:61 var
+binder 7245:7245 <> v:62
+binder 7252:7253 <> sh:63
+binder 7260:7260 <> Q:64
+binder 7267:7267 <> R:65
+R7408:7419 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R7420:7432 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R7433:7438 VST.floyd.canon <> ::assert5:'SEP'_'()' not
+R7560:7574 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R7577:7583 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R7560:7574 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R7560:7574 VST.concurrency.juicy.semax_conc_pred <> exclusive_mpred def
+R7577:7583 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+R7577:7583 VST.concurrency.juicy.semax_conc_pred <> rec_inv def
+def 13060:13073 <> spawn_arg_type
+R13078:13085 VST.veric.mpred <> ProdType constr
+R13088:13096 VST.veric.mpred <> ConstType constr
+R13102:13104 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R13099:13101 compcert.common.Values <> val ind
+R13105:13107 compcert.common.Values <> val ind
+R13112:13118 VST.veric.mpred <> SigType constr
+binder 13130:13130 <> A:66
+R13135:13142 VST.veric.mpred <> ProdType constr
+R13145:13152 VST.veric.mpred <> ProdType constr
+R13157:13165 VST.veric.mpred <> ArrowType constr
+R13168:13176 VST.veric.mpred <> ConstType constr
+R13178:13178 VST.concurrency.juicy.semax_conc <> A:66 var
+R13182:13190 VST.veric.mpred <> ConstType constr
+R13192:13198 VST.veric.SeparationLogic <> globals def
+R13203:13211 VST.veric.mpred <> ConstType constr
+R13213:13213 VST.concurrency.juicy.semax_conc <> A:66 var
+R13220:13228 VST.veric.mpred <> ArrowType constr
+R13231:13239 VST.veric.mpred <> ConstType constr
+R13241:13241 VST.concurrency.juicy.semax_conc <> A:66 var
+R13245:13253 VST.veric.mpred <> ArrowType constr
+R13256:13264 VST.veric.mpred <> ConstType constr
+R13266:13268 compcert.common.Values <> val ind
+R13271:13275 VST.veric.mpred <> Mpred constr
+def 13302:13311 <> spawn_spec
+R13318:13322 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13337:13342 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13344:13346 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13348:13349 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13351:13353 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13355:13356 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13359:13361 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13363:13371 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13393:13394 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13405:13411 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13948:13998 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R14004:14010 VST.floyd.client_lemmas <> :::'TYPE'_x_'WITH'_x_':'_x_','_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13372:13375 compcert.export.Ctypesdefs <> tptr def
+R13377:13392 VST.concurrency.juicy.semax_conc <> voidstar_funtype def
+R13395:13398 compcert.export.Ctypesdefs <> tptr def
+R13400:13404 compcert.export.Ctypesdefs <> tvoid def
+R13999:14003 compcert.export.Ctypesdefs <> tvoid def
+R13323:13336 VST.concurrency.juicy.semax_conc <> spawn_arg_type def
+binder 13343:13343 <> f:67
+binder 13350:13350 <> b:68
+binder 13357:13358 <> fs:69
+R13412:13417 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R13439:13444 VST.floyd.canon <> ::assert:'PROP'_'('_x_';'_'..'_';'_x_')'_x not
+R13418:13423 VST.veric.Cop2 <> tc_val def
+R13426:13429 compcert.export.Ctypesdefs <> tptr def
+R13431:13435 compcert.cfrontend.Ctypes <> Tvoid constr
+R13438:13438 VST.concurrency.juicy.semax_conc <> b:68 var
+R13445:13452 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R13454:13455 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R13457:13462 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R13453:13453 VST.concurrency.juicy.semax_conc <> f:67 var
+R13456:13456 VST.concurrency.juicy.semax_conc <> b:68 var
+R13463:13471 VST.floyd.canon <> ::assert4:'GLOBALS'_'('_x_';'_'..'_';'_x_')'_x not
+R13512:13517 VST.floyd.canon <> ::assert4:'GLOBALS'_'('_x_';'_'..'_';'_x_')'_x not
+R13502:13503 VST.concurrency.juicy.semax_conc <> fs:69 var
+R13477:13482 Coq.Init.Specif <> existT constr
+R13486:13486 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13494:13495 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13497:13497 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13487:13487 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13490:13491 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13493:13493 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13518:13522 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R13871:13881 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R13947:13947 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R13555:13556 VST.concurrency.juicy.semax_conc <> fs:69 var
+R13528:13533 Coq.Init.Specif <> existT constr
+R13537:13537 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13545:13546 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13550:13550 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13538:13538 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13541:13542 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13544:13544 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13571:13578 VST.veric.SeparationLogic <> func_ptr def
+R13592:13596 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13598:13600 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13604:13605 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13607:13609 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13611:13630 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13641:13658 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13751:13771 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13782:13799 VST.floyd.client_lemmas <> ::funspec_scope:'WITH'_x_':'_x_','_x_':'_x_'PRE'_'['_x_','_'..'_','_x_']'_x_'POST'_'['_x_']'_x not
+R13631:13634 compcert.export.Ctypesdefs <> tptr def
+R13636:13640 compcert.export.Ctypesdefs <> tvoid def
+R13772:13775 compcert.export.Ctypesdefs <> tptr def
+R13777:13781 compcert.export.Ctypesdefs <> tvoid def
+R13601:13603 compcert.common.Values <> val ind
+binder 13597:13597 <> y:72
+binder 13606:13606 <> x:73
+R13659:13681 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R13682:13689 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R13691:13707 VST.floyd.canon <> ::assert3:'PARAMS'_'('_x_';'_'..'_';'_x_')'_x not
+R13690:13690 VST.concurrency.juicy.semax_conc <> y:72 var
+R13708:13716 VST.floyd.canon <> ::assert4:'GLOBALS'_'('_x_';'_'..'_';'_x_')'_x not
+R13721:13737 VST.floyd.canon <> ::assert4:'GLOBALS'_'('_x_';'_'..'_';'_x_')'_x not
+R13738:13742 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R13750:13750 VST.floyd.canon <> ::assert5:'SEP'_'('_x_';'_'..'_';'_x_')' not
+R13747:13747 VST.concurrency.juicy.semax_conc <> x:73 var
+R13749:13749 VST.concurrency.juicy.semax_conc <> y:72 var
+binder 13597:13597 <> y:74
+binder 13606:13606 <> x:75
+R13800:13823 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R13824:13847 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R13848:13855 VST.floyd.canon <> ::assert5:'SEP'_'()' not
+R13869:13869 VST.concurrency.juicy.semax_conc <> f:67 var
+R13914:13915 VST.concurrency.juicy.semax_conc <> fs:69 var
+R13887:13892 Coq.Init.Specif <> existT constr
+R13896:13896 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13904:13905 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13909:13909 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13897:13897 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13900:13901 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13903:13903 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13935:13939 iris.bi.interface <> ::bi_scope:x_'∧'_x not
+R13920:13932 VST.veric.expr <> valid_pointer def
+R13934:13934 VST.concurrency.juicy.semax_conc <> b:68 var
+R13946:13946 VST.concurrency.juicy.semax_conc <> b:68 var
+binder 13343:13343 <> f:77
+binder 13350:13350 <> b:78
+binder 13357:13358 <> fs:79
+R14011:14022 VST.floyd.canon <> ::assert:'PROP'_'()'_x not
+R14023:14035 VST.floyd.canon <> ::assert3:'LOCAL'_'()'_x not
+R14036:14041 VST.floyd.canon <> ::assert5:'SEP'_'()' not
+R14328:14351 VST.veric.seplog <> func_ptr_si_nonexpansive inst
+R14328:14351 VST.veric.seplog <> func_ptr_si_nonexpansive inst
+R14399:14405 Coq.Init.Logic <> eq_refl constr
+R14399:14405 Coq.Init.Logic <> eq_refl constr
+binder 14687:14687 <> Z:80
+R14700:14709 VST.veric.external_state <> externalGS class
+R14711:14711 VST.concurrency.juicy.semax_conc <> Z:80 var
+R14713:14714 VST.concurrency.juicy.semax_conc <> mpred.Σ var
+binder 14699:14714 <> externalGS0:81
+def 14730:14752 <> concurrent_simple_specs
+R14760:14768 VST.veric.compspecs <> compspecs class
+binder 14755:14756 <> cs:82
+R14789:14792 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14783:14788 Coq.Strings.String <> string ind
+R14793:14797 compcert.common.AST <> ident def
+binder 14772:14779 <> ext_link:83
+R14846:14851 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R14805:14805 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14831:14832 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14845:14845 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14806:14813 VST.concurrency.juicy.semax_conc <> ext_link:83 var
+R14833:14844 VST.concurrency.juicy.semax_conc <> acquire_spec def
+R14893:14898 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R14852:14852 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14878:14879 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14892:14892 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R14853:14860 VST.concurrency.juicy.semax_conc <> ext_link:83 var
+R14880:14891 VST.concurrency.juicy.semax_conc <> release_spec def
+R14899:14901 Coq.Init.Datatypes <> nil constr
+inst 14923:14948 <> concurrent_simple_ext_spec
+R14956:14964 VST.veric.compspecs <> compspecs class
+binder 14951:14952 <> cs:84
+R14985:14988 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14979:14984 Coq.Strings.String <> string ind
+R14989:14993 compcert.common.AST <> ident def
+binder 14968:14975 <> ext_link:85
+R14998:15005 VST.sepcomp.extspec <> ext_spec abbrev
+R15007:15011 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+R15018:15033 VST.veric.semax_ext <> add_funspecs_rec def
+R15059:15067 VST.veric.juicy_extspec <> void_spec def
+R15069:15073 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+R15081:15103 VST.concurrency.juicy.semax_conc <> concurrent_simple_specs def
+R15035:15039 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+prf 15126:15139 <> strong_nat_ind
+R15149:15152 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15146:15148 Coq.Init.Datatypes <> nat ind
+binder 15142:15142 <> P:86
+R15165:15171 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R15173:15174 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+binder 15172:15172 <> n:87
+R15175:15175 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15199:15203 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15176:15182 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R15184:15185 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+binder 15183:15183 <> i:88
+R15192:15195 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15186:15187 Coq.Init.Peano <> lt def
+R15189:15189 VST.concurrency.juicy.semax_conc <> i:88 var
+R15191:15191 VST.concurrency.juicy.semax_conc <> n:87 var
+R15196:15196 VST.concurrency.juicy.semax_conc <> P:86 var
+R15198:15198 VST.concurrency.juicy.semax_conc <> i:88 var
+R15204:15204 VST.concurrency.juicy.semax_conc <> P:86 var
+R15206:15206 VST.concurrency.juicy.semax_conc <> n:87 var
+binder 15160:15161 <> IH:89
+binder 15209:15209 <> n:90
+R15213:15213 VST.concurrency.juicy.semax_conc <> P:86 var
+R15215:15215 VST.concurrency.juicy.semax_conc <> n:90 var
+def 15301:15316 <> concurrent_specs
+R15324:15332 VST.veric.compspecs <> compspecs class
+binder 15319:15320 <> cs:91
+R15353:15356 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15347:15352 Coq.Strings.String <> string ind
+R15357:15361 compcert.common.AST <> ident def
+binder 15336:15343 <> ext_link:92
+R15410:15415 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R15369:15369 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15395:15396 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15409:15409 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15370:15377 VST.concurrency.juicy.semax_conc <> ext_link:92 var
+R15397:15408 VST.concurrency.juicy.semax_conc <> acquire_spec def
+R15457:15462 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R15416:15416 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15442:15443 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15456:15456 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15417:15424 VST.concurrency.juicy.semax_conc <> ext_link:92 var
+R15444:15455 VST.concurrency.juicy.semax_conc <> release_spec def
+R15509:15514 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R15463:15463 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15490:15491 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15508:15508 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15464:15471 VST.concurrency.juicy.semax_conc <> ext_link:92 var
+R15492:15504 VST.concurrency.juicy.semax_conc <> makelock_spec def
+R15506:15507 VST.concurrency.juicy.semax_conc <> cs:91 var
+R15561:15566 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R15515:15515 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15542:15543 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15560:15560 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15516:15523 VST.concurrency.juicy.semax_conc <> ext_link:92 var
+R15544:15556 VST.concurrency.juicy.semax_conc <> freelock_spec def
+R15558:15559 VST.concurrency.juicy.semax_conc <> cs:91 var
+R15604:15609 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R15567:15567 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15591:15592 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15603:15603 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15568:15575 VST.concurrency.juicy.semax_conc <> ext_link:92 var
+R15593:15602 VST.concurrency.juicy.semax_conc <> spawn_spec def
+R15610:15612 Coq.Init.Datatypes <> nil constr
+inst 15635:15653 <> concurrent_ext_spec
+R15661:15669 VST.veric.compspecs <> compspecs class
+binder 15656:15657 <> cs:93
+R15690:15693 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15684:15689 Coq.Strings.String <> string ind
+R15694:15698 compcert.common.AST <> ident def
+binder 15673:15680 <> ext_link:94
+R15703:15710 VST.sepcomp.extspec <> ext_spec abbrev
+R15712:15716 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+R15723:15738 VST.veric.semax_ext <> add_funspecs_rec def
+R15764:15772 VST.veric.juicy_extspec <> void_spec def
+R15774:15778 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+R15786:15801 VST.concurrency.juicy.semax_conc <> concurrent_specs def
+R15740:15744 VST.concurrency.juicy.semax_conc <> mpred.OK_ty var
+R15822:15826 VST.concurrency.juicy.semax_conc mpred <> sec

@@ -1,0 +1,108 @@
+DIGEST bebc2f38a2913d0f8f372ed0a885f9a8
+FVST.concurrency.common.dry_context
+R106:141 VST.concurrency.common.HybridMachine <> <> lib
+R159:195 VST.concurrency.common.erased_machine <> <> lib
+R213:249 VST.concurrency.common.threads_lemmas <> <> lib
+R267:300 VST.concurrency.common.permissions <> <> lib
+R318:349 VST.concurrency.common.semantics <> <> lib
+R367:399 VST.concurrency.common.threadPool <> <> lib
+R417:455 VST.concurrency.common.HybridMachineSig <> <> lib
+R473:498 compcert.common.Globalenvs <> <> lib
+R516:534 compcert.lib.Axioms <> <> lib
+R576:584 mathcomp.ssreflect.ssreflect <> <> lib
+R586:592 mathcomp.ssreflect.ssrbool <> <> lib
+R594:599 mathcomp.ssreflect.ssrnat <> <> lib
+R601:606 mathcomp.ssreflect.ssrfun <> <> lib
+R608:613 mathcomp.ssreflect.eqtype <> <> lib
+R615:617 mathcomp.ssreflect.seq <> <> lib
+R619:625 mathcomp.ssreflect.fintype <> <> lib
+R627:632 mathcomp.ssreflect.finfun <> <> lib
+mod 668:677 <> AsmContext
+R689:704 VST.concurrency.common.HybridMachineSig HybridMachineSig <> mod
+sec 718:727 AsmContext AsmContext
+R796:804 VST.concurrency.common.semantics <> Semantics class
+binder 787:792 <> asmSem:1
+R831:859 VST.concurrency.common.threadPool OrdinalPool OrdinalThreadPool def
+R884:912 VST.concurrency.common.HybridMachine DryHybridMachine dryResources inst
+R937:972 VST.concurrency.common.HybridMachine DryHybridMachine DryHybridMachineSig inst
+inst 1055:1064 AsmContext FineDilMem
+R1068:1076 VST.concurrency.common.HybridMachineSig HybridMachineSig DiluteMem class
+R1090:1098 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1090:1098 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1090:1098 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1103:1112 VST.concurrency.common.permissions <> setMaxPerm def
+inst 1179:1189 AsmContext dryFineMach
+R1194:1206 VST.concurrency.common.HybridMachineSig HybridMachineSig HybridMachine class
+R1229:1263 VST.concurrency.common.HybridMachineSig HybridMachineSig.HybridFineMachine HybridFineMachine def
+R1289:1314 VST.concurrency.common.HybridMachineSig HybridMachineSig.HybridCoarseMachine DilMem inst
+inst 1391:1403 AsmContext dryCoarseMach
+R1408:1420 VST.concurrency.common.HybridMachineSig HybridMachineSig HybridMachine class
+R1443:1481 VST.concurrency.common.HybridMachineSig HybridMachineSig.HybridCoarseMachine HybridCoarseMachine def
+R1560:1580 VST.concurrency.common.erased_machine BareMachine resources inst
+inst 1605:1614 AsmContext BareDilMem
+R1618:1626 VST.concurrency.common.HybridMachineSig HybridMachineSig DiluteMem class
+R1640:1648 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1640:1648 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1640:1648 VST.concurrency.common.HybridMachineSig HybridMachineSig diluteMem meth
+R1653:1661 VST.concurrency.common.permissions <> erasePerm def
+inst 1728:1735 AsmContext bareMach
+R1740:1752 VST.concurrency.common.HybridMachineSig HybridMachineSig HybridMachine class
+R1754:1774 VST.concurrency.common.erased_machine BareMachine resources inst
+R1778:1806 VST.concurrency.common.threadPool OrdinalPool OrdinalThreadPool def
+R1824:1858 VST.concurrency.common.HybridMachineSig HybridMachineSig.HybridFineMachine HybridFineMachine def
+R1860:1880 VST.concurrency.common.erased_machine BareMachine resources inst
+R1886:1911 VST.concurrency.common.erased_machine BareMachine BareMachineSig inst
+R1913:1922 VST.concurrency.common.dry_context AsmContext BareDilMem inst
+var 1939:1943 AsmContext.AsmContext initU
+R1947:1949 mathcomp.ssreflect.seq <> seq abbrev
+R1951:1953 Coq.Init.Datatypes <> nat ind
+def 1972:1987 AsmContext coarse_semantics
+R1997:2012 VST.concurrency.common.HybridMachineSig HybridMachineSig MachineSemantics meth
+R2052:2055 Coq.Init.Datatypes <> None constr
+R2046:2050 VST.concurrency.common.dry_context <> AsmContext.AsmContext.initU var
+R2031:2043 VST.concurrency.common.dry_context AsmContext dryCoarseMach inst
+def 2074:2087 AsmContext fine_semantics
+R2097:2112 VST.concurrency.common.HybridMachineSig HybridMachineSig MachineSemantics meth
+R2150:2153 Coq.Init.Datatypes <> None constr
+R2144:2148 VST.concurrency.common.dry_context <> AsmContext.AsmContext.initU var
+R2131:2141 VST.concurrency.common.dry_context AsmContext dryFineMach inst
+def 2172:2185 AsmContext bare_semantics
+R2196:2211 VST.concurrency.common.HybridMachineSig HybridMachineSig MachineSemantics meth
+R2246:2249 Coq.Init.Datatypes <> None constr
+R2240:2244 VST.concurrency.common.dry_context <> AsmContext.AsmContext.initU var
+R2230:2237 VST.concurrency.common.dry_context AsmContext bareMach inst
+def 2268:2275 AsmContext tpc_init
+binder 2277:2277 <> m:3
+binder 2279:2279 <> c:4
+binder 2281:2281 <> f:5
+binder 2283:2285 <> arg:6
+R2290:2301 VST.sepcomp.semantics <> initial_core proj
+R2328:2330 VST.concurrency.common.dry_context <> arg:6 var
+R2326:2326 VST.concurrency.common.dry_context <> f:5 var
+R2324:2324 VST.concurrency.common.dry_context <> c:4 var
+R2322:2322 VST.concurrency.common.dry_context <> m:3 var
+R2303:2318 VST.concurrency.common.dry_context AsmContext coarse_semantics def
+def 2348:2355 AsmContext tpf_init
+binder 2357:2357 <> m:7
+binder 2359:2359 <> c:8
+binder 2361:2361 <> f:9
+binder 2363:2365 <> arg:10
+R2370:2381 VST.sepcomp.semantics <> initial_core proj
+R2406:2408 VST.concurrency.common.dry_context <> arg:10 var
+R2404:2404 VST.concurrency.common.dry_context <> f:9 var
+R2402:2402 VST.concurrency.common.dry_context <> c:8 var
+R2400:2400 VST.concurrency.common.dry_context <> m:7 var
+R2383:2396 VST.concurrency.common.dry_context AsmContext fine_semantics def
+def 2426:2434 AsmContext bare_init
+binder 2436:2436 <> m:11
+binder 2438:2438 <> c:12
+binder 2440:2440 <> f:13
+binder 2442:2444 <> arg:14
+R2449:2460 VST.sepcomp.semantics <> initial_core proj
+R2485:2487 VST.concurrency.common.dry_context <> arg:14 var
+R2483:2483 VST.concurrency.common.dry_context <> f:13 var
+R2481:2481 VST.concurrency.common.dry_context <> c:12 var
+R2479:2479 VST.concurrency.common.dry_context <> m:11 var
+R2462:2475 VST.concurrency.common.dry_context AsmContext bare_semantics def
+R2497:2506 VST.concurrency.common.dry_context AsmContext.AsmContext <> sec
+R2513:2522 VST.concurrency.common.dry_context AsmContext <> mod

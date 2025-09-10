@@ -1,0 +1,136 @@
+DIGEST e8a889fdc4c655fed0a0fc2b98b6e821
+FVST.concurrency.common.machine_semantics
+R15:33 compcert.lib.Coqlib <> <> lib
+R51:67 compcert.lib.Maps <> <> lib
+R85:105 compcert.lib.Integers <> <> lib
+R123:141 compcert.lib.Axioms <> <> lib
+R160:181 compcert.common.Values <> <> lib
+R199:220 compcert.common.Memory <> <> lib
+R238:259 compcert.common.Events <> <> lib
+R277:295 compcert.common.AST <> <> lib
+R313:338 compcert.common.Globalenvs <> <> lib
+R357:378 VST.sepcomp.mem_lemmas <> <> lib
+def 1392:1402 <> option_proj
+binder 1405:1405 <> A:1
+R1424:1424 VST.concurrency.common.machine_semantics <> A:1 var
+binder 1415:1421 <> default:2
+R1431:1436 Coq.Init.Datatypes <> option ind
+R1438:1438 VST.concurrency.common.machine_semantics <> A:1 var
+binder 1428:1428 <> x:3
+R1451:1451 VST.concurrency.common.machine_semantics <> x:3 var
+R1458:1461 Coq.Init.Datatypes <> Some constr
+R1472:1475 Coq.Init.Datatypes <> None constr
+R1480:1486 VST.concurrency.common.machine_semantics <> default:2 var
+rec 1501:1515 <> ConcurSemantics
+proj 1560:1574 <> initial_machine
+proj 1646:1656 <> conc_halted
+proj 1689:1699 <> thread_step
+proj 1746:1757 <> machine_step
+proj 1823:1836 <> running_thread
+proj 1863:1884 <> thread_step_not_halted
+proj 1977:1999 <> machine_step_not_halted
+binder 1518:1518 <> G:5
+binder 1520:1522 <> TID:6
+binder 1524:1526 <> SCH:7
+binder 1528:1529 <> TR:8
+binder 1531:1531 <> C:9
+binder 1533:1533 <> M:10
+binder 1535:1537 <> res:11
+R1588:1591 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1578:1583 Coq.Init.Datatypes <> option ind
+R1585:1587 VST.concurrency.common.machine_semantics <> res:11 var
+R1593:1596 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1592:1592 VST.concurrency.common.machine_semantics <> M:10 var
+R1598:1610 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1597:1597 VST.concurrency.common.machine_semantics <> C:9 var
+R1612:1615 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1611:1611 VST.concurrency.common.machine_semantics <> M:10 var
+R1619:1622 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1616:1618 compcert.common.Values <> val ind
+R1631:1634 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1623:1626 Coq.Init.Datatypes <> list ind
+R1628:1630 compcert.common.Values <> val ind
+R1663:1666 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1660:1662 VST.concurrency.common.machine_semantics <> SCH:7 var
+R1668:1671 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1667:1667 VST.concurrency.common.machine_semantics <> C:9 var
+R1672:1677 Coq.Init.Datatypes <> option ind
+R1679:1681 compcert.common.Values <> val ind
+R1704:1707 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1703:1703 VST.concurrency.common.machine_semantics <> G:5 var
+R1711:1714 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1708:1710 VST.concurrency.common.machine_semantics <> SCH:7 var
+R1716:1719 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1715:1715 VST.concurrency.common.machine_semantics <> C:9 var
+R1721:1724 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1720:1720 VST.concurrency.common.machine_semantics <> M:10 var
+R1726:1729 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1725:1725 VST.concurrency.common.machine_semantics <> C:9 var
+R1731:1734 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1730:1730 VST.concurrency.common.machine_semantics <> M:10 var
+R1762:1765 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1761:1761 VST.concurrency.common.machine_semantics <> G:5 var
+R1769:1772 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1766:1768 VST.concurrency.common.machine_semantics <> SCH:7 var
+R1775:1778 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1773:1774 VST.concurrency.common.machine_semantics <> TR:8 var
+R1780:1783 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1779:1779 VST.concurrency.common.machine_semantics <> C:9 var
+R1785:1788 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1784:1784 VST.concurrency.common.machine_semantics <> M:10 var
+R1792:1795 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1789:1791 VST.concurrency.common.machine_semantics <> SCH:7 var
+R1798:1801 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1796:1797 VST.concurrency.common.machine_semantics <> TR:8 var
+R1803:1806 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1802:1802 VST.concurrency.common.machine_semantics <> C:9 var
+R1808:1811 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1807:1807 VST.concurrency.common.machine_semantics <> M:10 var
+R1841:1844 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1840:1840 VST.concurrency.common.machine_semantics <> C:9 var
+R1848:1851 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1845:1847 VST.concurrency.common.machine_semantics <> TID:6 var
+binder 1900:1901 <> ge:18
+binder 1904:1904 <> U:19
+binder 1906:1906 <> m:20
+binder 1908:1908 <> q:21
+binder 1911:1912 <> m':22
+binder 1914:1915 <> q':23
+R1944:1947 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1918:1928 VST.concurrency.common.machine_semantics <> thread_step:15 meth
+R1942:1943 VST.concurrency.common.machine_semantics <> m':22 var
+R1939:1940 VST.concurrency.common.machine_semantics <> q':23 var
+R1937:1937 VST.concurrency.common.machine_semantics <> m:20 var
+R1935:1935 VST.concurrency.common.machine_semantics <> q:21 var
+R1933:1933 VST.concurrency.common.machine_semantics <> U:19 var
+R1930:1931 VST.concurrency.common.machine_semantics <> ge:18 var
+R1963:1965 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1948:1958 VST.concurrency.common.machine_semantics <> conc_halted:14 meth
+R1962:1962 VST.concurrency.common.machine_semantics <> q:21 var
+R1960:1960 VST.concurrency.common.machine_semantics <> U:19 var
+R1966:1969 Coq.Init.Datatypes <> None constr
+binder 2017:2018 <> ge:25
+binder 2021:2021 <> U:26
+binder 2023:2023 <> m:27
+binder 2025:2026 <> tr:28
+binder 2028:2028 <> q:29
+binder 2031:2032 <> U':30
+binder 2034:2035 <> m':31
+binder 2037:2039 <> tr':32
+binder 2041:2042 <> q':33
+R2082:2085 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2045:2056 VST.concurrency.common.machine_semantics <> machine_step:16 meth
+R2080:2081 VST.concurrency.common.machine_semantics <> m':31 var
+R2077:2078 VST.concurrency.common.machine_semantics <> q':33 var
+R2073:2075 VST.concurrency.common.machine_semantics <> tr':32 var
+R2070:2071 VST.concurrency.common.machine_semantics <> U':30 var
+R2068:2068 VST.concurrency.common.machine_semantics <> m:27 var
+R2066:2066 VST.concurrency.common.machine_semantics <> q:29 var
+R2063:2064 VST.concurrency.common.machine_semantics <> tr:28 var
+R2061:2061 VST.concurrency.common.machine_semantics <> U:26 var
+R2058:2059 VST.concurrency.common.machine_semantics <> ge:25 var
+R2101:2103 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2086:2096 VST.concurrency.common.machine_semantics <> conc_halted:14 meth
+R2100:2100 VST.concurrency.common.machine_semantics <> q:29 var
+R2098:2098 VST.concurrency.common.machine_semantics <> U:26 var
+R2104:2107 Coq.Init.Datatypes <> None constr

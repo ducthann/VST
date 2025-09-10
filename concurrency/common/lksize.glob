@@ -1,0 +1,46 @@
+DIGEST 7a19fa717d46a83e1318436873c9cadd
+FVST.concurrency.common.lksize
+R15:33 compcert.common.AST <> <> lib
+R51:73 compcert.common.Memdata <> <> lib
+R91:107 Coq.ZArith.ZArith <> <> lib
+R125:127 Coq.micromega.Lia <> <> lib
+def 195:200 <> LKSIZE
+R206:208 Coq.ZArith.BinInt <> ::Z_scope:x_'*'_x not
+R209:218 compcert.common.Memdata <> size_chunk def
+R220:223 compcert.common.AST <> Mptr def
+def 240:249 <> LKSIZE_nat
+R253:260 Coq.ZArith.BinInt Z to_nat def
+R262:267 VST.concurrency.common.lksize <> LKSIZE def
+prf 277:286 <> LKSIZE_pos
+R292:294 Coq.ZArith.BinInt <> ::Z_scope:x_'<'_x not
+R295:300 VST.concurrency.common.lksize <> LKSIZE def
+R322:327 VST.concurrency.common.lksize <> LKSIZE def
+R344:357 compcert.common.Memdata <> size_chunk_pos thm
+R359:362 compcert.common.AST <> Mptr def
+R344:357 compcert.common.Memdata <> size_chunk_pos thm
+R359:362 compcert.common.AST <> Mptr def
+prf 383:392 <> LKSIZE_int
+R414:416 Coq.ZArith.BinInt <> ::Z_scope:x_'<'_x not
+R397:406 compcert.common.Memdata <> size_chunk def
+R408:413 compcert.common.AST <> Mint32 constr
+R417:422 VST.concurrency.common.lksize <> LKSIZE def
+R444:449 VST.concurrency.common.lksize <> LKSIZE def
+R469:483 compcert.common.Memdata <> size_chunk_Mptr thm
+R495:505 compcert.aarch64.Archi <> ptr64 def
+R469:483 compcert.common.Memdata <> size_chunk_Mptr thm
+R469:483 compcert.common.Memdata <> size_chunk_Mptr thm
+R495:505 compcert.aarch64.Archi <> ptr64 def
+prf 525:535 <> LKSIZE_long
+R557:560 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R540:549 compcert.common.Memdata <> size_chunk def
+R551:556 compcert.common.AST <> Mint64 constr
+R561:566 VST.concurrency.common.lksize <> LKSIZE def
+R588:593 VST.concurrency.common.lksize <> LKSIZE def
+R613:627 compcert.common.Memdata <> size_chunk_Mptr thm
+R639:649 compcert.aarch64.Archi <> ptr64 def
+R613:627 compcert.common.Memdata <> size_chunk_Mptr thm
+R613:627 compcert.common.Memdata <> size_chunk_Mptr thm
+R639:649 compcert.aarch64.Archi <> ptr64 def
+R690:699 VST.concurrency.common.lksize <> LKSIZE_pos thm
+R713:722 VST.concurrency.common.lksize <> LKSIZE_int thm
+R736:746 VST.concurrency.common.lksize <> LKSIZE_long thm

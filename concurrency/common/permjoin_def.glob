@@ -1,0 +1,276 @@
+DIGEST 60a3503c22d794eef9722801a5e19f99
+FVST.concurrency.common.permjoin_def
+R15:36 compcert.common.Memory <> <> lib
+ind 50:57 <> permjoin
+constr 136:150 <> permjoin_None_l
+constr 178:192 <> permjoin_None_r
+constr 241:252 <> permjoin_NNN
+constr 336:347 <> permjoin_NRR
+constr 412:423 <> permjoin_RNR
+constr 512:523 <> permjoin_NWW
+constr 588:599 <> permjoin_NWF
+constr 664:675 <> permjoin_WNW
+constr 740:751 <> permjoin_WNF
+constr 844:855 <> permjoin_RRR
+constr 920:931 <> permjoin_RRW
+constr 996:1007 <> permjoin_RRF
+constr 1095:1106 <> permjoin_RWW
+constr 1171:1182 <> permjoin_WRW
+constr 1247:1258 <> permjoin_RWF
+constr 1323:1334 <> permjoin_WRF
+R78:81 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R61:66 Coq.Init.Datatypes <> option ind
+R68:77 compcert.common.Memtype <> permission ind
+R99:102 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R82:87 Coq.Init.Datatypes <> option ind
+R89:98 compcert.common.Memtype <> permission ind
+R120:123 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R103:108 Coq.Init.Datatypes <> option ind
+R110:119 compcert.common.Memtype <> permission ind
+binder 152:152 <> x:3
+R156:163 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R172:172 VST.concurrency.common.permjoin_def <> x:3 var
+R170:170 VST.concurrency.common.permjoin_def <> x:3 var
+R165:168 Coq.Init.Datatypes <> None constr
+binder 194:194 <> x:4
+R198:205 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R214:214 VST.concurrency.common.permjoin_def <> x:4 var
+R209:212 Coq.Init.Datatypes <> None constr
+R207:207 VST.concurrency.common.permjoin_def <> x:4 var
+R256:263 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R298:301 Coq.Init.Datatypes <> Some constr
+R303:310 compcert.common.Memtype <> Nonempty constr
+R282:285 Coq.Init.Datatypes <> Some constr
+R287:294 compcert.common.Memtype <> Nonempty constr
+R266:269 Coq.Init.Datatypes <> Some constr
+R271:278 compcert.common.Memtype <> Nonempty constr
+R351:358 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R393:396 Coq.Init.Datatypes <> Some constr
+R398:405 compcert.common.Memtype <> Readable constr
+R377:380 Coq.Init.Datatypes <> Some constr
+R382:389 compcert.common.Memtype <> Readable constr
+R361:364 Coq.Init.Datatypes <> Some constr
+R366:373 compcert.common.Memtype <> Nonempty constr
+R427:434 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R469:472 Coq.Init.Datatypes <> Some constr
+R474:481 compcert.common.Memtype <> Readable constr
+R453:456 Coq.Init.Datatypes <> Some constr
+R458:465 compcert.common.Memtype <> Nonempty constr
+R437:440 Coq.Init.Datatypes <> Some constr
+R442:449 compcert.common.Memtype <> Readable constr
+R527:534 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R569:572 Coq.Init.Datatypes <> Some constr
+R574:581 compcert.common.Memtype <> Writable constr
+R553:556 Coq.Init.Datatypes <> Some constr
+R558:565 compcert.common.Memtype <> Writable constr
+R537:540 Coq.Init.Datatypes <> Some constr
+R542:549 compcert.common.Memtype <> Nonempty constr
+R603:610 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R645:648 Coq.Init.Datatypes <> Some constr
+R650:657 compcert.common.Memtype <> Freeable constr
+R629:632 Coq.Init.Datatypes <> Some constr
+R634:641 compcert.common.Memtype <> Writable constr
+R613:616 Coq.Init.Datatypes <> Some constr
+R618:625 compcert.common.Memtype <> Nonempty constr
+R679:686 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R721:724 Coq.Init.Datatypes <> Some constr
+R726:733 compcert.common.Memtype <> Writable constr
+R705:708 Coq.Init.Datatypes <> Some constr
+R710:717 compcert.common.Memtype <> Nonempty constr
+R689:692 Coq.Init.Datatypes <> Some constr
+R694:701 compcert.common.Memtype <> Writable constr
+R755:762 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R797:800 Coq.Init.Datatypes <> Some constr
+R802:809 compcert.common.Memtype <> Freeable constr
+R781:784 Coq.Init.Datatypes <> Some constr
+R786:793 compcert.common.Memtype <> Nonempty constr
+R765:768 Coq.Init.Datatypes <> Some constr
+R770:777 compcert.common.Memtype <> Writable constr
+R859:866 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R901:904 Coq.Init.Datatypes <> Some constr
+R906:913 compcert.common.Memtype <> Readable constr
+R885:888 Coq.Init.Datatypes <> Some constr
+R890:897 compcert.common.Memtype <> Readable constr
+R869:872 Coq.Init.Datatypes <> Some constr
+R874:881 compcert.common.Memtype <> Readable constr
+R935:942 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R977:980 Coq.Init.Datatypes <> Some constr
+R982:989 compcert.common.Memtype <> Writable constr
+R961:964 Coq.Init.Datatypes <> Some constr
+R966:973 compcert.common.Memtype <> Readable constr
+R945:948 Coq.Init.Datatypes <> Some constr
+R950:957 compcert.common.Memtype <> Readable constr
+R1011:1018 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R1053:1056 Coq.Init.Datatypes <> Some constr
+R1058:1065 compcert.common.Memtype <> Freeable constr
+R1037:1040 Coq.Init.Datatypes <> Some constr
+R1042:1049 compcert.common.Memtype <> Readable constr
+R1021:1024 Coq.Init.Datatypes <> Some constr
+R1026:1033 compcert.common.Memtype <> Readable constr
+R1110:1117 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R1152:1155 Coq.Init.Datatypes <> Some constr
+R1157:1164 compcert.common.Memtype <> Writable constr
+R1136:1139 Coq.Init.Datatypes <> Some constr
+R1141:1148 compcert.common.Memtype <> Writable constr
+R1120:1123 Coq.Init.Datatypes <> Some constr
+R1125:1132 compcert.common.Memtype <> Readable constr
+R1186:1193 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R1228:1231 Coq.Init.Datatypes <> Some constr
+R1233:1240 compcert.common.Memtype <> Writable constr
+R1212:1215 Coq.Init.Datatypes <> Some constr
+R1217:1224 compcert.common.Memtype <> Readable constr
+R1196:1199 Coq.Init.Datatypes <> Some constr
+R1201:1208 compcert.common.Memtype <> Writable constr
+R1262:1269 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R1304:1307 Coq.Init.Datatypes <> Some constr
+R1309:1316 compcert.common.Memtype <> Freeable constr
+R1288:1291 Coq.Init.Datatypes <> Some constr
+R1293:1300 compcert.common.Memtype <> Writable constr
+R1272:1275 Coq.Init.Datatypes <> Some constr
+R1277:1284 compcert.common.Memtype <> Readable constr
+R1338:1345 VST.concurrency.common.permjoin_def <> permjoin:1 ind
+R1380:1383 Coq.Init.Datatypes <> Some constr
+R1385:1392 compcert.common.Memtype <> Freeable constr
+R1364:1367 Coq.Init.Datatypes <> Some constr
+R1369:1376 compcert.common.Memtype <> Readable constr
+R1348:1351 Coq.Init.Datatypes <> Some constr
+R1353:1360 compcert.common.Memtype <> Writable constr
+scheme 50:57 <> permjoin_ind
+scheme 50:57 <> permjoin_sind
+prf 1405:1417 <> permjoin_comm
+binder 1431:1432 <> p1:5
+binder 1434:1435 <> p2:6
+binder 1437:1438 <> p3:7
+R1464:1468 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R1447:1454 VST.concurrency.common.permjoin_def <> permjoin ind
+R1456:1457 VST.concurrency.common.permjoin_def <> p1:5 var
+R1459:1460 VST.concurrency.common.permjoin_def <> p2:6 var
+R1462:1463 VST.concurrency.common.permjoin_def <> p3:7 var
+R1469:1476 VST.concurrency.common.permjoin_def <> permjoin ind
+R1478:1479 VST.concurrency.common.permjoin_def <> p2:6 var
+R1481:1482 VST.concurrency.common.permjoin_def <> p1:5 var
+R1484:1485 VST.concurrency.common.permjoin_def <> p3:7 var
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+R1574:1581 VST.concurrency.common.permjoin_def <> permjoin ind
+prf 1600:1619 <> permjoin_readable_if
+binder 1633:1634 <> p1:8
+binder 1636:1637 <> p2:9
+binder 1639:1640 <> p3:10
+R1656:1663 VST.concurrency.common.permjoin_def <> permjoin ind
+R1665:1666 VST.concurrency.common.permjoin_def <> p1:8 var
+R1668:1669 VST.concurrency.common.permjoin_def <> p2:9 var
+R1671:1672 VST.concurrency.common.permjoin_def <> p3:10 var
+binder 1649:1653 <> Hjoin:11
+R1687:1701 compcert.common.Memory Mem perm_order' def
+R1703:1704 VST.concurrency.common.permjoin_def <> p1:8 var
+R1706:1713 compcert.common.Memtype <> Readable constr
+binder 1682:1684 <> Hp1:12
+R1723:1737 compcert.common.Memory Mem perm_order' def
+R1739:1740 VST.concurrency.common.permjoin_def <> p3:10 var
+R1742:1749 compcert.common.Memtype <> Readable constr
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+R1945:1954 compcert.common.Memtype <> perm_order ind
+prf 1973:1993 <> permjoin_readable_iff
+binder 2007:2008 <> p1:13
+binder 2010:2011 <> p2:14
+binder 2013:2014 <> p3:15
+R2030:2037 VST.concurrency.common.permjoin_def <> permjoin ind
+R2039:2040 VST.concurrency.common.permjoin_def <> p1:13 var
+R2042:2043 VST.concurrency.common.permjoin_def <> p2:14 var
+R2045:2046 VST.concurrency.common.permjoin_def <> p3:15 var
+binder 2023:2027 <> Hjoin:16
+R2083:2087 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R2056:2070 compcert.common.Memory Mem perm_order' def
+R2072:2073 VST.concurrency.common.permjoin_def <> p3:15 var
+R2075:2082 compcert.common.Memtype <> Readable constr
+R2115:2118 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R2088:2102 compcert.common.Memory Mem perm_order' def
+R2104:2105 VST.concurrency.common.permjoin_def <> p1:13 var
+R2107:2114 compcert.common.Memtype <> Readable constr
+R2119:2133 compcert.common.Memory Mem perm_order' def
+R2135:2136 VST.concurrency.common.permjoin_def <> p2:14 var
+R2138:2145 compcert.common.Memtype <> Readable constr
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2386:2395 compcert.common.Memtype <> perm_order ind
+R2441:2453 VST.concurrency.common.permjoin_def <> permjoin_comm thm
+R2486:2505 VST.concurrency.common.permjoin_def <> permjoin_readable_if thm
+R2441:2453 VST.concurrency.common.permjoin_def <> permjoin_comm thm
+R2486:2505 VST.concurrency.common.permjoin_def <> permjoin_readable_if thm
+R2486:2505 VST.concurrency.common.permjoin_def <> permjoin_readable_if thm
+prf 2525:2538 <> permjoin_order
+binder 2552:2553 <> p1:17
+binder 2555:2556 <> p2:18
+binder 2558:2559 <> p3:19
+R2575:2582 VST.concurrency.common.permjoin_def <> permjoin ind
+R2584:2585 VST.concurrency.common.permjoin_def <> p1:17 var
+R2587:2588 VST.concurrency.common.permjoin_def <> p2:18 var
+R2590:2591 VST.concurrency.common.permjoin_def <> p3:19 var
+binder 2568:2572 <> Hjoin:20
+R2623:2626 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2601:2616 compcert.common.Memory Mem perm_order'' def
+R2618:2619 VST.concurrency.common.permjoin_def <> p3:19 var
+R2621:2622 VST.concurrency.common.permjoin_def <> p1:17 var
+R2627:2642 compcert.common.Memory Mem perm_order'' def
+R2644:2645 VST.concurrency.common.permjoin_def <> p3:19 var
+R2647:2648 VST.concurrency.common.permjoin_def <> p2:18 var

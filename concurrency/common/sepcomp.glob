@@ -1,0 +1,14 @@
+DIGEST 28e1b1f5ea48515ee488094c7ff60e66
+FVST.concurrency.common.sepcomp
+R61:82 VST.sepcomp.mem_lemmas <> <> lib
+R94:126 VST.sepcomp.structured_injections <> <> lib
+R138:165 VST.sepcomp.effect_semantics <> <> lib
+R177:195 VST.sepcomp.extspec <> <> lib
+R207:225 VST.sepcomp.Address <> <> lib
+mod 235:241 <> SepComp
+R303:324 VST.sepcomp.mem_lemmas <> <> mod
+R335:367 VST.sepcomp.structured_injections <> <> mod
+R378:405 VST.sepcomp.effect_semantics <> <> mod
+R416:434 VST.sepcomp.extspec <> <> mod
+R445:463 VST.sepcomp.Address <> <> mod
+R470:476 VST.concurrency.common.sepcomp SepComp <> mod

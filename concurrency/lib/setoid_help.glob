@@ -1,0 +1,98 @@
+DIGEST d671da6887af4dfdcc0f4376f3f499e0
+FVST.concurrency.lib.setoid_help
+R16:36 Coq.Classes.Morphisms <> <> lib
+R54:73 Coq.Relations.Relation_Definitions <> <> lib
+R85:89 Coq.Init.Logic <> <> mod
+R99:104 Coq.Program.Basics <> <> mod
+R180:184 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R180:184 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R242:245 Coq.Program.Basics <> impl def
+R242:245 Coq.Program.Basics <> impl def
+R261:264 Coq.Program.Basics <> impl def
+R344:349 Coq.Classes.Morphisms <> Proper class
+R353:357 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R344:349 Coq.Classes.Morphisms <> Proper class
+R353:357 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R373:378 Coq.Classes.Morphisms <> Proper class
+rec 421:436 <> two_way_relation
+proj 458:463 <> TwoWay
+binder 439:439 <> T:1
+binder 442:446 <> Rimpl:2
+binder 448:451 <> Riff:3
+R478:478 VST.concurrency.lib.setoid_help <> T:1 var
+binder 474:474 <> x:5
+binder 476:476 <> y:6
+R491:494 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R482:486 VST.concurrency.lib.setoid_help <> Rimpl:2 var
+R488:488 VST.concurrency.lib.setoid_help <> x:5 var
+R490:490 VST.concurrency.lib.setoid_help <> y:6 var
+R504:507 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R495:499 VST.concurrency.lib.setoid_help <> Rimpl:2 var
+R501:501 VST.concurrency.lib.setoid_help <> y:6 var
+R503:503 VST.concurrency.lib.setoid_help <> x:5 var
+R508:511 VST.concurrency.lib.setoid_help <> Riff:3 var
+R513:513 VST.concurrency.lib.setoid_help <> x:5 var
+R515:515 VST.concurrency.lib.setoid_help <> y:6 var
+inst 529:537 <> TwoWayIff
+R542:557 VST.concurrency.lib.setoid_help <> two_way_relation class
+R564:566 Coq.Init.Logic <> iff def
+R559:562 Coq.Program.Basics <> impl def
+prf 627:640 <> Proper_two_way
+binder 646:646 <> A:8
+binder 648:648 <> B:9
+R659:666 Coq.Relations.Relation_Definitions <> relation def
+R668:668 VST.concurrency.lib.setoid_help <> B:9 var
+binder 652:653 <> R1:10
+binder 655:656 <> R2:11
+R675:682 Coq.Relations.Relation_Definitions <> relation def
+R684:684 VST.concurrency.lib.setoid_help <> A:8 var
+binder 672:672 <> a:12
+R692:695 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R691:691 VST.concurrency.lib.setoid_help <> A:8 var
+R696:696 VST.concurrency.lib.setoid_help <> B:9 var
+binder 688:688 <> f:13
+R711:719 Coq.Classes.RelationClasses <> Symmetric class
+R723:723 VST.concurrency.lib.setoid_help <> a:12 var
+binder 705:708 <> Syma:14
+R739:754 VST.concurrency.lib.setoid_help <> two_way_relation class
+R758:759 VST.concurrency.lib.setoid_help <> R1:10 var
+R761:762 VST.concurrency.lib.setoid_help <> R2:11 var
+binder 732:737 <> TwoWay:15
+R789:796 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R770:775 Coq.Classes.Morphisms <> Proper class
+R788:788 VST.concurrency.lib.setoid_help <> f:13 var
+R779:783 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R778:778 VST.concurrency.lib.setoid_help <> a:12 var
+R784:785 VST.concurrency.lib.setoid_help <> R1:10 var
+R797:802 Coq.Classes.Morphisms <> Proper class
+R815:815 VST.concurrency.lib.setoid_help <> f:13 var
+R806:810 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R805:805 VST.concurrency.lib.setoid_help <> a:12 var
+R811:812 VST.concurrency.lib.setoid_help <> R2:11 var
+R987:992 Coq.Classes.Morphisms <> Proper class
+R987:992 Coq.Classes.Morphisms <> Proper class
+R1012:1025 VST.concurrency.lib.setoid_help <> Proper_two_way thm
+inst 1050:1057 <> two_way2
+binder 1063:1063 <> A:16
+binder 1065:1065 <> B:17
+R1072:1079 Coq.Relations.Relation_Definitions <> relation def
+R1081:1081 VST.concurrency.lib.setoid_help <> A:16 var
+binder 1069:1069 <> a:18
+R1092:1099 Coq.Relations.Relation_Definitions <> relation def
+R1101:1101 VST.concurrency.lib.setoid_help <> B:17 var
+binder 1085:1086 <> b1:19
+binder 1088:1089 <> b2:20
+R1115:1123 Coq.Classes.RelationClasses <> Symmetric class
+R1127:1127 VST.concurrency.lib.setoid_help <> a:18 var
+binder 1110:1113 <> Syma:21
+R1143:1158 VST.concurrency.lib.setoid_help <> two_way_relation class
+R1162:1163 VST.concurrency.lib.setoid_help <> b1:19 var
+R1165:1166 VST.concurrency.lib.setoid_help <> b2:20 var
+binder 1136:1141 <> TwoWay:22
+R1174:1189 VST.concurrency.lib.setoid_help <> two_way_relation class
+R1214:1218 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R1213:1213 VST.concurrency.lib.setoid_help <> a:18 var
+R1219:1220 VST.concurrency.lib.setoid_help <> b2:20 var
+R1193:1197 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R1192:1192 VST.concurrency.lib.setoid_help <> a:18 var
+R1198:1199 VST.concurrency.lib.setoid_help <> b1:19 var

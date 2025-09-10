@@ -1,0 +1,1129 @@
+DIGEST e5f61ade8d8336da0b9d3ea80846eb4a
+FVST.concurrency.common.bounded_maps
+R15:33 compcert.lib.Axioms <> <> lib
+R51:67 compcert.lib.Maps <> <> lib
+R128:157 VST.concurrency.common.sepcomp <> <> lib
+R167:173 VST.concurrency.common.sepcomp SepComp <> mod
+R192:217 VST.concurrency.common.pos <> <> lib
+R235:266 VST.concurrency.common.scheduler <> <> lib
+R284:311 VST.concurrency.common.konig <> <> lib
+R329:367 VST.concurrency.common.addressFiniteMap <> <> lib
+R405:430 VST.concurrency.common.pos <> <> lib
+R448:476 VST.concurrency.common.lksize <> <> lib
+R494:528 VST.concurrency.common.permjoin_def <> <> lib
+R546:564 Coq.Program.Program <> <> lib
+R606:614 mathcomp.ssreflect.ssreflect <> <> lib
+R616:622 mathcomp.ssreflect.ssrbool <> <> lib
+R624:629 mathcomp.ssreflect.ssrnat <> <> lib
+R631:636 mathcomp.ssreflect.ssrfun <> <> lib
+R638:643 mathcomp.ssreflect.eqtype <> <> lib
+R645:647 mathcomp.ssreflect.seq <> <> lib
+R649:655 mathcomp.ssreflect.fintype <> <> lib
+R657:662 mathcomp.ssreflect.finfun <> <> lib
+R680:682 Coq.micromega.Lia <> <> lib
+R725:755 VST.concurrency.common.ssromega <> <> lib
+R793:809 Coq.ZArith.ZArith <> <> lib
+R828:861 VST.concurrency.common.permissions <> <> lib
+R879:911 VST.concurrency.common.threadPool <> <> lib
+R930:951 compcert.common.Memory <> <> lib
+def 1060:1066 <> map_leq
+binder 1069:1069 <> A:1
+binder 1071:1071 <> B:2
+R1079:1085 compcert.lib.Maps PTree t def
+R1087:1087 VST.concurrency.common.bounded_maps <> A:1 var
+binder 1075:1076 <> m1:3
+R1094:1100 compcert.lib.Maps PTree t def
+R1102:1102 VST.concurrency.common.bounded_maps <> B:2 var
+binder 1090:1091 <> m2:4
+binder 1123:1123 <> p:5
+R1132:1135 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1128:1130 compcert.lib.Maps <> :::x_'!'_x not
+R1131:1131 VST.concurrency.common.bounded_maps <> p:5 var
+R1126:1127 VST.concurrency.common.bounded_maps <> m1:3 var
+R1138:1140 compcert.lib.Maps <> :::x_'!'_x not
+R1141:1141 VST.concurrency.common.bounded_maps <> p:5 var
+R1136:1137 VST.concurrency.common.bounded_maps <> m2:4 var
+prf 1151:1163 <> map_leq_apply
+binder 1176:1176 <> A:6
+binder 1178:1178 <> B:7
+R1186:1192 compcert.lib.Maps PTree t def
+R1194:1194 VST.concurrency.common.bounded_maps <> A:6 var
+binder 1182:1183 <> m1:8
+R1201:1207 compcert.lib.Maps PTree t def
+R1209:1209 VST.concurrency.common.bounded_maps <> B:7 var
+binder 1197:1198 <> m2:9
+binder 1212:1212 <> p:10
+binder 1214:1215 <> f1:11
+R1235:1242 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1222:1228 VST.concurrency.common.bounded_maps <> map_leq def
+R1233:1234 VST.concurrency.common.bounded_maps <> m2:9 var
+R1230:1231 VST.concurrency.common.bounded_maps <> m1:8 var
+R1259:1262 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1249:1251 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1245:1247 compcert.lib.Maps <> :::x_'!'_x not
+R1248:1248 VST.concurrency.common.bounded_maps <> p:10 var
+R1243:1244 VST.concurrency.common.bounded_maps <> m1:8 var
+R1252:1255 Coq.Init.Datatypes <> Some constr
+R1257:1258 VST.concurrency.common.bounded_maps <> f1:11 var
+R1263:1269 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1272:1273 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 1270:1271 <> f2:12
+R1280:1282 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1276:1278 compcert.lib.Maps <> :::x_'!'_x not
+R1279:1279 VST.concurrency.common.bounded_maps <> p:10 var
+R1274:1275 VST.concurrency.common.bounded_maps <> m2:9 var
+R1283:1286 Coq.Init.Datatypes <> Some constr
+R1288:1289 VST.concurrency.common.bounded_maps <> f2:12 var
+R1336:1342 VST.concurrency.common.bounded_maps <> map_leq def
+R1336:1342 VST.concurrency.common.bounded_maps <> map_leq def
+R1336:1342 VST.concurrency.common.bounded_maps <> map_leq def
+R1427:1429 compcert.lib.Maps <> :::x_'!'_x not
+R1427:1429 compcert.lib.Maps <> :::x_'!'_x not
+prf 1500:1514 <> treemap_sub_map
+binder 1525:1525 <> A:13
+binder 1527:1527 <> B:14
+R1542:1545 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1534:1541 Coq.Numbers.BinNums <> positive ind
+R1547:1550 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1546:1546 VST.concurrency.common.bounded_maps <> B:14 var
+R1551:1551 VST.concurrency.common.bounded_maps <> A:13 var
+binder 1531:1531 <> f:15
+binder 1554:1555 <> m2:16
+R1562:1568 VST.concurrency.common.bounded_maps <> map_leq def
+R1587:1588 VST.concurrency.common.bounded_maps <> m2:16 var
+R1571:1579 compcert.lib.Maps PTree map def
+R1583:1584 VST.concurrency.common.bounded_maps <> m2:16 var
+R1581:1581 VST.concurrency.common.bounded_maps <> f:15 var
+R1630:1639 compcert.lib.Maps PTree gmap thm
+R1630:1639 compcert.lib.Maps PTree gmap thm
+R1630:1639 compcert.lib.Maps PTree gmap thm
+R1656:1658 compcert.lib.Maps <> :::x_'!'_x not
+R1656:1658 compcert.lib.Maps <> :::x_'!'_x not
+def 1719:1731 <> map_empty_def
+binder 1734:1734 <> A:17
+R1742:1747 compcert.lib.Maps PMap t def
+R1751:1754 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1750:1750 Coq.Numbers.BinNums <> Z ind
+R1755:1760 Coq.Init.Datatypes <> option ind
+R1762:1762 VST.concurrency.common.bounded_maps <> A:17 var
+binder 1738:1739 <> m1:18
+R1774:1776 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1772:1773 Coq.ssr.ssrfun <> ::pair_scope:x_'.1' not
+R1770:1771 VST.concurrency.common.bounded_maps <> m1:18 var
+R1786:1789 Coq.Init.Datatypes <> None constr
+def 1804:1811 <> fun_leq'
+binder 1814:1814 <> A:19
+binder 1816:1816 <> B:20
+R1825:1828 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1824:1824 Coq.Numbers.BinNums <> Z ind
+R1829:1834 Coq.Init.Datatypes <> option ind
+R1836:1836 VST.concurrency.common.bounded_maps <> A:19 var
+binder 1820:1821 <> f1:21
+R1845:1848 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1844:1844 Coq.Numbers.BinNums <> Z ind
+R1849:1854 Coq.Init.Datatypes <> option ind
+R1856:1856 VST.concurrency.common.bounded_maps <> B:20 var
+binder 1840:1841 <> f2:22
+binder 1877:1877 <> p:23
+R1884:1887 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1880:1881 VST.concurrency.common.bounded_maps <> f1:21 var
+R1883:1883 VST.concurrency.common.bounded_maps <> p:23 var
+R1888:1889 VST.concurrency.common.bounded_maps <> f2:22 var
+R1891:1891 VST.concurrency.common.bounded_maps <> p:23 var
+def 1906:1912 <> fun_leq
+binder 1915:1915 <> A:24
+binder 1917:1917 <> B:25
+R1925:1930 Coq.Init.Datatypes <> option ind
+R1934:1937 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1933:1933 Coq.Numbers.BinNums <> Z ind
+R1938:1943 Coq.Init.Datatypes <> option ind
+R1945:1945 VST.concurrency.common.bounded_maps <> A:24 var
+binder 1921:1922 <> o1:26
+R1954:1959 Coq.Init.Datatypes <> option ind
+R1963:1966 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1962:1962 Coq.Numbers.BinNums <> Z ind
+R1967:1972 Coq.Init.Datatypes <> option ind
+R1974:1974 VST.concurrency.common.bounded_maps <> B:25 var
+binder 1950:1951 <> o2:27
+R1999:2000 VST.concurrency.common.bounded_maps <> o2:27 var
+R1995:1996 VST.concurrency.common.bounded_maps <> o1:26 var
+R2011:2014 Coq.Init.Datatypes <> Some constr
+R2020:2023 Coq.Init.Datatypes <> Some constr
+R2031:2038 VST.concurrency.common.bounded_maps <> fun_leq' def
+R2050:2053 Coq.Init.Datatypes <> None constr
+R2056:2059 Coq.Init.Datatypes <> None constr
+R2064:2067 Coq.Init.Logic <> True ind
+R2081:2085 Coq.Init.Logic <> False ind
+def 2106:2114 <> option_eq
+binder 2117:2117 <> A:30
+binder 2119:2119 <> B:31
+R2125:2130 Coq.Init.Datatypes <> option ind
+R2132:2132 VST.concurrency.common.bounded_maps <> A:30 var
+binder 2123:2123 <> a:32
+R2139:2144 Coq.Init.Datatypes <> option ind
+R2146:2146 VST.concurrency.common.bounded_maps <> B:31 var
+binder 2136:2136 <> b:33
+R2169:2169 VST.concurrency.common.bounded_maps <> b:33 var
+R2166:2166 VST.concurrency.common.bounded_maps <> a:32 var
+R2180:2183 Coq.Init.Datatypes <> Some constr
+R2189:2192 Coq.Init.Datatypes <> Some constr
+R2199:2202 Coq.Init.Logic <> True ind
+R2208:2211 Coq.Init.Datatypes <> None constr
+R2214:2217 Coq.Init.Datatypes <> None constr
+R2222:2225 Coq.Init.Logic <> True ind
+R2239:2243 Coq.Init.Logic <> False ind
+def 2264:2283 <> bounded_nat_func_aux
+binder 2286:2286 <> A:36
+R2296:2299 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2293:2295 Coq.Init.Datatypes <> nat ind
+R2300:2305 Coq.Init.Datatypes <> option ind
+R2307:2307 VST.concurrency.common.bounded_maps <> A:36 var
+binder 2290:2290 <> f:37
+binder 2310:2311 <> hi:38
+binder 2332:2332 <> p:39
+R2349:2352 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2337:2340 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'>='_x not
+R2341:2342 VST.concurrency.common.bounded_maps <> hi:38 var
+R2336:2336 VST.concurrency.common.bounded_maps <> p:39 var
+R2356:2358 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2353:2353 VST.concurrency.common.bounded_maps <> f:37 var
+R2355:2355 VST.concurrency.common.bounded_maps <> p:39 var
+R2359:2362 Coq.Init.Datatypes <> None constr
+def 2378:2394 <> bounded_nat_func'
+binder 2397:2397 <> A:40
+R2407:2410 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2404:2406 Coq.Init.Datatypes <> nat ind
+R2411:2416 Coq.Init.Datatypes <> option ind
+R2418:2418 VST.concurrency.common.bounded_maps <> A:40 var
+binder 2401:2401 <> f:41
+binder 2421:2422 <> hi:42
+binder 2443:2443 <> p:43
+R2459:2462 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2448:2450 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'>'_x not
+R2451:2452 VST.concurrency.common.bounded_maps <> hi:42 var
+R2447:2447 VST.concurrency.common.bounded_maps <> p:43 var
+R2466:2468 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2463:2463 VST.concurrency.common.bounded_maps <> f:41 var
+R2465:2465 VST.concurrency.common.bounded_maps <> p:43 var
+R2469:2472 Coq.Init.Datatypes <> None constr
+def 2488:2500 <> bounded_func'
+binder 2503:2503 <> A:44
+R2511:2514 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2510:2510 Coq.Numbers.BinNums <> Z ind
+R2515:2520 Coq.Init.Datatypes <> option ind
+R2522:2522 VST.concurrency.common.bounded_maps <> A:44 var
+binder 2507:2507 <> f:45
+binder 2525:2526 <> hi:46
+binder 2528:2529 <> lo:47
+R2542:2542 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2578:2585 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2620:2620 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+binder 2550:2550 <> p:48
+R2564:2567 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2555:2557 Coq.ZArith.BinInt <> ::Z_scope:x_'>'_x not
+R2554:2554 VST.concurrency.common.bounded_maps <> p:48 var
+R2558:2559 VST.concurrency.common.bounded_maps <> hi:46 var
+R2571:2573 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2568:2568 VST.concurrency.common.bounded_maps <> f:45 var
+R2570:2570 VST.concurrency.common.bounded_maps <> p:48 var
+R2574:2577 Coq.Init.Datatypes <> None constr
+binder 2593:2593 <> p:49
+R2606:2609 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2598:2600 Coq.ZArith.BinInt <> ::Z_scope:x_'<'_x not
+R2597:2597 VST.concurrency.common.bounded_maps <> p:49 var
+R2601:2602 VST.concurrency.common.bounded_maps <> lo:47 var
+R2613:2615 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2610:2610 VST.concurrency.common.bounded_maps <> f:45 var
+R2612:2612 VST.concurrency.common.bounded_maps <> p:49 var
+R2616:2619 Coq.Init.Datatypes <> None constr
+def 2635:2649 <> bounded_func_op
+binder 2652:2652 <> A:50
+R2659:2664 Coq.Init.Datatypes <> option ind
+R2668:2671 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2667:2667 Coq.Numbers.BinNums <> Z ind
+R2672:2677 Coq.Init.Datatypes <> option ind
+R2679:2679 VST.concurrency.common.bounded_maps <> A:50 var
+binder 2656:2656 <> f:51
+binder 2683:2684 <> hi:52
+binder 2686:2687 <> lo:53
+R2706:2706 VST.concurrency.common.bounded_maps <> f:51 var
+R2717:2720 Coq.Init.Datatypes <> Some constr
+R2728:2740 VST.concurrency.common.bounded_maps <> bounded_func' def
+R2748:2749 VST.concurrency.common.bounded_maps <> lo:53 var
+R2745:2746 VST.concurrency.common.bounded_maps <> hi:52 var
+R2755:2758 Coq.Init.Datatypes <> None constr
+R2763:2766 Coq.Init.Logic <> True ind
+def 2787:2798 <> bounded_func
+binder 2801:2801 <> A:55
+R2809:2812 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2808:2808 Coq.Numbers.BinNums <> Z ind
+R2813:2818 Coq.Init.Datatypes <> option ind
+R2820:2820 VST.concurrency.common.bounded_maps <> A:55 var
+binder 2805:2805 <> f:56
+R2834:2840 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R2846:2849 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 2841:2842 <> hi:57
+binder 2844:2845 <> lo:58
+R2850:2862 VST.concurrency.common.bounded_maps <> bounded_func' def
+R2869:2870 VST.concurrency.common.bounded_maps <> lo:58 var
+R2866:2867 VST.concurrency.common.bounded_maps <> hi:57 var
+R2864:2864 VST.concurrency.common.bounded_maps <> f:56 var
+def 2885:2895 <> bounded_map
+binder 2898:2898 <> A:59
+R2905:2911 compcert.lib.Maps PTree t def
+R2915:2918 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2914:2914 Coq.Numbers.BinNums <> Z ind
+R2919:2924 Coq.Init.Datatypes <> option ind
+R2926:2926 VST.concurrency.common.bounded_maps <> A:59 var
+binder 2902:2902 <> m:60
+binder 2941:2941 <> p:61
+binder 2943:2943 <> f:62
+R2960:2963 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2951:2953 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2947:2949 compcert.lib.Maps <> :::x_'!'_x not
+R2950:2950 VST.concurrency.common.bounded_maps <> p:61 var
+R2946:2946 VST.concurrency.common.bounded_maps <> m:60 var
+R2954:2957 Coq.Init.Datatypes <> Some constr
+R2959:2959 VST.concurrency.common.bounded_maps <> f:62 var
+R2964:2975 VST.concurrency.common.bounded_maps <> bounded_func def
+R2977:2977 VST.concurrency.common.bounded_maps <> f:62 var
+def 3518:3524 <> sub_map
+binder 3527:3527 <> A:63
+binder 3529:3529 <> B:64
+R3537:3543 compcert.lib.Maps PTree t def
+R3547:3550 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3546:3546 Coq.Numbers.BinNums <> Z ind
+R3551:3556 Coq.Init.Datatypes <> option ind
+R3558:3558 VST.concurrency.common.bounded_maps <> A:63 var
+binder 3533:3534 <> m1:65
+R3566:3572 compcert.lib.Maps PTree t def
+R3576:3579 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3575:3575 Coq.Numbers.BinNums <> Z ind
+R3580:3585 Coq.Init.Datatypes <> option ind
+R3587:3587 VST.concurrency.common.bounded_maps <> B:64 var
+binder 3562:3563 <> m2:66
+binder 3602:3602 <> p:67
+binder 3604:3605 <> f1:68
+R3624:3637 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3614:3616 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3610:3612 compcert.lib.Maps <> :::x_'!'_x not
+R3613:3613 VST.concurrency.common.bounded_maps <> p:67 var
+R3608:3609 VST.concurrency.common.bounded_maps <> m1:65 var
+R3617:3620 Coq.Init.Datatypes <> Some constr
+R3622:3623 VST.concurrency.common.bounded_maps <> f1:68 var
+R3638:3644 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R3647:3648 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 3645:3646 <> f2:69
+R3665:3668 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R3655:3657 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3651:3653 compcert.lib.Maps <> :::x_'!'_x not
+R3654:3654 VST.concurrency.common.bounded_maps <> p:67 var
+R3649:3650 VST.concurrency.common.bounded_maps <> m2:66 var
+R3658:3661 Coq.Init.Datatypes <> Some constr
+R3663:3664 VST.concurrency.common.bounded_maps <> f2:69 var
+R3669:3676 VST.concurrency.common.bounded_maps <> fun_leq' def
+R3681:3682 VST.concurrency.common.bounded_maps <> f2:69 var
+R3678:3679 VST.concurrency.common.bounded_maps <> f1:68 var
+def 4600:4610 <> nat_to_perm
+R4615:4617 Coq.Init.Datatypes <> nat ind
+binder 4613:4613 <> i:70
+R4632:4632 VST.concurrency.common.bounded_maps <> i:70 var
+R4648:4651 Coq.Init.Datatypes <> Some constr
+R4653:4656 Coq.Init.Datatypes <> None constr
+R4667:4670 Coq.Init.Datatypes <> Some constr
+R4673:4676 Coq.Init.Datatypes <> Some constr
+R4678:4685 compcert.common.Memtype <> Nonempty constr
+R4697:4700 Coq.Init.Datatypes <> Some constr
+R4703:4706 Coq.Init.Datatypes <> Some constr
+R4708:4715 compcert.common.Memtype <> Readable constr
+R4727:4730 Coq.Init.Datatypes <> Some constr
+R4733:4736 Coq.Init.Datatypes <> Some constr
+R4738:4745 compcert.common.Memtype <> Writable constr
+R4757:4760 Coq.Init.Datatypes <> Some constr
+R4763:4766 Coq.Init.Datatypes <> Some constr
+R4768:4775 compcert.common.Memtype <> Freeable constr
+R4787:4790 Coq.Init.Datatypes <> None constr
+def 4816:4826 <> perm_to_nat
+R4832:4837 Coq.Init.Datatypes <> option ind
+R4840:4845 Coq.Init.Datatypes <> option ind
+R4847:4856 compcert.common.Memtype <> permission ind
+binder 4829:4829 <> p:72
+R4871:4871 VST.concurrency.common.bounded_maps <> p:72 var
+R4882:4885 Coq.Init.Datatypes <> Some constr
+R4888:4891 Coq.Init.Datatypes <> None constr
+R4903:4906 Coq.Init.Datatypes <> Some constr
+R4909:4912 Coq.Init.Datatypes <> Some constr
+R4914:4921 compcert.common.Memtype <> Nonempty constr
+R4933:4936 Coq.Init.Datatypes <> Some constr
+R4939:4942 Coq.Init.Datatypes <> Some constr
+R4944:4951 compcert.common.Memtype <> Readable constr
+R4963:4966 Coq.Init.Datatypes <> Some constr
+R4969:4972 Coq.Init.Datatypes <> Some constr
+R4974:4981 compcert.common.Memtype <> Writable constr
+R4993:4996 Coq.Init.Datatypes <> Some constr
+R4999:5002 Coq.Init.Datatypes <> Some constr
+R5004:5011 compcert.common.Memtype <> Freeable constr
+R5023:5026 Coq.Init.Datatypes <> None constr
+def 5052:5068 <> nat_to_perm_simpl
+R5073:5075 Coq.Init.Datatypes <> nat ind
+binder 5071:5071 <> i:74
+R5090:5090 VST.concurrency.common.bounded_maps <> i:74 var
+R5106:5109 Coq.Init.Datatypes <> None constr
+R5120:5123 Coq.Init.Datatypes <> Some constr
+R5125:5132 compcert.common.Memtype <> Nonempty constr
+R5143:5146 Coq.Init.Datatypes <> Some constr
+R5148:5155 compcert.common.Memtype <> Readable constr
+R5166:5169 Coq.Init.Datatypes <> Some constr
+R5171:5178 compcert.common.Memtype <> Writable constr
+R5189:5192 Coq.Init.Datatypes <> Some constr
+R5194:5201 compcert.common.Memtype <> Freeable constr
+R5212:5215 Coq.Init.Datatypes <> None constr
+def 5241:5257 <> perm_to_nat_simpl
+R5263:5268 Coq.Init.Datatypes <> option ind
+R5270:5279 compcert.common.Memtype <> permission ind
+binder 5260:5260 <> p:76
+R5293:5293 VST.concurrency.common.bounded_maps <> p:76 var
+R5304:5307 Coq.Init.Datatypes <> None constr
+R5318:5321 Coq.Init.Datatypes <> Some constr
+R5323:5330 compcert.common.Memtype <> Nonempty constr
+R5341:5344 Coq.Init.Datatypes <> Some constr
+R5346:5353 compcert.common.Memtype <> Readable constr
+R5364:5367 Coq.Init.Datatypes <> Some constr
+R5369:5376 compcert.common.Memtype <> Writable constr
+R5387:5390 Coq.Init.Datatypes <> Some constr
+R5392:5399 compcert.common.Memtype <> Freeable constr
+prf 5419:5435 <> perm_to_nat_bound
+binder 5447:5447 <> p:78
+R5467:5469 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'<'_x not
+R5454:5464 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R5466:5466 VST.concurrency.common.bounded_maps <> p:78 var
+prf 5585:5607 <> perm_to_nat_bound_simpl
+binder 5619:5619 <> p:79
+R5645:5647 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'<'_x not
+R5626:5642 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R5644:5644 VST.concurrency.common.bounded_maps <> p:79 var
+prf 5739:5761 <> nat_to_perm_perm_to_nat
+binder 5773:5773 <> p:80
+R5807:5809 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5780:5790 VST.concurrency.common.bounded_maps <> nat_to_perm def
+R5793:5803 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R5805:5805 VST.concurrency.common.bounded_maps <> p:80 var
+R5810:5810 VST.concurrency.common.bounded_maps <> p:80 var
+prf 5931:5959 <> nat_to_perm_perm_to_nat_simpl
+binder 5971:5971 <> p:81
+R6017:6019 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5978:5994 VST.concurrency.common.bounded_maps <> nat_to_perm_simpl def
+R5997:6013 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R6015:6015 VST.concurrency.common.bounded_maps <> p:81 var
+R6020:6020 VST.concurrency.common.bounded_maps <> p:81 var
+prf 6113:6139 <> finite_bounded_nat_aux_func
+binder 6151:6152 <> hi:82
+R6160:6171 VST.concurrency.common.konig <> finite def
+R6190:6193 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6187:6189 Coq.Init.Datatypes <> nat ind
+R6194:6199 Coq.Init.Datatypes <> option ind
+R6202:6207 Coq.Init.Datatypes <> option ind
+R6209:6218 compcert.common.Memtype <> permission ind
+binder 6185:6185 <> f:83
+R6224:6243 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R6247:6248 VST.concurrency.common.bounded_maps <> hi:82 var
+R6245:6245 VST.concurrency.common.bounded_maps <> f:83 var
+R6287:6297 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R6287:6297 VST.concurrency.common.bounded_maps <> perm_to_nat def
+binder 6354:6354 <> x:84
+R6361:6364 Coq.Init.Datatypes <> None constr
+binder 6354:6354 <> x:85
+R6361:6364 Coq.Init.Datatypes <> None constr
+R6483:6485 mathcomp.ssreflect.ssrnat <> leP thm
+R6483:6485 mathcomp.ssreflect.ssrnat <> leP thm
+R6542:6542 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R6542:6542 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+binder 6568:6568 <> x:86
+binder 6570:6570 <> i:87
+R6575:6578 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6594:6623 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6652:6673 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6579:6588 Coq.Arith.PeanoNat Nat eq_dec thm
+R6590:6590 VST.concurrency.common.bounded_maps <> i:87 var
+R6624:6634 VST.concurrency.common.bounded_maps <> nat_to_perm def
+R6637:6646 Coq.Arith.PeanoNat Nat modulo def
+R6648:6648 VST.concurrency.common.bounded_maps <> x:86 var
+R6678:6684 Coq.Arith.PeanoNat Nat div def
+R6686:6686 VST.concurrency.common.bounded_maps <> x:86 var
+R6691:6691 VST.concurrency.common.bounded_maps <> i:87 var
+binder 6568:6568 <> x:88
+binder 6570:6570 <> i:89
+R6575:6578 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6594:6623 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6652:6673 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6579:6588 Coq.Arith.PeanoNat Nat eq_dec thm
+R6590:6590 VST.concurrency.common.bounded_maps <> i:89 var
+R6624:6634 VST.concurrency.common.bounded_maps <> nat_to_perm def
+R6637:6646 Coq.Arith.PeanoNat Nat modulo def
+R6648:6648 VST.concurrency.common.bounded_maps <> x:88 var
+R6678:6684 Coq.Arith.PeanoNat Nat div def
+R6686:6686 VST.concurrency.common.bounded_maps <> x:88 var
+R6691:6691 VST.concurrency.common.bounded_maps <> i:89 var
+binder 6737:6737 <> n:90
+R6742:6745 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6761:6795 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6800:6831 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6746:6755 Coq.Arith.PeanoNat Nat eq_dec thm
+R6757:6757 VST.concurrency.common.bounded_maps <> n:90 var
+R6796:6799 Coq.Init.Datatypes <> None constr
+R6834:6834 VST.concurrency.common.bounded_maps <> n:90 var
+binder 6737:6737 <> n:91
+R6742:6745 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6761:6795 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6800:6831 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R6746:6755 Coq.Arith.PeanoNat Nat eq_dec thm
+R6757:6757 VST.concurrency.common.bounded_maps <> n:91 var
+R6796:6799 Coq.Init.Datatypes <> None constr
+R6834:6834 VST.concurrency.common.bounded_maps <> n:91 var
+R6918:6927 Coq.Arith.PeanoNat Nat eq_dec thm
+R6918:6927 Coq.Arith.PeanoNat Nat eq_dec thm
+R7002:7004 mathcomp.ssreflect.ssrnat <> leP thm
+R7028:7030 mathcomp.ssreflect.ssrnat <> ltP thm
+R7028:7030 mathcomp.ssreflect.ssrnat <> ltP thm
+R7063:7063 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7069:7073 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7092:7092 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7065:7067 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7074:7084 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R7063:7063 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7069:7073 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7092:7092 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7065:7067 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7074:7084 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R7129:7131 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7161:7163 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7151:7154 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7160:7160 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7156:7158 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7129:7131 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7161:7163 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7151:7154 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7160:7160 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7156:7158 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7188:7202 Coq.Arith.PeanoNat Nat lt_le_trans thm
+R7212:7215 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7208:7210 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7188:7202 Coq.Arith.PeanoNat Nat lt_le_trans thm
+R7212:7215 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R7208:7210 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R7241:7243 mathcomp.ssreflect.ssrnat <> leP thm
+R7241:7243 mathcomp.ssreflect.ssrnat <> leP thm
+R7267:7275 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R7267:7275 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R7267:7275 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7376:7378 mathcomp.ssreflect.ssrnat <> leP thm
+R7410:7412 mathcomp.ssreflect.ssrnat <> leP thm
+R7410:7412 mathcomp.ssreflect.ssrnat <> leP thm
+R7436:7444 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R7436:7444 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R7436:7444 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R7468:7477 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R7468:7477 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R7468:7477 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R7503:7505 mathcomp.ssreflect.ssrnat <> leP thm
+R7503:7505 mathcomp.ssreflect.ssrnat <> leP thm
+R7552:7552 Coq.Init.Datatypes <> S constr
+R7556:7558 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7552:7552 Coq.Init.Datatypes <> S constr
+R7556:7558 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7594:7596 mathcomp.ssreflect.ssrnat <> leP thm
+R7594:7596 mathcomp.ssreflect.ssrnat <> leP thm
+R7627:7630 mathcomp.ssreflect.ssrnat <> ltnS thm
+R7640:7642 mathcomp.ssreflect.ssrnat <> leP thm
+R7627:7630 mathcomp.ssreflect.ssrnat <> ltnS thm
+R7627:7630 mathcomp.ssreflect.ssrnat <> ltnS thm
+R7640:7642 mathcomp.ssreflect.ssrnat <> leP thm
+R7669:7673 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7669:7673 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7669:7673 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7697:7701 mathcomp.ssreflect.ssrnat <> subnK thm
+R7697:7701 mathcomp.ssreflect.ssrnat <> subnK thm
+R7738:7740 mathcomp.ssreflect.ssrnat <> ltP thm
+R7738:7740 mathcomp.ssreflect.ssrnat <> ltP thm
+R7738:7740 mathcomp.ssreflect.ssrnat <> ltP thm
+R7812:7817 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R7812:7817 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R7812:7817 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R7837:7837 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R7842:7845 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R7839:7840 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7837:7837 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R7842:7845 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R7839:7840 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R7879:7883 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7879:7883 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7879:7883 mathcomp.ssreflect.ssrnat <> addn1 thm
+R7911:7915 mathcomp.ssreflect.ssrnat <> subnK thm
+R7911:7915 mathcomp.ssreflect.ssrnat <> subnK thm
+R7946:7948 mathcomp.ssreflect.ssrnat <> ltP thm
+R7946:7948 mathcomp.ssreflect.ssrnat <> ltP thm
+R7946:7948 mathcomp.ssreflect.ssrnat <> ltP thm
+R8011:8020 Coq.Arith.PeanoNat Nat eq_dec thm
+R8011:8020 Coq.Arith.PeanoNat Nat eq_dec thm
+R8071:8075 mathcomp.ssreflect.ssrnat <> addnC thm
+R8071:8075 mathcomp.ssreflect.ssrnat <> addnC thm
+R8071:8075 mathcomp.ssreflect.ssrnat <> addnC thm
+R8099:8103 mathcomp.ssreflect.ssrnat <> mulnC thm
+R8099:8103 mathcomp.ssreflect.ssrnat <> mulnC thm
+R8099:8103 mathcomp.ssreflect.ssrnat <> mulnC thm
+R8127:8137 Coq.Arith.PeanoNat Nat mod_add abbrev
+R8127:8137 Coq.Arith.PeanoNat Nat mod_add abbrev
+R8127:8137 Coq.Arith.PeanoNat Nat mod_add abbrev
+R8170:8182 Coq.Arith.PeanoNat Nat mod_small def
+R8212:8214 mathcomp.ssreflect.ssrnat <> ltP thm
+R8224:8240 VST.concurrency.common.bounded_maps <> perm_to_nat_bound thm
+R8170:8182 Coq.Arith.PeanoNat Nat mod_small def
+R8170:8182 Coq.Arith.PeanoNat Nat mod_small def
+R8212:8214 mathcomp.ssreflect.ssrnat <> ltP thm
+R8212:8214 mathcomp.ssreflect.ssrnat <> ltP thm
+R8224:8240 VST.concurrency.common.bounded_maps <> perm_to_nat_bound thm
+R8265:8287 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat thm
+R8265:8287 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat thm
+R8265:8287 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat thm
+R8339:8339 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R8366:8369 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R8345:8347 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R8341:8343 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R8348:8358 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R8339:8339 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R8366:8369 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R8345:8347 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R8341:8343 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R8348:8358 VST.concurrency.common.bounded_maps <> perm_to_nat def
+R8459:8468 Coq.Arith.PeanoNat Nat eq_dec thm
+R8459:8468 Coq.Arith.PeanoNat Nat eq_dec thm
+R8581:8594 Coq.Arith.PeanoNat Nat div_unique def
+R8624:8626 mathcomp.ssreflect.ssrnat <> ltP thm
+R8636:8652 VST.concurrency.common.bounded_maps <> perm_to_nat_bound thm
+R8581:8594 Coq.Arith.PeanoNat Nat div_unique def
+R8624:8626 mathcomp.ssreflect.ssrnat <> ltP thm
+R8636:8652 VST.concurrency.common.bounded_maps <> perm_to_nat_bound thm
+R8624:8626 mathcomp.ssreflect.ssrnat <> ltP thm
+prf 8708:8740 <> finite_bounded_nat_aux_func_simpl
+binder 8752:8753 <> hi:92
+R8761:8772 VST.concurrency.common.konig <> finite def
+R8791:8794 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8788:8790 Coq.Init.Datatypes <> nat ind
+R8795:8800 Coq.Init.Datatypes <> option ind
+R8802:8811 compcert.common.Memtype <> permission ind
+binder 8786:8786 <> f:93
+R8816:8835 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R8839:8840 VST.concurrency.common.bounded_maps <> hi:92 var
+R8837:8837 VST.concurrency.common.bounded_maps <> f:93 var
+R8879:8895 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R8879:8895 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+binder 8952:8952 <> x:94
+R8959:8962 Coq.Init.Datatypes <> None constr
+binder 8952:8952 <> x:95
+R8959:8962 Coq.Init.Datatypes <> None constr
+R9081:9083 mathcomp.ssreflect.ssrnat <> leP thm
+R9081:9083 mathcomp.ssreflect.ssrnat <> leP thm
+R9140:9140 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9140:9140 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+binder 9166:9166 <> x:96
+binder 9168:9168 <> i:97
+R9173:9176 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9192:9221 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9256:9277 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9177:9186 Coq.Arith.PeanoNat Nat eq_dec thm
+R9188:9188 VST.concurrency.common.bounded_maps <> i:97 var
+R9222:9238 VST.concurrency.common.bounded_maps <> nat_to_perm_simpl def
+R9241:9250 Coq.Arith.PeanoNat Nat modulo def
+R9252:9252 VST.concurrency.common.bounded_maps <> x:96 var
+R9282:9288 Coq.Arith.PeanoNat Nat div def
+R9290:9290 VST.concurrency.common.bounded_maps <> x:96 var
+R9295:9295 VST.concurrency.common.bounded_maps <> i:97 var
+binder 9166:9166 <> x:98
+binder 9168:9168 <> i:99
+R9173:9176 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9192:9221 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9256:9277 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9177:9186 Coq.Arith.PeanoNat Nat eq_dec thm
+R9188:9188 VST.concurrency.common.bounded_maps <> i:99 var
+R9222:9238 VST.concurrency.common.bounded_maps <> nat_to_perm_simpl def
+R9241:9250 Coq.Arith.PeanoNat Nat modulo def
+R9252:9252 VST.concurrency.common.bounded_maps <> x:98 var
+R9282:9288 Coq.Arith.PeanoNat Nat div def
+R9290:9290 VST.concurrency.common.bounded_maps <> x:98 var
+R9295:9295 VST.concurrency.common.bounded_maps <> i:99 var
+binder 9341:9341 <> n:100
+R9346:9349 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9365:9399 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9404:9435 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9350:9359 Coq.Arith.PeanoNat Nat eq_dec thm
+R9361:9361 VST.concurrency.common.bounded_maps <> n:100 var
+R9400:9403 Coq.Init.Datatypes <> None constr
+R9438:9438 VST.concurrency.common.bounded_maps <> n:100 var
+binder 9341:9341 <> n:101
+R9346:9349 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9365:9399 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9404:9435 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R9350:9359 Coq.Arith.PeanoNat Nat eq_dec thm
+R9361:9361 VST.concurrency.common.bounded_maps <> n:101 var
+R9400:9403 Coq.Init.Datatypes <> None constr
+R9438:9438 VST.concurrency.common.bounded_maps <> n:101 var
+R9522:9531 Coq.Arith.PeanoNat Nat eq_dec thm
+R9522:9531 Coq.Arith.PeanoNat Nat eq_dec thm
+R9606:9608 mathcomp.ssreflect.ssrnat <> leP thm
+R9632:9634 mathcomp.ssreflect.ssrnat <> ltP thm
+R9632:9634 mathcomp.ssreflect.ssrnat <> ltP thm
+R9667:9667 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9673:9677 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9702:9702 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9669:9671 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9678:9694 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R9667:9667 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9673:9677 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9702:9702 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9669:9671 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9678:9694 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R9739:9741 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9771:9773 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9761:9764 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9770:9770 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9766:9768 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R9739:9741 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9771:9773 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9761:9764 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9770:9770 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9766:9768 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R9798:9812 Coq.Arith.PeanoNat Nat lt_le_trans thm
+R9822:9825 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9818:9820 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9798:9812 Coq.Arith.PeanoNat Nat lt_le_trans thm
+R9822:9825 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R9818:9820 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R9851:9853 mathcomp.ssreflect.ssrnat <> leP thm
+R9851:9853 mathcomp.ssreflect.ssrnat <> leP thm
+R9877:9885 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R9877:9885 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R9877:9885 mathcomp.ssreflect.ssrnat <> ltn_add2l thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9955:9957 mathcomp.ssreflect.ssrnat <> leP thm
+R9989:9991 mathcomp.ssreflect.ssrnat <> leP thm
+R9989:9991 mathcomp.ssreflect.ssrnat <> leP thm
+R10015:10023 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R10015:10023 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R10015:10023 mathcomp.ssreflect.ssrnat <> leq_add2r thm
+R10047:10056 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R10047:10056 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R10047:10056 mathcomp.ssreflect.ssrnat <> leq_pmul2l thm
+R10082:10084 mathcomp.ssreflect.ssrnat <> leP thm
+R10082:10084 mathcomp.ssreflect.ssrnat <> leP thm
+R10131:10131 Coq.Init.Datatypes <> S constr
+R10135:10137 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R10131:10131 Coq.Init.Datatypes <> S constr
+R10135:10137 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R10173:10175 mathcomp.ssreflect.ssrnat <> leP thm
+R10173:10175 mathcomp.ssreflect.ssrnat <> leP thm
+R10206:10209 mathcomp.ssreflect.ssrnat <> ltnS thm
+R10219:10221 mathcomp.ssreflect.ssrnat <> leP thm
+R10206:10209 mathcomp.ssreflect.ssrnat <> ltnS thm
+R10206:10209 mathcomp.ssreflect.ssrnat <> ltnS thm
+R10219:10221 mathcomp.ssreflect.ssrnat <> leP thm
+R10248:10252 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10248:10252 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10248:10252 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10276:10280 mathcomp.ssreflect.ssrnat <> subnK thm
+R10276:10280 mathcomp.ssreflect.ssrnat <> subnK thm
+R10317:10319 mathcomp.ssreflect.ssrnat <> ltP thm
+R10317:10319 mathcomp.ssreflect.ssrnat <> ltP thm
+R10317:10319 mathcomp.ssreflect.ssrnat <> ltP thm
+R10391:10396 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R10391:10396 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R10391:10396 mathcomp.ssreflect.ssrnat <> mulnSr thm
+R10416:10416 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R10421:10424 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R10418:10419 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R10416:10416 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R10421:10424 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R10418:10419 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R10458:10462 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10458:10462 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10458:10462 mathcomp.ssreflect.ssrnat <> addn1 thm
+R10490:10494 mathcomp.ssreflect.ssrnat <> subnK thm
+R10490:10494 mathcomp.ssreflect.ssrnat <> subnK thm
+R10525:10527 mathcomp.ssreflect.ssrnat <> ltP thm
+R10525:10527 mathcomp.ssreflect.ssrnat <> ltP thm
+R10525:10527 mathcomp.ssreflect.ssrnat <> ltP thm
+R10590:10599 Coq.Arith.PeanoNat Nat eq_dec thm
+R10590:10599 Coq.Arith.PeanoNat Nat eq_dec thm
+R10650:10654 mathcomp.ssreflect.ssrnat <> addnC thm
+R10650:10654 mathcomp.ssreflect.ssrnat <> addnC thm
+R10650:10654 mathcomp.ssreflect.ssrnat <> addnC thm
+R10678:10682 mathcomp.ssreflect.ssrnat <> mulnC thm
+R10678:10682 mathcomp.ssreflect.ssrnat <> mulnC thm
+R10678:10682 mathcomp.ssreflect.ssrnat <> mulnC thm
+R10706:10716 Coq.Arith.PeanoNat Nat mod_add abbrev
+R10706:10716 Coq.Arith.PeanoNat Nat mod_add abbrev
+R10706:10716 Coq.Arith.PeanoNat Nat mod_add abbrev
+R10749:10761 Coq.Arith.PeanoNat Nat mod_small def
+R10791:10793 mathcomp.ssreflect.ssrnat <> ltP thm
+R10803:10825 VST.concurrency.common.bounded_maps <> perm_to_nat_bound_simpl thm
+R10749:10761 Coq.Arith.PeanoNat Nat mod_small def
+R10749:10761 Coq.Arith.PeanoNat Nat mod_small def
+R10791:10793 mathcomp.ssreflect.ssrnat <> ltP thm
+R10791:10793 mathcomp.ssreflect.ssrnat <> ltP thm
+R10803:10825 VST.concurrency.common.bounded_maps <> perm_to_nat_bound_simpl thm
+R10850:10878 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat_simpl thm
+R10850:10878 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat_simpl thm
+R10850:10878 VST.concurrency.common.bounded_maps <> nat_to_perm_perm_to_nat_simpl thm
+R10930:10930 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R10963:10966 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R10936:10938 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R10932:10934 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R10939:10955 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R10930:10930 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R10963:10966 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R10936:10938 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'+'_x not
+R10932:10934 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'*'_x not
+R10939:10955 VST.concurrency.common.bounded_maps <> perm_to_nat_simpl def
+R11056:11065 Coq.Arith.PeanoNat Nat eq_dec thm
+R11056:11065 Coq.Arith.PeanoNat Nat eq_dec thm
+R11178:11191 Coq.Arith.PeanoNat Nat div_unique def
+R11221:11223 mathcomp.ssreflect.ssrnat <> ltP thm
+R11233:11255 VST.concurrency.common.bounded_maps <> perm_to_nat_bound_simpl thm
+R11178:11191 Coq.Arith.PeanoNat Nat div_unique def
+R11221:11223 mathcomp.ssreflect.ssrnat <> ltP thm
+R11233:11255 VST.concurrency.common.bounded_maps <> perm_to_nat_bound_simpl thm
+R11221:11223 mathcomp.ssreflect.ssrnat <> ltP thm
+prf 11310:11332 <> finite_bounded_nat_func
+binder 11344:11345 <> hi:102
+R11353:11364 VST.concurrency.common.konig <> finite def
+R11383:11386 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11380:11382 Coq.Init.Datatypes <> nat ind
+R11387:11392 Coq.Init.Datatypes <> option ind
+R11395:11400 Coq.Init.Datatypes <> option ind
+R11402:11411 compcert.common.Memtype <> permission ind
+binder 11378:11378 <> f:103
+R11417:11433 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R11437:11438 VST.concurrency.common.bounded_maps <> hi:102 var
+R11435:11435 VST.concurrency.common.bounded_maps <> f:103 var
+R11471:11497 VST.concurrency.common.bounded_maps <> finite_bounded_nat_aux_func thm
+R11500:11500 Coq.Init.Datatypes <> S constr
+R11471:11497 VST.concurrency.common.bounded_maps <> finite_bounded_nat_aux_func thm
+R11500:11500 Coq.Init.Datatypes <> S constr
+R11561:11580 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R11587:11589 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R11561:11580 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R11587:11589 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+prf 11699:11727 <> finite_bounded_nat_func_simpl
+binder 11739:11740 <> hi:104
+R11748:11759 VST.concurrency.common.konig <> finite def
+R11778:11781 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11775:11777 Coq.Init.Datatypes <> nat ind
+R11782:11787 Coq.Init.Datatypes <> option ind
+R11789:11798 compcert.common.Memtype <> permission ind
+binder 11773:11773 <> f:105
+R11803:11819 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R11823:11824 VST.concurrency.common.bounded_maps <> hi:104 var
+R11821:11821 VST.concurrency.common.bounded_maps <> f:105 var
+R11857:11889 VST.concurrency.common.bounded_maps <> finite_bounded_nat_aux_func_simpl thm
+R11892:11892 Coq.Init.Datatypes <> S constr
+R11857:11889 VST.concurrency.common.bounded_maps <> finite_bounded_nat_aux_func_simpl thm
+R11892:11892 Coq.Init.Datatypes <> S constr
+R11953:11972 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R11979:11981 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+R11953:11972 VST.concurrency.common.bounded_maps <> bounded_nat_func_aux def
+R11979:11981 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'.+1' not
+prf 12090:12108 <> finite_bounded_func
+binder 12120:12121 <> hi:106
+binder 12123:12124 <> lo:107
+R12131:12142 VST.concurrency.common.konig <> finite def
+R12159:12162 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R12158:12158 Coq.Numbers.BinNums <> Z ind
+R12163:12168 Coq.Init.Datatypes <> option ind
+R12171:12176 Coq.Init.Datatypes <> option ind
+R12178:12187 compcert.common.Memtype <> permission ind
+binder 12156:12156 <> f:108
+R12193:12205 VST.concurrency.common.bounded_maps <> bounded_func' def
+R12212:12213 VST.concurrency.common.bounded_maps <> lo:107 var
+R12209:12210 VST.concurrency.common.bounded_maps <> hi:106 var
+R12207:12207 VST.concurrency.common.bounded_maps <> f:108 var
+R12252:12261 compcert.lib.Coqlib <> zlt def
+R12252:12261 compcert.lib.Coqlib <> zlt def
+R12310:12313 Coq.Init.Datatypes <> None constr
+R12310:12313 Coq.Init.Datatypes <> None constr
+R12436:12445 compcert.lib.Coqlib <> zle def
+R12436:12445 compcert.lib.Coqlib <> zle def
+R12484:12496 Coq.ZArith.BinInt Z le_lt_trans thm
+R12484:12496 Coq.ZArith.BinInt Z le_lt_trans thm
+R12548:12551 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R12554:12556 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12548:12551 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R12554:12556 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12585:12592 Coq.ZArith.BinInt Z to_nat def
+R12597:12599 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12585:12592 Coq.ZArith.BinInt Z to_nat def
+R12597:12599 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12620:12642 VST.concurrency.common.bounded_maps <> finite_bounded_nat_func thm
+R12620:12642 VST.concurrency.common.bounded_maps <> finite_bounded_nat_func thm
+binder 12693:12693 <> n:109
+binder 12695:12695 <> z:110
+R12701:12704 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12721:12743 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12748:12769 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12705:12715 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R12717:12717 VST.concurrency.common.bounded_maps <> z:110 var
+R12744:12747 Coq.Init.Datatypes <> None constr
+R12773:12773 VST.concurrency.common.bounded_maps <> n:109 var
+R12776:12783 Coq.ZArith.BinInt Z to_nat def
+R12787:12787 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12786:12786 VST.concurrency.common.bounded_maps <> z:110 var
+binder 12693:12693 <> n:111
+binder 12695:12695 <> z:112
+R12701:12704 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12721:12743 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12748:12769 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R12705:12715 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R12717:12717 VST.concurrency.common.bounded_maps <> z:112 var
+R12744:12747 Coq.Init.Datatypes <> None constr
+R12773:12773 VST.concurrency.common.bounded_maps <> n:111 var
+R12776:12783 Coq.ZArith.BinInt Z to_nat def
+R12787:12787 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R12786:12786 VST.concurrency.common.bounded_maps <> z:112 var
+binder 12845:12845 <> n:113
+R12863:12865 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R12853:12860 Coq.ZArith.BinInt Z of_nat def
+R12862:12862 VST.concurrency.common.bounded_maps <> n:113 var
+binder 12845:12845 <> n:114
+R12863:12865 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R12853:12860 Coq.ZArith.BinInt Z of_nat def
+R12862:12862 VST.concurrency.common.bounded_maps <> n:114 var
+R12886:12902 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R12886:12902 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R13015:13017 Coq.ZArith.BinInt <> ::Z_scope:x_'>'_x not
+R13005:13012 Coq.ZArith.BinInt Z of_nat def
+R13020:13022 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13015:13017 Coq.ZArith.BinInt <> ::Z_scope:x_'>'_x not
+R13005:13012 Coq.ZArith.BinInt Z of_nat def
+R13020:13022 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13062:13064 mathcomp.ssreflect.ssrnat <> ltP thm
+R13067:13072 Coq.ZArith.Znat <> inj_lt def
+R13075:13085 Coq.ZArith.BinInt Z gt_lt_iff thm
+R13102:13109 Coq.ZArith.Znat Z2Nat id thm
+R13102:13109 Coq.ZArith.Znat Z2Nat id thm
+R13102:13109 Coq.ZArith.Znat Z2Nat id thm
+R13282:13292 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R13282:13292 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R13382:13389 Coq.ZArith.Znat Z2Nat id thm
+R13382:13389 Coq.ZArith.Znat Z2Nat id thm
+R13382:13389 Coq.ZArith.Znat Z2Nat id thm
+prf 13440:13464 <> finite_bounded_func_simpl
+binder 13476:13477 <> hi:115
+binder 13479:13480 <> lo:116
+R13487:13498 VST.concurrency.common.konig <> finite def
+R13515:13518 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13514:13514 Coq.Numbers.BinNums <> Z ind
+R13519:13524 Coq.Init.Datatypes <> option ind
+R13526:13535 compcert.common.Memtype <> permission ind
+binder 13512:13512 <> f:117
+R13540:13552 VST.concurrency.common.bounded_maps <> bounded_func' def
+R13559:13560 VST.concurrency.common.bounded_maps <> lo:116 var
+R13556:13557 VST.concurrency.common.bounded_maps <> hi:115 var
+R13554:13554 VST.concurrency.common.bounded_maps <> f:117 var
+R13599:13608 compcert.lib.Coqlib <> zlt def
+R13599:13608 compcert.lib.Coqlib <> zlt def
+R13657:13660 Coq.Init.Datatypes <> None constr
+R13657:13660 Coq.Init.Datatypes <> None constr
+R13783:13792 compcert.lib.Coqlib <> zle def
+R13783:13792 compcert.lib.Coqlib <> zle def
+R13831:13843 Coq.ZArith.BinInt Z le_lt_trans thm
+R13831:13843 Coq.ZArith.BinInt Z le_lt_trans thm
+R13895:13898 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R13901:13903 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13895:13898 Coq.ZArith.BinInt <> ::Z_scope:x_'<='_x not
+R13901:13903 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13932:13939 Coq.ZArith.BinInt Z to_nat def
+R13944:13946 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13932:13939 Coq.ZArith.BinInt Z to_nat def
+R13944:13946 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R13967:13995 VST.concurrency.common.bounded_maps <> finite_bounded_nat_func_simpl thm
+R13967:13995 VST.concurrency.common.bounded_maps <> finite_bounded_nat_func_simpl thm
+binder 14046:14046 <> n:118
+binder 14048:14048 <> z:119
+R14054:14057 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14074:14096 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14101:14122 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14058:14068 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R14070:14070 VST.concurrency.common.bounded_maps <> z:119 var
+R14097:14100 Coq.Init.Datatypes <> None constr
+R14126:14126 VST.concurrency.common.bounded_maps <> n:118 var
+R14129:14136 Coq.ZArith.BinInt Z to_nat def
+R14140:14140 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R14139:14139 VST.concurrency.common.bounded_maps <> z:119 var
+binder 14046:14046 <> n:120
+binder 14048:14048 <> z:121
+R14054:14057 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14074:14096 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14101:14122 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R14058:14068 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R14070:14070 VST.concurrency.common.bounded_maps <> z:121 var
+R14097:14100 Coq.Init.Datatypes <> None constr
+R14126:14126 VST.concurrency.common.bounded_maps <> n:120 var
+R14129:14136 Coq.ZArith.BinInt Z to_nat def
+R14140:14140 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R14139:14139 VST.concurrency.common.bounded_maps <> z:121 var
+binder 14198:14198 <> n:122
+R14216:14218 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R14206:14213 Coq.ZArith.BinInt Z of_nat def
+R14215:14215 VST.concurrency.common.bounded_maps <> n:122 var
+binder 14198:14198 <> n:123
+R14216:14218 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R14206:14213 Coq.ZArith.BinInt Z of_nat def
+R14215:14215 VST.concurrency.common.bounded_maps <> n:123 var
+R14239:14255 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R14239:14255 VST.concurrency.common.bounded_maps <> bounded_nat_func' def
+R14368:14370 Coq.ZArith.BinInt <> ::Z_scope:x_'>'_x not
+R14358:14365 Coq.ZArith.BinInt Z of_nat def
+R14373:14375 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R14368:14370 Coq.ZArith.BinInt <> ::Z_scope:x_'>'_x not
+R14358:14365 Coq.ZArith.BinInt Z of_nat def
+R14373:14375 Coq.ZArith.BinInt <> ::Z_scope:x_'-'_x not
+R14415:14417 mathcomp.ssreflect.ssrnat <> ltP thm
+R14420:14425 Coq.ZArith.Znat <> inj_lt def
+R14428:14438 Coq.ZArith.BinInt Z gt_lt_iff thm
+R14455:14462 Coq.ZArith.Znat Z2Nat id thm
+R14455:14462 Coq.ZArith.Znat Z2Nat id thm
+R14455:14462 Coq.ZArith.Znat Z2Nat id thm
+R14635:14645 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R14635:14645 Coq.ZArith.ZArith_dec <> Z_lt_ge_dec def
+R14735:14742 Coq.ZArith.Znat Z2Nat id thm
+R14735:14742 Coq.ZArith.Znat Z2Nat id thm
+R14735:14742 Coq.ZArith.Znat Z2Nat id thm
+prf 14792:14819 <> finite_bounded_op_func_simpl
+binder 14831:14832 <> hi:124
+binder 14834:14835 <> lo:125
+R14842:14853 VST.concurrency.common.konig <> finite def
+R14870:14875 Coq.Init.Datatypes <> option ind
+R14879:14882 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14878:14878 Coq.Numbers.BinNums <> Z ind
+R14883:14888 Coq.Init.Datatypes <> option ind
+R14890:14899 compcert.common.Memtype <> permission ind
+binder 14867:14867 <> f:126
+R14905:14919 VST.concurrency.common.bounded_maps <> bounded_func_op def
+R14926:14927 VST.concurrency.common.bounded_maps <> lo:125 var
+R14923:14924 VST.concurrency.common.bounded_maps <> hi:124 var
+R14921:14921 VST.concurrency.common.bounded_maps <> f:126 var
+R14964:14988 VST.concurrency.common.bounded_maps <> finite_bounded_func_simpl thm
+R14964:14988 VST.concurrency.common.bounded_maps <> finite_bounded_func_simpl thm
+R14964:14988 VST.concurrency.common.bounded_maps <> finite_bounded_func_simpl thm
+R15031:15031 Coq.Init.Datatypes <> S constr
+R15031:15031 Coq.Init.Datatypes <> S constr
+binder 15051:15051 <> n:127
+R15056:15058 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15065:15070 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15075:15091 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15060:15063 mathcomp.ssreflect.eqtype <> ::bool_scope:x_'=='_x not
+R15059:15059 VST.concurrency.common.bounded_maps <> n:127 var
+R15071:15074 Coq.Init.Datatypes <> None constr
+R15092:15095 Coq.Init.Datatypes <> Some constr
+R15103:15104 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R15102:15102 VST.concurrency.common.bounded_maps <> n:127 var
+binder 15051:15051 <> n:128
+R15056:15058 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15065:15070 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15075:15091 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15060:15063 mathcomp.ssreflect.eqtype <> ::bool_scope:x_'=='_x not
+R15059:15059 VST.concurrency.common.bounded_maps <> n:128 var
+R15071:15074 Coq.Init.Datatypes <> None constr
+R15092:15095 Coq.Init.Datatypes <> Some constr
+R15103:15104 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R15102:15102 VST.concurrency.common.bounded_maps <> n:128 var
+R15204:15204 Coq.Init.Datatypes <> S constr
+R15204:15204 Coq.Init.Datatypes <> S constr
+R15296:15300 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15304:15309 mathcomp.ssreflect.ssrnat <> addnBA thm
+R15296:15300 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15296:15300 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15304:15309 mathcomp.ssreflect.ssrnat <> addnBA thm
+R15304:15309 mathcomp.ssreflect.ssrnat <> addnBA thm
+prf 15383:15404 <> finite_bounded_op_func
+binder 15416:15417 <> hi:129
+binder 15419:15420 <> lo:130
+R15427:15438 VST.concurrency.common.konig <> finite def
+R15455:15460 Coq.Init.Datatypes <> option ind
+R15464:15467 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15463:15463 Coq.Numbers.BinNums <> Z ind
+R15468:15473 Coq.Init.Datatypes <> option ind
+R15476:15481 Coq.Init.Datatypes <> option ind
+R15483:15492 compcert.common.Memtype <> permission ind
+binder 15452:15452 <> f:131
+R15499:15513 VST.concurrency.common.bounded_maps <> bounded_func_op def
+R15520:15521 VST.concurrency.common.bounded_maps <> lo:130 var
+R15517:15518 VST.concurrency.common.bounded_maps <> hi:129 var
+R15515:15515 VST.concurrency.common.bounded_maps <> f:131 var
+R15558:15576 VST.concurrency.common.bounded_maps <> finite_bounded_func thm
+R15558:15576 VST.concurrency.common.bounded_maps <> finite_bounded_func thm
+R15558:15576 VST.concurrency.common.bounded_maps <> finite_bounded_func thm
+R15619:15619 Coq.Init.Datatypes <> S constr
+R15619:15619 Coq.Init.Datatypes <> S constr
+binder 15639:15639 <> n:132
+R15644:15646 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15653:15658 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15663:15679 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15648:15651 mathcomp.ssreflect.eqtype <> ::bool_scope:x_'=='_x not
+R15647:15647 VST.concurrency.common.bounded_maps <> n:132 var
+R15659:15662 Coq.Init.Datatypes <> None constr
+R15680:15683 Coq.Init.Datatypes <> Some constr
+R15691:15692 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R15690:15690 VST.concurrency.common.bounded_maps <> n:132 var
+binder 15639:15639 <> n:133
+R15644:15646 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15653:15658 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15663:15679 Coq.ssr.ssreflect <> ::boolean_if_scope:'if'_x_'then'_x_'else'_x not
+R15648:15651 mathcomp.ssreflect.eqtype <> ::bool_scope:x_'=='_x not
+R15647:15647 VST.concurrency.common.bounded_maps <> n:133 var
+R15659:15662 Coq.Init.Datatypes <> None constr
+R15680:15683 Coq.Init.Datatypes <> Some constr
+R15691:15692 mathcomp.ssreflect.ssrnat <> ::nat_scope:x_'-'_x not
+R15690:15690 VST.concurrency.common.bounded_maps <> n:133 var
+R15792:15792 Coq.Init.Datatypes <> S constr
+R15792:15792 Coq.Init.Datatypes <> S constr
+R15884:15888 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15892:15897 mathcomp.ssreflect.ssrnat <> addnBA thm
+R15884:15888 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15884:15888 mathcomp.ssreflect.ssrnat <> addn1 thm
+R15892:15897 mathcomp.ssreflect.ssrnat <> addnBA thm
+R15892:15897 mathcomp.ssreflect.ssrnat <> addnBA thm
+prf 36030:36042 <> fun_leq_trans
+binder 36053:36053 <> A:134
+binder 36055:36055 <> B:135
+binder 36057:36057 <> C:136
+binder 36060:36061 <> f1:137
+binder 36063:36064 <> f2:138
+binder 36066:36067 <> f3:139
+R36088:36091 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R36071:36077 VST.concurrency.common.bounded_maps <> fun_leq def
+R36079:36079 VST.concurrency.common.bounded_maps <> A:134 var
+R36081:36081 VST.concurrency.common.bounded_maps <> B:135 var
+R36083:36084 VST.concurrency.common.bounded_maps <> f1:137 var
+R36086:36087 VST.concurrency.common.bounded_maps <> f2:138 var
+R36110:36115 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R36093:36099 VST.concurrency.common.bounded_maps <> fun_leq def
+R36101:36101 VST.concurrency.common.bounded_maps <> B:135 var
+R36103:36103 VST.concurrency.common.bounded_maps <> C:136 var
+R36105:36106 VST.concurrency.common.bounded_maps <> f2:138 var
+R36108:36109 VST.concurrency.common.bounded_maps <> f3:139 var
+R36117:36123 VST.concurrency.common.bounded_maps <> fun_leq def
+R36125:36125 VST.concurrency.common.bounded_maps <> A:134 var
+R36127:36127 VST.concurrency.common.bounded_maps <> C:136 var
+R36129:36130 VST.concurrency.common.bounded_maps <> f1:137 var
+R36132:36133 VST.concurrency.common.bounded_maps <> f3:139 var
+R36152:36158 VST.concurrency.common.bounded_maps <> fun_leq def
+R36161:36168 VST.concurrency.common.bounded_maps <> fun_leq' def

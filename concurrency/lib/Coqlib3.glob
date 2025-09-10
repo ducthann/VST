@@ -1,0 +1,190 @@
+DIGEST fc0afb9ab83b2b969f63125cb3630740
+FVST.concurrency.lib.Coqlib3
+R15:33 compcert.lib.Coqlib <> <> lib
+R51:67 compcert.lib.Maps <> <> lib
+R85:111 VST.concurrency.lib.tactics <> <> lib
+R154:156 mathcomp.ssreflect.seq <> <> lib
+prf 166:172 <> cat_app
+binder 185:185 <> T:1
+R195:198 Coq.Init.Datatypes <> list ind
+R200:200 VST.concurrency.lib.Coqlib3 <> T:1 var
+binder 189:190 <> l1:2
+binder 192:193 <> l2:3
+R221:223 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R208:214 mathcomp.ssreflect.seq <> cat def
+R219:220 VST.concurrency.lib.Coqlib3 <> l2:3 var
+R216:217 VST.concurrency.lib.Coqlib3 <> l1:2 var
+R224:226 Coq.Init.Datatypes <> app def
+R231:232 VST.concurrency.lib.Coqlib3 <> l2:3 var
+R228:229 VST.concurrency.lib.Coqlib3 <> l1:2 var
+prf 282:293 <> trivial_map1
+binder 306:306 <> A:4
+R314:320 compcert.lib.Maps PTree t def
+R322:322 VST.concurrency.lib.Coqlib3 <> A:4 var
+binder 310:310 <> t:5
+R361:363 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R330:339 compcert.lib.Maps PTree map1 def
+R360:360 VST.concurrency.lib.Coqlib3 <> t:5 var
+R351:351 VST.concurrency.lib.Coqlib3 <> A:4 var
+binder 347:347 <> a:6
+R357:357 VST.concurrency.lib.Coqlib3 <> a:6 var
+R364:364 VST.concurrency.lib.Coqlib3 <> t:5 var
+R390:409 compcert.lib.Maps PTree extensionality thm
+R390:409 compcert.lib.Maps PTree extensionality thm
+R430:440 compcert.lib.Maps PTree gmap1 thm
+R430:440 compcert.lib.Maps PTree gmap1 thm
+R430:440 compcert.lib.Maps PTree gmap1 thm
+R456:458 compcert.lib.Maps <> :::x_'!'_x not
+R456:458 compcert.lib.Maps <> :::x_'!'_x not
+prf 480:487 <> map_map1
+binder 500:500 <> A:7
+binder 502:502 <> B:8
+binder 505:505 <> f:9
+binder 507:507 <> m:10
+R533:535 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R515:524 compcert.lib.Maps PTree map1 def
+R526:526 VST.concurrency.lib.Coqlib3 <> A:7 var
+R528:528 VST.concurrency.lib.Coqlib3 <> B:8 var
+R530:530 VST.concurrency.lib.Coqlib3 <> f:9 var
+R532:532 VST.concurrency.lib.Coqlib3 <> m:10 var
+R536:544 compcert.lib.Maps PTree map def
+R558:558 VST.concurrency.lib.Coqlib3 <> m:10 var
+R555:555 VST.concurrency.lib.Coqlib3 <> f:9 var
+R584:603 compcert.lib.Maps PTree extensionality thm
+R584:603 compcert.lib.Maps PTree extensionality thm
+R624:634 compcert.lib.Maps PTree gmap1 thm
+R637:646 compcert.lib.Maps PTree gmap thm
+R624:634 compcert.lib.Maps PTree gmap1 thm
+R624:634 compcert.lib.Maps PTree gmap1 thm
+R637:646 compcert.lib.Maps PTree gmap thm
+R637:646 compcert.lib.Maps PTree gmap thm
+prf 673:683 <> trivial_map
+binder 696:696 <> A:11
+R704:710 compcert.lib.Maps PTree t def
+R712:712 VST.concurrency.lib.Coqlib3 <> A:11 var
+binder 700:700 <> t:12
+R765:767 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R720:728 compcert.lib.Maps PTree map def
+R764:764 VST.concurrency.lib.Coqlib3 <> t:12 var
+R740:747 Coq.Numbers.BinNums <> positive ind
+R755:755 VST.concurrency.lib.Coqlib3 <> A:11 var
+binder 751:751 <> a:13
+R761:761 VST.concurrency.lib.Coqlib3 <> a:13 var
+R768:768 VST.concurrency.lib.Coqlib3 <> t:12 var
+R799:806 VST.concurrency.lib.Coqlib3 <> map_map1 thm
+R816:827 VST.concurrency.lib.Coqlib3 <> trivial_map1 thm
+R799:806 VST.concurrency.lib.Coqlib3 <> map_map1 thm
+R799:806 VST.concurrency.lib.Coqlib3 <> map_map1 thm
+R816:827 VST.concurrency.lib.Coqlib3 <> trivial_map1 thm
+def 848:857 <> merge_func
+binder 860:860 <> A:14
+R871:874 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R870:870 Coq.Numbers.BinNums <> Z ind
+R875:880 Coq.Init.Datatypes <> option ind
+R882:882 VST.concurrency.lib.Coqlib3 <> A:14 var
+binder 864:865 <> f1:15
+binder 867:868 <> f2:16
+R898:901 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R889:897 Coq.Numbers.BinNums <> Z ind
+R902:907 Coq.Init.Datatypes <> option ind
+R909:909 VST.concurrency.lib.Coqlib3 <> A:14 var
+binder 920:922 <> ofs:17
+R930:931 VST.concurrency.lib.Coqlib3 <> f1:15 var
+R933:935 VST.concurrency.lib.Coqlib3 <> ofs:17 var
+R954:955 VST.concurrency.lib.Coqlib3 <> f2:16 var
+R957:959 VST.concurrency.lib.Coqlib3 <> ofs:17 var
+R942:943 VST.concurrency.lib.Coqlib3 <> f1:15 var
+R945:947 VST.concurrency.lib.Coqlib3 <> ofs:17 var
+prf 1621:1637 <> trivial_ptree_map
+binder 1650:1650 <> A:18
+binder 1653:1653 <> t:19
+binder 1655:1655 <> F:20
+R1662:1662 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1702:1710 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+binder 1670:1670 <> b:21
+binder 1672:1672 <> f:22
+R1689:1692 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1680:1682 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1676:1678 compcert.lib.Maps <> :::x_'!'_x not
+R1679:1679 VST.concurrency.lib.Coqlib3 <> b:21 var
+R1675:1675 VST.concurrency.lib.Coqlib3 <> t:19 var
+R1683:1686 Coq.Init.Datatypes <> Some constr
+R1688:1688 VST.concurrency.lib.Coqlib3 <> f:22 var
+R1698:1700 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1693:1693 VST.concurrency.lib.Coqlib3 <> F:20 var
+R1695:1695 VST.concurrency.lib.Coqlib3 <> b:21 var
+R1697:1697 VST.concurrency.lib.Coqlib3 <> f:22 var
+R1701:1701 VST.concurrency.lib.Coqlib3 <> f:22 var
+R1729:1731 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1712:1720 compcert.lib.Maps PTree map def
+R1722:1722 VST.concurrency.lib.Coqlib3 <> A:18 var
+R1724:1724 VST.concurrency.lib.Coqlib3 <> A:18 var
+R1726:1726 VST.concurrency.lib.Coqlib3 <> F:20 var
+R1728:1728 VST.concurrency.lib.Coqlib3 <> t:19 var
+R1732:1732 VST.concurrency.lib.Coqlib3 <> t:19 var
+R1758:1777 compcert.lib.Maps PTree extensionality thm
+R1758:1777 compcert.lib.Maps PTree extensionality thm
+R1798:1807 compcert.lib.Maps PTree gmap thm
+R1798:1807 compcert.lib.Maps PTree gmap thm
+R1798:1807 compcert.lib.Maps PTree gmap thm
+R1823:1825 compcert.lib.Maps <> :::x_'!'_x not
+R1823:1825 compcert.lib.Maps <> :::x_'!'_x not
+prf 1892:1902 <> max_maximum
+binder 1913:1913 <> l:23
+R1916:1921 Coq.Lists.List <> Forall ind
+R1966:1966 VST.concurrency.lib.Coqlib3 <> l:23 var
+R1924:1929 Coq.PArith.BinPos Pos ge def
+R1932:1941 Coq.Lists.List <> fold_right def
+R1953:1953 VST.concurrency.lib.Coqlib3 <> l:23 var
+R1943:1949 Coq.PArith.BinPos Pos max def
+R2039:2049 Coq.Lists.List <> Forall_impl thm
+R2039:2049 Coq.Lists.List <> Forall_impl thm
+prf 2074:2085 <> finite_ptree
+binder 2098:2098 <> A:24
+R2104:2110 compcert.lib.Maps PTree t def
+R2112:2112 VST.concurrency.lib.Coqlib3 <> A:24 var
+binder 2102:2102 <> t:25
+R2116:2122 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R2124:2125 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 2123:2123 <> b:26
+binder 2133:2134 <> b':27
+R2154:2157 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2139:2141 Coq.PArith.BinPos <> ::positive_scope:x_'<'_x not
+R2138:2138 VST.concurrency.lib.Coqlib3 <> b:26 var
+R2142:2143 VST.concurrency.lib.Coqlib3 <> b':27 var
+R2158:2158 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2165:2168 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2160:2162 compcert.lib.Maps <> :::x_'!'_x not
+R2163:2164 VST.concurrency.lib.Coqlib3 <> b':27 var
+R2159:2159 VST.concurrency.lib.Coqlib3 <> t:25 var
+R2169:2172 Coq.Init.Datatypes <> None constr
+R2202:2211 Coq.Lists.List <> fold_right def
+R2224:2226 mathcomp.ssreflect.seq <> map def
+R2233:2246 compcert.lib.Maps PTree elements def
+R2228:2230 Coq.Init.Datatypes <> fst def
+R2213:2219 Coq.PArith.BinPos Pos max def
+R2202:2211 Coq.Lists.List <> fold_right def
+R2224:2226 mathcomp.ssreflect.seq <> map def
+R2233:2246 compcert.lib.Maps PTree elements def
+R2228:2230 Coq.Init.Datatypes <> fst def
+R2213:2219 Coq.PArith.BinPos Pos max def
+R2284:2286 compcert.lib.Maps <> :::x_'!'_x not
+R2284:2286 compcert.lib.Maps <> :::x_'!'_x not
+R2318:2339 compcert.lib.Maps PTree elements_correct thm
+R2318:2339 compcert.lib.Maps PTree elements_correct thm
+R2363:2373 VST.concurrency.lib.Coqlib3 <> max_maximum thm
+R2376:2378 mathcomp.ssreflect.seq <> map def
+R2385:2398 compcert.lib.Maps PTree elements def
+R2380:2382 Coq.Init.Datatypes <> fst def
+R2363:2373 VST.concurrency.lib.Coqlib3 <> max_maximum thm
+R2376:2378 mathcomp.ssreflect.seq <> map def
+R2385:2398 compcert.lib.Maps PTree elements def
+R2380:2382 Coq.Init.Datatypes <> fst def
+R2424:2436 Coq.Lists.List <> Forall_forall thm
+R2424:2436 Coq.Lists.List <> Forall_forall thm
+R2424:2436 Coq.Lists.List <> Forall_forall thm
+R2502:2511 Coq.Lists.List <> in_map_iff thm
+R2502:2511 Coq.Lists.List <> in_map_iff thm
+R2502:2511 Coq.Lists.List <> in_map_iff thm
+R2560:2566 mathcomp.ssreflect.seq <> cat def
+not 2553:2553 <> :::x_'++'_x

@@ -1,0 +1,107 @@
+DIGEST 0dde98cb605714afd6ade24eaa71b8b4
+FVST.concurrency.common.ClightSemanticsForMachines
+R212:233 compcert.common.Memory <> <> lib
+R251:274 VST.veric.res_predicates <> <> lib
+R325:340 Coq.Logic.ProofIrrelevance <> <> lib
+R359:362 Coq.Lists.List <> <> lib
+R372:384 Coq.Lists.List ListNotations <> mod
+R491:512 VST.sepcomp.mem_lemmas <> <> lib
+R530:558 VST.concurrency.memsem_lemmas <> <> lib
+R576:607 VST.concurrency.common.scheduler <> <> lib
+R625:663 VST.concurrency.common.HybridMachineSig <> <> lib
+R681:712 VST.concurrency.common.semantics <> <> lib
+R730:758 VST.concurrency.common.lksize <> <> lib
+R776:809 VST.concurrency.common.permissions <> <> lib
+R827:867 VST.concurrency.common.dry_machine_lemmas <> <> lib
+R878:883 compcert.cfrontend.Ctypes <> <> mod
+R902:926 compcert.cfrontend.Clight <> <> lib
+R936:938 compcert.cfrontend.Cop <> <> mod
+R951:956 compcert.cfrontend.Ctypes <> sizeof def
+R951:956 compcert.cfrontend.Ctypes <> sizeof def
+R1001:1021 VST.veric.Clight_core <> <> lib
+R1039:1063 VST.veric.Clightcore_coop <> <> lib
+R1081:1107 VST.sepcomp.event_semantics <> <> lib
+R1125:1146 VST.veric.Clight_evsem <> <> lib
+prf 1197:1214 <> at_external_SEM_eq
+R1220:1226 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R1233:1234 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+binder 1227:1228 <> ge:1
+binder 1230:1230 <> c:2
+binder 1232:1232 <> m:3
+R1275:1280 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1235:1255 VST.sepcomp.semantics <> at_external proj
+R1274:1274 VST.concurrency.common.ClightSemanticsForMachines <> m:3 var
+R1272:1272 VST.concurrency.common.ClightSemanticsForMachines <> c:2 var
+R1258:1266 VST.veric.Clight_evsem <> CLC_evsem def
+R1268:1269 VST.concurrency.common.ClightSemanticsForMachines <> ge:1 var
+R1287:1287 VST.concurrency.common.ClightSemanticsForMachines <> c:2 var
+R1299:1307 VST.veric.Clight_core <> Callstate constr
+R1310:1317 compcert.cfrontend.Ctypes <> External constr
+R1347:1349 Coq.ssr.ssreflect <> ::general_if_scope:'if'_x_'then'_x_'else'_x not
+R1362:1367 Coq.ssr.ssreflect <> ::general_if_scope:'if'_x_'then'_x_'else'_x not
+R1372:1377 Coq.ssr.ssreflect <> ::general_if_scope:'if'_x_'then'_x_'else'_x not
+R1378:1381 Coq.Init.Datatypes <> Some constr
+R1383:1383 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R1386:1387 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R1392:1392 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R1368:1371 Coq.Init.Datatypes <> None constr
+R1350:1358 compcert.common.AST <> ef_inline def
+R1404:1407 Coq.Init.Datatypes <> None constr
+inst 1453:1461 <> ClightSem
+binder 1463:1464 <> ge:5
+R1468:1476 VST.concurrency.common.semantics <> Semantics class
+R1531:1536 VST.concurrency.common.semantics <> the_ge meth
+R1507:1512 VST.concurrency.common.semantics <> semSem meth
+R1496:1499 VST.concurrency.common.semantics <> semC meth
+R1485:1488 VST.concurrency.common.semantics <> semG meth
+R1493:1493 VST.veric.Clight_evsem <> G def
+R1504:1504 VST.veric.Clight_evsem <> C def
+R1517:1525 VST.veric.Clight_evsem <> CLC_evsem def
+prf 1554:1567 <> CLC_step_decay
+R1570:1576 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+R1591:1598 stdpp.base <> ::type_scope:'forall'_x_'..'_x_','_x not
+binder 1577:1577 <> g:6
+binder 1579:1579 <> c:7
+binder 1581:1581 <> m:8
+binder 1583:1584 <> tr:9
+binder 1586:1587 <> c':10
+binder 1589:1590 <> m':11
+R1649:1658 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1599:1621 VST.sepcomp.event_semantics <> ev_step proj
+R1647:1648 VST.concurrency.common.ClightSemanticsForMachines <> m':11 var
+R1644:1645 VST.concurrency.common.ClightSemanticsForMachines <> c':10 var
+R1641:1642 VST.concurrency.common.ClightSemanticsForMachines <> tr:9 var
+R1639:1639 VST.concurrency.common.ClightSemanticsForMachines <> m:8 var
+R1637:1637 VST.concurrency.common.ClightSemanticsForMachines <> c:7 var
+R1624:1632 VST.veric.Clight_evsem <> CLC_evsem def
+R1634:1634 VST.concurrency.common.ClightSemanticsForMachines <> g:6 var
+R1659:1663 VST.concurrency.common.permissions <> decay def
+R1667:1668 VST.concurrency.common.ClightSemanticsForMachines <> m':11 var
+R1665:1665 VST.concurrency.common.ClightSemanticsForMachines <> m:8 var
+R1698:1707 VST.concurrency.common.permissions <> msem_decay thm
+R1710:1719 VST.veric.Clightcore_coop <> CLC_memsem def
+R1698:1707 VST.concurrency.common.permissions <> msem_decay thm
+R1710:1719 VST.veric.Clightcore_coop <> CLC_memsem def
+R1774:1787 VST.veric.Clight_evsem <> CLC_evstep_ax1 thm
+R1774:1787 VST.veric.Clight_evsem <> CLC_evstep_ax1 thm
+inst 1826:1837 <> ClightAxioms
+binder 1839:1840 <> ge:12
+R1845:1866 VST.concurrency.common.dry_machine_lemmas CoreLanguage SemAxioms class
+R1869:1877 VST.concurrency.common.ClightSemanticsForMachines <> ClightSem inst
+R1879:1880 VST.concurrency.common.ClightSemanticsForMachines <> ge:12 var
+R1928:1951 VST.concurrency.memsem_lemmas <> mem_step_obeys_cur_write thm
+R1928:1951 VST.concurrency.memsem_lemmas <> mem_step_obeys_cur_write thm
+R1971:1982 VST.sepcomp.semantics <> corestep_mem proj
+R1971:1982 VST.sepcomp.semantics <> corestep_mem proj
+R2014:2024 VST.sepcomp.event_semantics <> ev_step_ax2 proj
+R2014:2024 VST.sepcomp.event_semantics <> ev_step_ax2 proj
+R2049:2062 VST.concurrency.common.ClightSemanticsForMachines <> CLC_step_decay thm
+R2049:2062 VST.concurrency.common.ClightSemanticsForMachines <> CLC_step_decay thm
+R2106:2126 VST.sepcomp.mem_lemmas <> mem_forward_nextblock thm
+R2129:2144 VST.concurrency.memsem_lemmas <> mem_step_forward thm
+R2106:2126 VST.sepcomp.mem_lemmas <> mem_forward_nextblock thm
+R2129:2144 VST.concurrency.memsem_lemmas <> mem_step_forward thm
+R2158:2169 VST.sepcomp.semantics <> corestep_mem proj
+R2158:2169 VST.sepcomp.semantics <> corestep_mem proj
+R2534:2550 VST.concurrency.common.permissions <> strong_decay_refl thm
+R2534:2550 VST.concurrency.common.permissions <> strong_decay_refl thm

@@ -1,0 +1,947 @@
+DIGEST ed2530346ca4f72e2dbbbb474999f693
+FVST.concurrency.compiler.mem_equiv
+R15:17 Coq.micromega.Lia <> <> lib
+R36:56 Coq.Classes.Morphisms <> <> lib
+R74:93 Coq.Relations.Relation_Definitions <> <> lib
+R112:133 compcert.common.Values <> <> lib
+R151:172 compcert.common.Memory <> <> lib
+R190:206 compcert.lib.Maps <> <> lib
+R225:255 VST.concurrency.lib.setoid_help <> <> lib
+R273:306 VST.concurrency.common.permissions <> <> lib
+R316:326 VST.concurrency.common.permissions <> <> mod
+R344:379 VST.concurrency.common.Clight_bounds <> <> lib
+R397:430 VST.concurrency.common.permissions <> <> lib
+R491:514 Coq.Logic.FunctionalExtensionality <> <> mod
+R524:528 Coq.Init.Logic <> <> mod
+R538:543 Coq.Program.Basics <> <> mod
+R553:558 Coq.ZArith.BinInt <> <> mod
+rec 804:816 <> PartReflexive
+proj 850:856 <> PReflex
+binder 819:819 <> A:1
+R832:835 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R831:831 VST.concurrency.compiler.mem_equiv <> A:1 var
+binder 828:828 <> P:2
+binder 842:842 <> R:3
+R870:870 VST.concurrency.compiler.mem_equiv <> A:1 var
+binder 866:866 <> x:5
+R876:879 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R873:873 VST.concurrency.compiler.mem_equiv <> P:2 var
+R875:875 VST.concurrency.compiler.mem_equiv <> x:5 var
+R880:880 VST.concurrency.compiler.mem_equiv <> R:3 var
+R882:882 VST.concurrency.compiler.mem_equiv <> x:5 var
+R884:884 VST.concurrency.compiler.mem_equiv <> x:5 var
+prf 895:921 <> part_reflexive_proper_proxy
+binder 924:924 <> A:7
+binder 926:926 <> P:8
+R933:940 Coq.Relations.Relation_Definitions <> relation def
+R942:942 VST.concurrency.compiler.mem_equiv <> A:7 var
+binder 930:930 <> R:9
+R953:965 VST.concurrency.compiler.mem_equiv <> PartReflexive class
+R967:967 VST.concurrency.compiler.mem_equiv <> A:7 var
+R969:969 VST.concurrency.compiler.mem_equiv <> P:8 var
+R971:971 VST.concurrency.compiler.mem_equiv <> R:9 var
+binder 953:971 <> H:10
+R979:979 VST.concurrency.compiler.mem_equiv <> A:7 var
+binder 975:975 <> x:11
+R987:990 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R984:984 VST.concurrency.compiler.mem_equiv <> P:8 var
+R986:986 VST.concurrency.compiler.mem_equiv <> x:11 var
+R991:1001 Coq.Classes.Morphisms <> ProperProxy class
+R1005:1005 VST.concurrency.compiler.mem_equiv <> x:11 var
+R1003:1003 VST.concurrency.compiler.mem_equiv <> R:9 var
+R1162:1172 Coq.Classes.Morphisms <> ProperProxy class
+R1209:1235 VST.concurrency.compiler.mem_equiv <> part_reflexive_proper_proxy thm
+ind 1403:1407 <> trieq
+constr 1450:1459 <> triew_refl
+binder 1410:1410 <> A:12
+R1425:1425 VST.concurrency.compiler.mem_equiv <> A:12 var
+binder 1421:1421 <> x:13
+R1431:1434 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1436:1439 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1462:1466 VST.concurrency.compiler.mem_equiv <> trieq:14 ind
+R1472:1472 VST.concurrency.compiler.mem_equiv <> x:13 var
+R1470:1470 VST.concurrency.compiler.mem_equiv <> x:13 var
+R1468:1468 VST.concurrency.compiler.mem_equiv <> x:13 var
+scheme 1403:1407 <> trieq_rect
+scheme 1403:1407 <> trieq_ind
+scheme 1403:1407 <> trieq_rec
+scheme 1403:1407 <> trieq_sind
+R1503:1507 VST.concurrency.compiler.mem_equiv <> trieq ind
+inst 1536:1554 <> trieq_PartReflexive
+binder 1564:1564 <> A:16
+R1569:1569 VST.concurrency.compiler.mem_equiv <> A:16 var
+binder 1567:1567 <> x:17
+R1573:1585 VST.concurrency.compiler.mem_equiv <> PartReflexive class
+R1595:1599 VST.concurrency.compiler.mem_equiv <> trieq ind
+R1601:1601 VST.concurrency.compiler.mem_equiv <> x:17 var
+R1588:1589 Coq.Init.Logic <> eq ind
+R1591:1591 VST.concurrency.compiler.mem_equiv <> x:17 var
+inst 1674:1688 <> Symmetric_trieq
+binder 1701:1701 <> A:18
+R1707:1707 VST.concurrency.compiler.mem_equiv <> A:18 var
+binder 1705:1705 <> x:19
+R1711:1719 Coq.Classes.RelationClasses <> Symmetric class
+R1722:1726 VST.concurrency.compiler.mem_equiv <> trieq ind
+R1728:1728 VST.concurrency.compiler.mem_equiv <> x:19 var
+inst 1809:1824 <> Transitive_trieq
+binder 1837:1837 <> A:20
+R1843:1843 VST.concurrency.compiler.mem_equiv <> A:20 var
+binder 1841:1841 <> x:21
+R1847:1856 Coq.Classes.RelationClasses <> Transitive class
+R1859:1863 VST.concurrency.compiler.mem_equiv <> trieq ind
+R1865:1865 VST.concurrency.compiler.mem_equiv <> x:21 var
+def 1965:1968 <> eq_P
+binder 1971:1971 <> A:22
+R1985:1988 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1984:1984 VST.concurrency.compiler.mem_equiv <> A:22 var
+binder 1982:1982 <> P:23
+R2001:2001 VST.concurrency.compiler.mem_equiv <> A:22 var
+binder 1996:1996 <> x:24
+binder 1998:1998 <> y:25
+R2017:2017 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2023:2027 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2019:2021 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2018:2018 VST.concurrency.compiler.mem_equiv <> x:24 var
+R2022:2022 VST.concurrency.compiler.mem_equiv <> y:25 var
+R2028:2028 VST.concurrency.compiler.mem_equiv <> P:23 var
+R2030:2030 VST.concurrency.compiler.mem_equiv <> x:24 var
+inst 2052:2069 <> eq_P_PartReflexive
+binder 2080:2080 <> A:26
+binder 2082:2082 <> P:27
+R2086:2098 VST.concurrency.compiler.mem_equiv <> PartReflexive class
+R2104:2107 VST.concurrency.compiler.mem_equiv <> eq_P def
+R2109:2109 VST.concurrency.compiler.mem_equiv <> A:26 var
+R2111:2111 VST.concurrency.compiler.mem_equiv <> P:27 var
+R2100:2100 VST.concurrency.compiler.mem_equiv <> P:27 var
+inst 2190:2203 <> Symmetric_eq_P
+binder 2216:2216 <> A:28
+binder 2218:2218 <> P:29
+R2222:2230 Coq.Classes.RelationClasses <> Symmetric class
+R2234:2237 VST.concurrency.compiler.mem_equiv <> eq_P def
+R2239:2239 VST.concurrency.compiler.mem_equiv <> A:28 var
+R2241:2241 VST.concurrency.compiler.mem_equiv <> P:29 var
+inst 2335:2349 <> Transitive_eq_P
+binder 2362:2362 <> A:30
+binder 2364:2364 <> P:31
+R2368:2377 Coq.Classes.RelationClasses <> Transitive class
+R2381:2384 VST.concurrency.compiler.mem_equiv <> eq_P def
+R2386:2386 VST.concurrency.compiler.mem_equiv <> A:30 var
+R2388:2388 VST.concurrency.compiler.mem_equiv <> P:31 var
+R2582:2582 compcert.lib.Maps <> :::x_'!!'_x not
+R2588:2592 compcert.lib.Maps <> :::x_'!!'_x not
+R2595:2602 compcert.lib.Maps <> :::x_'!!'_x not
+R2582:2582 compcert.lib.Maps <> :::x_'!!'_x not
+R2588:2592 compcert.lib.Maps <> :::x_'!!'_x not
+R2595:2602 compcert.lib.Maps <> :::x_'!!'_x not
+R2623:2623 compcert.lib.Maps <> :::x_'!!'_x not
+R2627:2631 compcert.lib.Maps <> :::x_'!!'_x not
+R2633:2638 compcert.lib.Maps <> :::x_'!!'_x not
+R2647:2659 VST.concurrency.common.permissions <> permission_at def
+R2717:2719 compcert.common.Memtype <> Cur constr
+R2717:2719 compcert.common.Memtype <> Cur constr
+R2760:2762 compcert.common.Memtype <> Max constr
+R2760:2762 compcert.common.Memtype <> Max constr
+R2778:2795 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R2735:2752 VST.concurrency.common.permissions <> getCurPerm_correct thm
+R2873:2873 compcert.lib.Maps <> :::x_'!!'_x not
+R2879:2883 compcert.lib.Maps <> :::x_'!!'_x not
+R2886:2893 compcert.lib.Maps <> :::x_'!!'_x not
+R2873:2873 compcert.lib.Maps <> :::x_'!!'_x not
+R2879:2883 compcert.lib.Maps <> :::x_'!!'_x not
+R2886:2893 compcert.lib.Maps <> :::x_'!!'_x not
+R2918:2918 compcert.lib.Maps <> :::x_'!!'_x not
+R2922:2926 compcert.lib.Maps <> :::x_'!!'_x not
+R2928:2933 compcert.lib.Maps <> :::x_'!!'_x not
+R2942:2954 VST.concurrency.common.permissions <> permission_at def
+R3017:3019 compcert.common.Memtype <> Cur constr
+R3017:3019 compcert.common.Memtype <> Cur constr
+R3065:3067 compcert.common.Memtype <> Max constr
+R3065:3067 compcert.common.Memtype <> Max constr
+R3083:3100 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R3035:3052 VST.concurrency.common.permissions <> getCurPerm_correct thm
+def 3210:3225 <> access_map_equiv
+R3235:3244 VST.concurrency.common.permissions <> access_map def
+binder 3228:3229 <> a1:32
+binder 3231:3232 <> a2:33
+binder 3265:3265 <> b:34
+R3275:3278 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3270:3273 compcert.lib.Maps <> :::x_'!!'_x not
+R3274:3274 VST.concurrency.compiler.mem_equiv <> b:34 var
+R3268:3269 VST.concurrency.compiler.mem_equiv <> a1:32 var
+R3281:3284 compcert.lib.Maps <> :::x_'!!'_x not
+R3285:3285 VST.concurrency.compiler.mem_equiv <> b:34 var
+R3279:3280 VST.concurrency.compiler.mem_equiv <> a2:33 var
+inst 3307:3334 <> access_map_equiv_Equivalence
+R3337:3347 Coq.Classes.RelationClasses <> Equivalence class
+R3349:3364 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R3435:3450 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R3475:3490 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+inst 3541:3555 <> permMapLt_order
+R3559:3570 Coq.Classes.RelationClasses <> PartialOrder class
+R3589:3597 VST.concurrency.common.permissions <> permMapLt def
+R3572:3587 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R3665:3671 VST.concurrency.common.permissions <> po_refl thm
+R3665:3671 VST.concurrency.common.permissions <> po_refl thm
+R3665:3671 VST.concurrency.common.permissions <> po_refl thm
+R3728:3745 VST.concurrency.common.permissions <> perm_order_antisym thm
+R3728:3745 VST.concurrency.common.permissions <> perm_order_antisym thm
+R3880:3889 compcert.lib.Coqlib <> peq def
+R3941:3951 compcert.lib.Intv <> In_dec thm
+R3983:3983 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R3987:3988 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4013:4013 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R3992:3994 Coq.ZArith.BinInt <> ::Z_scope:x_'+'_x not
+R3995:4009 Coq.ZArith.BinInt Z of_nat def
+inst 4073:4101 <> setPermBlock_access_map_equiv
+R4106:4111 Coq.Classes.Morphisms <> Proper class
+R4214:4225 VST.concurrency.common.permissions <> setPermBlock def
+R4116:4120 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R4114:4115 Coq.Init.Logic <> eq ind
+R4123:4127 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R4121:4122 Coq.Init.Logic <> eq ind
+R4130:4147 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R4128:4129 Coq.Init.Logic <> eq ind
+R4164:4168 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R4148:4163 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R4180:4185 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R4169:4172 VST.concurrency.compiler.mem_equiv <> eq_P def
+R4175:4176 Coq.Init.Peano <> lt def
+R4186:4201 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R4359:4365 compcert.lib.Intv <> In def
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4404:4420 VST.concurrency.common.permissions <> setPermBlock_same thm
+R4440:4455 compcert.lib.Intv <> range_notin thm
+R4440:4455 compcert.lib.Intv <> range_notin thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4503:4522 VST.concurrency.common.permissions <> setPermBlock_other_1 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+R4583:4602 VST.concurrency.common.permissions <> setPermBlock_other_2 thm
+def 4650:4658 <> Max_equiv
+R4668:4670 compcert.common.Memory <> mem abbrev
+binder 4661:4662 <> m1:35
+binder 4664:4665 <> m2:36
+R4684:4699 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R4702:4711 VST.concurrency.common.permissions <> getMaxPerm def
+R4713:4714 VST.concurrency.compiler.mem_equiv <> m1:35 var
+R4718:4727 VST.concurrency.common.permissions <> getMaxPerm def
+R4729:4730 VST.concurrency.compiler.mem_equiv <> m2:36 var
+inst 4751:4770 <> Equivalenc_Max_equiv
+R4775:4785 Coq.Classes.RelationClasses <> Equivalence class
+R4787:4795 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+def 4938:4946 <> Cur_equiv
+R4956:4958 compcert.common.Memory <> mem abbrev
+binder 4949:4950 <> m1:37
+binder 4952:4953 <> m2:38
+R4972:4987 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R4990:4999 VST.concurrency.common.permissions <> getCurPerm def
+R5001:5002 VST.concurrency.compiler.mem_equiv <> m1:37 var
+R5006:5015 VST.concurrency.common.permissions <> getCurPerm def
+R5017:5018 VST.concurrency.compiler.mem_equiv <> m2:38 var
+inst 5038:5057 <> Equivalenc_Cur_equiv
+R5062:5072 Coq.Classes.RelationClasses <> Equivalence class
+R5074:5082 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+prf 5221:5235 <> restr_Max_equiv
+binder 5248:5248 <> p:39
+binder 5250:5250 <> m:40
+R5268:5276 VST.concurrency.common.permissions <> permMapLt def
+R5281:5290 VST.concurrency.common.permissions <> getMaxPerm def
+R5292:5292 VST.concurrency.compiler.mem_equiv <> m:40 var
+R5278:5278 VST.concurrency.compiler.mem_equiv <> p:39 var
+binder 5263:5265 <> Hlt:41
+R5301:5309 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R5312:5323 VST.concurrency.common.permissions <> restrPermMap def
+R5325:5327 VST.concurrency.compiler.mem_equiv <> Hlt:41 var
+R5330:5330 VST.concurrency.compiler.mem_equiv <> m:40 var
+R5395:5412 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R5395:5412 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R5395:5412 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R5428:5443 VST.concurrency.common.permissions <> restrPermMap_Max thm
+R5428:5443 VST.concurrency.common.permissions <> restrPermMap_Max thm
+def 5463:5475 <> content_equiv
+R5485:5487 compcert.common.Memory <> mem abbrev
+binder 5478:5479 <> m1:42
+binder 5481:5482 <> m2:43
+binder 5501:5501 <> b:44
+binder 5503:5505 <> ofs:45
+R5551:5557 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5512:5519 compcert.lib.Maps ZMap get def
+R5525:5525 compcert.lib.Maps <> :::x_'!!'_x not
+R5545:5549 compcert.lib.Maps <> :::x_'!!'_x not
+R5550:5550 VST.concurrency.compiler.mem_equiv <> b:44 var
+R5526:5541 compcert.common.Memory Mem mem_contents proj
+R5543:5544 VST.concurrency.compiler.mem_equiv <> m1:42 var
+R5521:5523 VST.concurrency.compiler.mem_equiv <> ofs:45 var
+R5558:5565 compcert.lib.Maps ZMap get def
+R5571:5571 compcert.lib.Maps <> :::x_'!!'_x not
+R5591:5595 compcert.lib.Maps <> :::x_'!!'_x not
+R5596:5596 VST.concurrency.compiler.mem_equiv <> b:44 var
+R5572:5587 compcert.common.Memory Mem mem_contents proj
+R5589:5590 VST.concurrency.compiler.mem_equiv <> m2:43 var
+R5567:5569 VST.concurrency.compiler.mem_equiv <> ofs:45 var
+inst 5615:5638 <> Equivalenc_content_equiv
+R5643:5653 Coq.Classes.RelationClasses <> Equivalence class
+R5655:5667 VST.concurrency.compiler.mem_equiv <> content_equiv def
+prf 5805:5823 <> restr_content_equiv
+binder 5836:5836 <> p:46
+binder 5838:5838 <> m:47
+binder 5841:5843 <> Hlt:48
+R5850:5862 VST.concurrency.compiler.mem_equiv <> content_equiv def
+R5866:5877 VST.concurrency.common.permissions <> restrPermMap def
+R5879:5879 VST.concurrency.compiler.mem_equiv <> p:46 var
+R5881:5881 VST.concurrency.compiler.mem_equiv <> m:47 var
+R5883:5885 VST.concurrency.compiler.mem_equiv <> Hlt:48 var
+R5888:5888 VST.concurrency.compiler.mem_equiv <> m:47 var
+rec 5938:5946 <> mem_equiv
+proj 5974:5980 <> cur_eqv
+proj 6005:6011 <> max_eqv
+proj 6036:6046 <> content_eqv
+proj 6091:6103 <> nextblock_eqv
+R5956:5958 compcert.common.Memory <> mem abbrev
+binder 5949:5950 <> m1:49
+binder 5952:5953 <> m2:50
+R5984:5992 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R5994:5995 VST.concurrency.compiler.mem_equiv <> m1:49 var
+R5997:5998 VST.concurrency.compiler.mem_equiv <> m2:50 var
+R6015:6023 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R6025:6026 VST.concurrency.compiler.mem_equiv <> m1:49 var
+R6028:6029 VST.concurrency.compiler.mem_equiv <> m2:50 var
+R6065:6077 VST.concurrency.compiler.mem_equiv <> content_equiv def
+R6079:6080 VST.concurrency.compiler.mem_equiv <> m1:49 var
+R6082:6083 VST.concurrency.compiler.mem_equiv <> m2:50 var
+R6123:6125 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6107:6119 compcert.common.Memory Mem nextblock proj
+R6121:6122 VST.concurrency.compiler.mem_equiv <> m1:49 var
+R6126:6138 compcert.common.Memory Mem nextblock proj
+R6140:6141 VST.concurrency.compiler.mem_equiv <> m2:50 var
+inst 6163:6183 <> Equivalence_mem_equiv
+R6188:6198 Coq.Classes.RelationClasses <> Equivalence class
+R6200:6208 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+inst 6450:6464 <> Proper_perm_max
+R6469:6474 Coq.Classes.Morphisms <> Proper class
+R6533:6540 compcert.common.Memory Mem perm def
+R6486:6490 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6477:6485 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R6493:6497 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6491:6492 Coq.Init.Logic <> eq ind
+R6500:6504 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6498:6499 Coq.Init.Logic <> eq ind
+R6505:6505 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6515:6520 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6506:6510 VST.concurrency.compiler.mem_equiv <> trieq ind
+R6512:6514 compcert.common.Memtype <> Max constr
+R6523:6527 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6521:6522 Coq.Init.Logic <> eq ind
+R6528:6530 Coq.Init.Logic <> iff def
+R6618:6626 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R6643:6650 compcert.common.Memory Mem perm def
+inst 6732:6746 <> Proper_perm_cur
+R6751:6756 Coq.Classes.Morphisms <> Proper class
+R6815:6822 compcert.common.Memory Mem perm def
+R6768:6772 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6759:6767 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R6775:6779 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6773:6774 Coq.Init.Logic <> eq ind
+R6782:6786 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6780:6781 Coq.Init.Logic <> eq ind
+R6787:6787 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6797:6802 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6788:6792 VST.concurrency.compiler.mem_equiv <> trieq ind
+R6794:6796 compcert.common.Memtype <> Cur constr
+R6805:6809 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R6803:6804 Coq.Init.Logic <> eq ind
+R6810:6812 Coq.Init.Logic <> iff def
+R6900:6908 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R6925:6932 compcert.common.Memory Mem perm def
+inst 7017:7027 <> Proper_perm
+R7032:7037 Coq.Classes.Morphisms <> Proper class
+R7087:7094 compcert.common.Memory Mem perm def
+R7049:7053 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7040:7048 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R7056:7060 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7054:7055 Coq.Init.Logic <> eq ind
+R7063:7067 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7061:7062 Coq.Init.Logic <> eq ind
+R7070:7074 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7068:7069 Coq.Init.Logic <> eq ind
+R7077:7081 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7075:7076 Coq.Init.Logic <> eq ind
+R7082:7084 Coq.Init.Logic <> iff def
+R7168:7174 VST.concurrency.compiler.mem_equiv <> max_eqv proj
+R7197:7203 VST.concurrency.compiler.mem_equiv <> cur_eqv proj
+R7168:7174 VST.concurrency.compiler.mem_equiv <> max_eqv proj
+R7168:7174 VST.concurrency.compiler.mem_equiv <> max_eqv proj
+R7197:7203 VST.concurrency.compiler.mem_equiv <> cur_eqv proj
+R7197:7203 VST.concurrency.compiler.mem_equiv <> cur_eqv proj
+inst 7254:7268 <> Proper_perm_Max
+R7273:7278 Coq.Classes.Morphisms <> Proper class
+R7335:7342 compcert.common.Memory Mem perm def
+R7290:7294 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7281:7289 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R7297:7301 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7295:7296 Coq.Init.Logic <> eq ind
+R7304:7308 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7302:7303 Coq.Init.Logic <> eq ind
+R7318:7322 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7309:7313 VST.concurrency.compiler.mem_equiv <> trieq ind
+R7315:7317 compcert.common.Memtype <> Max constr
+R7325:7329 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7323:7324 Coq.Init.Logic <> eq ind
+R7330:7332 Coq.Init.Logic <> iff def
+R7373:7380 compcert.common.Memory Mem perm def
+inst 7514:7533 <> range_perm_mem_equiv
+R7538:7543 Coq.Classes.Morphisms <> Proper class
+R7604:7617 compcert.common.Memory Mem range_perm def
+R7555:7559 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7546:7554 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R7562:7567 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7560:7561 Coq.Init.Logic <> eq ind
+R7570:7575 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7568:7569 Coq.Init.Logic <> eq ind
+R7578:7583 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7576:7577 Coq.Init.Logic <> eq ind
+R7586:7591 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7584:7585 Coq.Init.Logic <> eq ind
+R7594:7598 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7592:7593 Coq.Init.Logic <> eq ind
+R7599:7601 Coq.Init.Logic <> iff def
+R7672:7685 compcert.common.Memory Mem range_perm def
+inst 7758:7781 <> range_perm_mem_equiv_Max
+R7786:7791 Coq.Classes.Morphisms <> Proper class
+R7860:7873 compcert.common.Memory Mem range_perm def
+R7803:7807 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7794:7802 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R7810:7815 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7808:7809 Coq.Init.Logic <> eq ind
+R7818:7823 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7816:7817 Coq.Init.Logic <> eq ind
+R7826:7831 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7824:7825 Coq.Init.Logic <> eq ind
+R7841:7847 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7832:7836 VST.concurrency.compiler.mem_equiv <> trieq ind
+R7838:7840 compcert.common.Memtype <> Max constr
+R7850:7854 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R7848:7849 Coq.Init.Logic <> eq ind
+R7855:7857 Coq.Init.Logic <> iff def
+R7951:7964 compcert.common.Memory Mem range_perm def
+inst 8037:8060 <> range_perm_mem_equiv_Cur
+R8065:8070 Coq.Classes.Morphisms <> Proper class
+R8139:8152 compcert.common.Memory Mem range_perm def
+R8082:8086 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8073:8081 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R8089:8094 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8087:8088 Coq.Init.Logic <> eq ind
+R8097:8102 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8095:8096 Coq.Init.Logic <> eq ind
+R8105:8110 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8103:8104 Coq.Init.Logic <> eq ind
+R8120:8126 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8111:8115 VST.concurrency.compiler.mem_equiv <> trieq ind
+R8117:8119 compcert.common.Memtype <> Cur constr
+R8129:8133 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8127:8128 Coq.Init.Logic <> eq ind
+R8134:8136 Coq.Init.Logic <> iff def
+R8230:8243 compcert.common.Memory Mem range_perm def
+inst 8317:8329 <> mem_inj_equiv
+R8334:8339 Coq.Classes.Morphisms <> Proper class
+R8383:8393 compcert.common.Memory Mem mem_inj rec
+R8345:8349 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8343:8344 Coq.Init.Logic <> eq ind
+R8359:8363 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8350:8358 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R8373:8377 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8364:8372 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R8378:8380 Coq.Init.Logic <> iff def
+R8640:8652 VST.concurrency.compiler.mem_equiv <> content_equiv def
+inst 8765:8780 <> Proper_nextblock
+R8785:8790 Coq.Classes.Morphisms <> Proper class
+R8817:8829 compcert.common.Memory Mem nextblock proj
+R8802:8806 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8793:8801 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R8807:8814 Coq.Init.Logic <> eq ind
+R8860:8872 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+R8860:8872 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+R8860:8872 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+R8860:8872 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+inst 8906:8923 <> Proper_valid_block
+R8928:8933 Coq.Classes.Morphisms <> Proper class
+R8973:8987 compcert.common.Memory Mem valid_block def
+R8945:8949 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8936:8944 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R8958:8962 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R8950:8957 Coq.Init.Logic <> eq ind
+R8963:8970 Coq.Init.Logic <> eq ind
+R9030:9044 compcert.common.Memory Mem valid_block def
+inst 9099:9125 <> Proper_no_overlap_max_equiv
+R9130:9135 Coq.Classes.Morphisms <> Proper class
+R9179:9199 compcert.common.Memory Mem meminj_no_overlap def
+R9146:9150 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9138:9145 Coq.Init.Logic <> eq ind
+R9160:9164 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9151:9159 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R9165:9167 Coq.Init.Logic <> iff def
+R9218:9238 compcert.common.Memory Mem meminj_no_overlap def
+R9298:9305 compcert.common.Memory Mem perm def
+inst 9446:9472 <> Proper_no_overlap_mem_equiv
+R9477:9482 Coq.Classes.Morphisms <> Proper class
+R9511:9531 compcert.common.Memory Mem meminj_no_overlap def
+R9487:9491 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9485:9486 Coq.Init.Logic <> eq ind
+R9501:9505 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9492:9500 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R9506:9508 Coq.Init.Logic <> iff def
+R9586:9612 VST.concurrency.compiler.mem_equiv <> Proper_no_overlap_max_equiv inst
+R9586:9612 VST.concurrency.compiler.mem_equiv <> Proper_no_overlap_max_equiv inst
+inst 9669:9684 <> mem_inject_equiv
+R9689:9694 Coq.Classes.Morphisms <> Proper class
+R9739:9748 compcert.common.Memory Mem inject def
+R9701:9705 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9699:9700 Coq.Init.Logic <> eq ind
+R9715:9719 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9706:9714 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R9729:9733 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R9720:9728 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R9734:9736 Coq.Init.Logic <> iff def
+inst 10177:10191 <> permMapLt_equiv
+R10196:10201 Coq.Classes.Morphisms <> Proper class
+R10260:10268 VST.concurrency.common.permissions <> permMapLt def
+R10220:10224 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R10204:10219 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R10241:10245 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R10225:10240 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R10246:10248 Coq.Init.Logic <> iff def
+prf 10350:10361 <> getCur_restr
+binder 10373:10376 <> perm:56
+binder 10378:10378 <> m:57
+R10386:10394 VST.concurrency.common.permissions <> permMapLt def
+R10402:10411 VST.concurrency.common.permissions <> getMaxPerm def
+R10413:10413 VST.concurrency.compiler.mem_equiv <> m:57 var
+R10396:10399 VST.concurrency.compiler.mem_equiv <> perm:56 var
+binder 10381:10383 <> Hlt:58
+R10422:10437 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R10446:10455 VST.concurrency.common.permissions <> getCurPerm def
+R10458:10469 VST.concurrency.common.permissions <> restrPermMap def
+R10471:10473 VST.concurrency.compiler.mem_equiv <> Hlt:58 var
+R10478:10481 VST.concurrency.compiler.mem_equiv <> perm:56 var
+R10500:10509 VST.concurrency.common.permissions <> getCurPerm def
+R10512:10527 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R10557:10565 compcert.lib.Maps PMap gmap thm
+R10557:10565 compcert.lib.Maps PMap gmap thm
+R10557:10565 compcert.lib.Maps PMap gmap thm
+R10577:10600 Coq.Logic.FunctionalExtensionality <> <> mod
+R10641:10648 compcert.lib.Maps PMap get def
+R10668:10677 compcert.lib.Maps PTree gmap thm
+R10668:10677 compcert.lib.Maps PTree gmap thm
+R10668:10677 compcert.lib.Maps PTree gmap thm
+R10692:10692 compcert.lib.Maps <> :::x_'!'_x not
+R10715:10718 compcert.lib.Maps <> :::x_'!'_x not
+R10693:10695 Coq.Init.Datatypes <> snd def
+R10698:10711 compcert.common.Memory Mem mem_access proj
+R10692:10692 compcert.lib.Maps <> :::x_'!'_x not
+R10715:10718 compcert.lib.Maps <> :::x_'!'_x not
+R10693:10695 Coq.Init.Datatypes <> snd def
+R10698:10711 compcert.common.Memory Mem mem_access proj
+R10798:10815 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R10838:10850 VST.concurrency.common.permissions <> permission_at def
+R10798:10815 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R10798:10815 VST.concurrency.common.permissions <> getMaxPerm_correct thm
+R10871:10878 compcert.lib.Maps PMap get def
+R10923:10942 VST.concurrency.common.permissions <> Mem_canonical_useful thm
+R10923:10942 VST.concurrency.common.permissions <> Mem_canonical_useful thm
+R10923:10942 VST.concurrency.common.permissions <> Mem_canonical_useful thm
+R10985:10985 compcert.lib.Maps <> :::x_'!'_x not
+R10994:10997 compcert.lib.Maps <> :::x_'!'_x not
+R10986:10988 Coq.Init.Datatypes <> snd def
+R10985:10985 compcert.lib.Maps <> :::x_'!'_x not
+R10994:10997 compcert.lib.Maps <> :::x_'!'_x not
+R10986:10988 Coq.Init.Datatypes <> snd def
+R11072:11074 Coq.Init.Datatypes <> fst def
+R11072:11074 Coq.Init.Datatypes <> fst def
+R10577:10600 Coq.Logic.FunctionalExtensionality <> <> mod
+prf 11128:11139 <> getMax_restr
+binder 11151:11154 <> perm:59
+binder 11156:11156 <> m:60
+R11164:11172 VST.concurrency.common.permissions <> permMapLt def
+R11180:11189 VST.concurrency.common.permissions <> getMaxPerm def
+R11191:11191 VST.concurrency.compiler.mem_equiv <> m:60 var
+R11174:11177 VST.concurrency.compiler.mem_equiv <> perm:59 var
+binder 11159:11161 <> Hlt:61
+R11200:11215 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R11224:11233 VST.concurrency.common.permissions <> getMaxPerm def
+R11236:11247 VST.concurrency.common.permissions <> restrPermMap def
+R11249:11251 VST.concurrency.compiler.mem_equiv <> Hlt:61 var
+R11257:11266 VST.concurrency.common.permissions <> getMaxPerm def
+R11268:11268 VST.concurrency.compiler.mem_equiv <> m:60 var
+R11305:11316 VST.concurrency.common.permissions <> getMax_restr thm
+R11305:11316 VST.concurrency.common.permissions <> getMax_restr thm
+prf 11332:11349 <> restrPermMap_equiv
+binder 11361:11365 <> perm1:62
+binder 11367:11371 <> perm2:63
+binder 11373:11374 <> m1:64
+binder 11376:11377 <> m2:65
+binder 11388:11391 <> Hlt1:66
+binder 11393:11396 <> Hlt2:67
+R11418:11425 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11403:11411 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R11413:11414 VST.concurrency.compiler.mem_equiv <> m1:64 var
+R11416:11417 VST.concurrency.compiler.mem_equiv <> m2:65 var
+R11454:11461 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11426:11441 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R11443:11447 VST.concurrency.compiler.mem_equiv <> perm1:62 var
+R11449:11453 VST.concurrency.compiler.mem_equiv <> perm2:63 var
+R11462:11470 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R11474:11485 VST.concurrency.common.permissions <> restrPermMap def
+R11487:11491 VST.concurrency.compiler.mem_equiv <> perm1:62 var
+R11493:11494 VST.concurrency.compiler.mem_equiv <> m1:64 var
+R11496:11499 VST.concurrency.compiler.mem_equiv <> Hlt1:66 var
+R11518:11529 VST.concurrency.common.permissions <> restrPermMap def
+R11531:11535 VST.concurrency.compiler.mem_equiv <> perm2:63 var
+R11537:11538 VST.concurrency.compiler.mem_equiv <> m2:65 var
+R11540:11543 VST.concurrency.compiler.mem_equiv <> Hlt2:67 var
+R11604:11612 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R11628:11639 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R11628:11639 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R11628:11639 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R11628:11639 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R11628:11639 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R11659:11667 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R11697:11708 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R11697:11708 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R11697:11708 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R11697:11708 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R11697:11708 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+prf 11763:11785 <> restrPermMap_idempotent
+binder 11797:11801 <> perm0:68
+binder 11803:11807 <> perm1:69
+binder 11809:11810 <> m1:70
+binder 11812:11815 <> Hlt0:71
+binder 11817:11820 <> Hlt1:72
+binder 11822:11825 <> Hlt2:73
+R11833:11841 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R11845:11856 VST.concurrency.common.permissions <> restrPermMap def
+R11858:11862 VST.concurrency.compiler.mem_equiv <> perm1:69 var
+R11864:11865 VST.concurrency.compiler.mem_equiv <> m1:70 var
+R11867:11870 VST.concurrency.compiler.mem_equiv <> Hlt1:72 var
+R11889:11900 VST.concurrency.common.permissions <> restrPermMap def
+R11902:11906 VST.concurrency.compiler.mem_equiv <> perm1:69 var
+R11910:11921 VST.concurrency.common.permissions <> restrPermMap def
+R11923:11927 VST.concurrency.compiler.mem_equiv <> perm0:68 var
+R11929:11930 VST.concurrency.compiler.mem_equiv <> m1:70 var
+R11932:11935 VST.concurrency.compiler.mem_equiv <> Hlt0:71 var
+R11938:11941 VST.concurrency.compiler.mem_equiv <> Hlt2:73 var
+R11987:11995 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R12011:12022 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R12011:12022 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R12011:12022 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R12011:12022 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R12011:12022 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R12049:12057 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12087:12098 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12155:12173 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12155:12173 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12155:12173 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12207:12225 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12207:12225 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12207:12225 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R12252:12264 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+R12252:12264 VST.concurrency.compiler.mem_equiv <> nextblock_eqv proj
+R12295:12317 VST.concurrency.compiler.mem_equiv <> restrPermMap_idempotent thm
+R12295:12317 VST.concurrency.compiler.mem_equiv <> restrPermMap_idempotent thm
+prf 12339:12360 <> useful_permMapLt_trans
+binder 12373:12376 <> perm:74
+binder 12378:12378 <> m:75
+binder 12380:12384 <> perm0:76
+binder 12387:12390 <> Hlt0:77
+R12426:12433 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R12397:12405 VST.concurrency.common.permissions <> permMapLt def
+R12413:12422 VST.concurrency.common.permissions <> getMaxPerm def
+R12424:12424 VST.concurrency.compiler.mem_equiv <> m:75 var
+R12407:12410 VST.concurrency.compiler.mem_equiv <> perm:74 var
+R12434:12442 VST.concurrency.common.permissions <> permMapLt def
+R12450:12459 VST.concurrency.common.permissions <> getMaxPerm def
+R12463:12474 VST.concurrency.common.permissions <> restrPermMap def
+R12476:12480 VST.concurrency.compiler.mem_equiv <> perm0:76 var
+R12482:12482 VST.concurrency.compiler.mem_equiv <> m:75 var
+R12484:12487 VST.concurrency.compiler.mem_equiv <> Hlt0:77 var
+R12444:12447 VST.concurrency.compiler.mem_equiv <> perm:74 var
+R12507:12515 VST.concurrency.common.permissions <> permMapLt def
+R12534:12545 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12534:12545 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R12534:12545 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+prf 12567:12590 <> restrPermMap_idempotent'
+binder 12602:12606 <> perm0:78
+binder 12608:12612 <> perm1:79
+binder 12614:12615 <> m1:80
+binder 12617:12620 <> Hlt0:81
+binder 12622:12625 <> Hlt1:82
+R12634:12642 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R12646:12657 VST.concurrency.common.permissions <> restrPermMap def
+R12659:12663 VST.concurrency.compiler.mem_equiv <> perm1:79 var
+R12665:12666 VST.concurrency.compiler.mem_equiv <> m1:80 var
+R12668:12671 VST.concurrency.compiler.mem_equiv <> Hlt1:82 var
+R12690:12701 VST.concurrency.common.permissions <> restrPermMap def
+R12703:12707 VST.concurrency.compiler.mem_equiv <> perm1:79 var
+R12711:12722 VST.concurrency.common.permissions <> restrPermMap def
+R12724:12728 VST.concurrency.compiler.mem_equiv <> perm0:78 var
+R12730:12731 VST.concurrency.compiler.mem_equiv <> m1:80 var
+R12733:12736 VST.concurrency.compiler.mem_equiv <> Hlt0:81 var
+R12769:12790 VST.concurrency.compiler.mem_equiv <> useful_permMapLt_trans thm
+R12797:12800 VST.concurrency.compiler.mem_equiv <> Hlt1:82 var
+R12792:12795 VST.concurrency.compiler.mem_equiv <> Hlt0:81 var
+R12827:12849 VST.concurrency.compiler.mem_equiv <> restrPermMap_idempotent thm
+R12827:12849 VST.concurrency.compiler.mem_equiv <> restrPermMap_idempotent thm
+prf 12864:12884 <> restr_proof_irr_equiv
+binder 12896:12896 <> m:83
+binder 12898:12901 <> perm:84
+binder 12903:12905 <> Hlt:85
+binder 12907:12910 <> Hlt':86
+R12917:12925 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R12929:12940 VST.concurrency.common.permissions <> restrPermMap def
+R12942:12942 VST.concurrency.compiler.mem_equiv <> m:83 var
+R12944:12947 VST.concurrency.compiler.mem_equiv <> perm:84 var
+R12949:12951 VST.concurrency.compiler.mem_equiv <> Hlt:85 var
+R12956:12967 VST.concurrency.common.permissions <> restrPermMap def
+R12969:12969 VST.concurrency.compiler.mem_equiv <> m:83 var
+R12971:12974 VST.concurrency.compiler.mem_equiv <> perm:84 var
+R12976:12979 VST.concurrency.compiler.mem_equiv <> Hlt':86 var
+R13044:13059 VST.msl.Axioms <> proof_irr thm
+R13044:13059 VST.msl.Axioms <> proof_irr thm
+inst 13088:13106 <> valid_access_Proper
+R13111:13116 Coq.Classes.Morphisms <> Proper class
+R13213:13228 compcert.common.Memory Mem valid_access def
+R13128:13133 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13119:13127 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R13142:13146 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13134:13141 Coq.Init.Logic <> eq ind
+R13155:13181 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13147:13154 Coq.Init.Logic <> eq ind
+R13190:13194 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13182:13189 Coq.Init.Logic <> eq ind
+R13203:13207 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13195:13202 Coq.Init.Logic <> eq ind
+R13208:13210 Coq.Init.Logic <> iff def
+R13247:13262 compcert.common.Memory Mem valid_access def
+inst 13371:13381 <> load_Proper
+R13386:13391 Coq.Classes.Morphisms <> Proper class
+R13458:13465 compcert.common.Memory Mem load def
+R13402:13406 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13394:13401 Coq.Init.Logic <> eq ind
+R13416:13420 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13407:13415 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R13429:13433 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13421:13428 Coq.Init.Logic <> eq ind
+R13442:13447 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13434:13441 Coq.Init.Logic <> eq ind
+R13448:13455 Coq.Init.Logic <> eq ind
+R13525:13532 compcert.common.Memory Mem load def
+R13544:13551 compcert.common.Memory Mem load def
+R13566:13585 compcert.common.Memory Mem valid_access_dec thm
+R13598:13605 compcert.common.Memtype <> Readable constr
+R13653:13672 compcert.common.Memory Mem valid_access_dec thm
+R13685:13692 compcert.common.Memtype <> Readable constr
+R13566:13585 compcert.common.Memory Mem valid_access_dec thm
+R13598:13605 compcert.common.Memtype <> Readable constr
+R13653:13672 compcert.common.Memory Mem valid_access_dec thm
+R13685:13692 compcert.common.Memtype <> Readable constr
+R13653:13672 compcert.common.Memory Mem valid_access_dec thm
+R13685:13692 compcert.common.Memtype <> Readable constr
+R13863:13876 compcert.common.Memdata <> size_chunk_nat def
+R13863:13876 compcert.common.Memdata <> size_chunk_nat def
+R13525:13532 compcert.common.Memory Mem load def
+inst 13966:13977 <> loadv_Proper
+R13982:13987 Coq.Classes.Morphisms <> Proper class
+R14041:14049 compcert.common.Memory Mem loadv def
+R13998:14002 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R13990:13997 Coq.Init.Logic <> eq ind
+R14012:14016 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R14003:14011 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R14025:14030 Coq.Classes.Morphisms ProperNotations ::signature_scope:x_'==>'_x not
+R14017:14024 Coq.Init.Logic <> eq ind
+R14031:14038 Coq.Init.Logic <> eq ind
+R14126:14136 VST.concurrency.compiler.mem_equiv <> load_Proper inst
+R14126:14136 VST.concurrency.compiler.mem_equiv <> load_Proper inst
+prf 14158:14182 <> cur_equiv_restr_mem_equiv
+R14197:14199 compcert.common.Memory <> mem abbrev
+binder 14195:14195 <> m:87
+binder 14202:14202 <> p:88
+R14214:14222 VST.concurrency.common.permissions <> permMapLt def
+R14227:14236 VST.concurrency.common.permissions <> getMaxPerm def
+R14238:14238 VST.concurrency.compiler.mem_equiv <> m:87 var
+R14224:14224 VST.concurrency.compiler.mem_equiv <> p:88 var
+binder 14209:14211 <> Hlt:89
+R14280:14287 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14247:14262 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R14264:14264 VST.concurrency.compiler.mem_equiv <> p:88 var
+R14267:14276 VST.concurrency.common.permissions <> getCurPerm def
+R14278:14278 VST.concurrency.compiler.mem_equiv <> m:87 var
+R14288:14296 VST.concurrency.compiler.mem_equiv <> mem_equiv rec
+R14299:14310 VST.concurrency.common.permissions <> restrPermMap def
+R14312:14314 VST.concurrency.compiler.mem_equiv <> Hlt:89 var
+R14317:14317 VST.concurrency.compiler.mem_equiv <> m:87 var
+R14368:14376 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R14412:14423 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R14412:14423 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R14437:14448 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R14437:14448 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R14462:14480 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+R14462:14480 VST.concurrency.compiler.mem_equiv <> restr_content_equiv thm
+prf 14494:14513 <> mem_access_max_equiv
+binder 14525:14526 <> m1:90
+binder 14528:14529 <> m2:91
+R14570:14584 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14549:14552 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14532:14545 compcert.common.Memory Mem mem_access proj
+R14547:14548 VST.concurrency.compiler.mem_equiv <> m1:90 var
+R14553:14566 compcert.common.Memory Mem mem_access proj
+R14568:14569 VST.concurrency.compiler.mem_equiv <> m2:91 var
+R14585:14593 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R14595:14596 VST.concurrency.compiler.mem_equiv <> m1:90 var
+R14598:14599 VST.concurrency.compiler.mem_equiv <> m2:91 var
+R14629:14638 VST.concurrency.common.permissions <> getMaxPerm def
+prf 14690:14709 <> mem_access_cur_equiv
+binder 14721:14722 <> m1:92
+binder 14724:14725 <> m2:93
+R14765:14779 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14745:14747 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14728:14741 compcert.common.Memory Mem mem_access proj
+R14743:14744 VST.concurrency.compiler.mem_equiv <> m1:92 var
+R14748:14761 compcert.common.Memory Mem mem_access proj
+R14763:14764 VST.concurrency.compiler.mem_equiv <> m2:93 var
+R14780:14788 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R14790:14791 VST.concurrency.compiler.mem_equiv <> m1:92 var
+R14793:14794 VST.concurrency.compiler.mem_equiv <> m2:93 var
+R14824:14833 VST.concurrency.common.permissions <> getCurPerm def
+prf 14886:14900 <> Cur_equiv_restr
+binder 14912:14913 <> p1:94
+binder 14915:14916 <> p2:95
+binder 14918:14919 <> m1:96
+binder 14921:14922 <> m2:97
+binder 14924:14927 <> Hlt1:98
+binder 14929:14932 <> Hlt2:99
+R14961:14968 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14939:14954 VST.concurrency.compiler.mem_equiv <> access_map_equiv def
+R14956:14957 VST.concurrency.compiler.mem_equiv <> p1:94 var
+R14959:14960 VST.concurrency.compiler.mem_equiv <> p2:95 var
+R14969:14977 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R14981:14992 VST.concurrency.common.permissions <> restrPermMap def
+R14994:14995 VST.concurrency.compiler.mem_equiv <> p1:94 var
+R14997:14998 VST.concurrency.compiler.mem_equiv <> m1:96 var
+R15000:15003 VST.concurrency.compiler.mem_equiv <> Hlt1:98 var
+R15022:15033 VST.concurrency.common.permissions <> restrPermMap def
+R15035:15036 VST.concurrency.compiler.mem_equiv <> p2:95 var
+R15038:15039 VST.concurrency.compiler.mem_equiv <> m2:97 var
+R15041:15044 VST.concurrency.compiler.mem_equiv <> Hlt2:99 var
+R15062:15070 VST.concurrency.compiler.mem_equiv <> Cur_equiv def
+R15101:15112 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R15101:15112 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R15101:15112 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R15101:15112 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+R15101:15112 VST.concurrency.compiler.mem_equiv <> getCur_restr thm
+prf 15138:15152 <> Max_equiv_restr
+binder 15164:15165 <> p1:100
+binder 15167:15168 <> p2:101
+binder 15170:15171 <> m1:102
+binder 15173:15174 <> m2:103
+binder 15176:15179 <> Hlt1:104
+binder 15181:15184 <> Hlt2:105
+R15206:15213 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15191:15199 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R15201:15202 VST.concurrency.compiler.mem_equiv <> m1:102 var
+R15204:15205 VST.concurrency.compiler.mem_equiv <> m2:103 var
+R15214:15222 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R15226:15237 VST.concurrency.common.permissions <> restrPermMap def
+R15239:15240 VST.concurrency.compiler.mem_equiv <> p1:100 var
+R15242:15243 VST.concurrency.compiler.mem_equiv <> m1:102 var
+R15245:15248 VST.concurrency.compiler.mem_equiv <> Hlt1:104 var
+R15267:15278 VST.concurrency.common.permissions <> restrPermMap def
+R15280:15281 VST.concurrency.compiler.mem_equiv <> p2:101 var
+R15283:15284 VST.concurrency.compiler.mem_equiv <> m2:103 var
+R15286:15289 VST.concurrency.compiler.mem_equiv <> Hlt2:105 var
+R15307:15315 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R15346:15357 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R15346:15357 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R15346:15357 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R15346:15357 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+R15346:15357 VST.concurrency.compiler.mem_equiv <> getMax_restr thm
+prf 15384:15395 <> store_max_eq
+binder 15407:15409 <> cnk:106
+binder 15412:15412 <> m:107
+binder 15414:15414 <> b:108
+binder 15416:15418 <> ofs:109
+binder 15420:15420 <> v:110
+binder 15422:15423 <> m':111
+R15464:15471 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15454:15456 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15430:15438 compcert.common.Memory Mem store def
+R15440:15442 VST.concurrency.compiler.mem_equiv <> cnk:106 var
+R15445:15445 VST.concurrency.compiler.mem_equiv <> m:107 var
+R15447:15447 VST.concurrency.compiler.mem_equiv <> b:108 var
+R15449:15451 VST.concurrency.compiler.mem_equiv <> ofs:109 var
+R15453:15453 VST.concurrency.compiler.mem_equiv <> v:110 var
+R15457:15460 Coq.Init.Datatypes <> Some constr
+R15462:15463 VST.concurrency.compiler.mem_equiv <> m':111 var
+R15484:15486 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15472:15481 VST.concurrency.common.permissions <> getMaxPerm def
+R15483:15483 VST.concurrency.compiler.mem_equiv <> m:107 var
+R15487:15496 VST.concurrency.common.permissions <> getMaxPerm def
+R15498:15499 VST.concurrency.compiler.mem_equiv <> m':111 var
+R15533:15541 compcert.common.Memory Mem store def
+R15553:15561 compcert.common.Memory Mem store def
+R15593:15612 compcert.common.Memory Mem valid_access_dec thm
+R15626:15633 compcert.common.Memtype <> Writable constr
+R15593:15612 compcert.common.Memory Mem valid_access_dec thm
+R15626:15633 compcert.common.Memtype <> Writable constr
+R15533:15541 compcert.common.Memory Mem store def
+prf 15694:15708 <> store_max_equiv
+binder 15720:15721 <> sz:112
+binder 15723:15723 <> m:113
+binder 15725:15725 <> b:114
+binder 15727:15729 <> ofs:115
+binder 15731:15731 <> v:116
+binder 15733:15734 <> m':117
+R15773:15780 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R15763:15765 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R15741:15749 compcert.common.Memory Mem store def
+R15751:15752 VST.concurrency.compiler.mem_equiv <> sz:112 var
+R15754:15754 VST.concurrency.compiler.mem_equiv <> m:113 var
+R15756:15756 VST.concurrency.compiler.mem_equiv <> b:114 var
+R15758:15760 VST.concurrency.compiler.mem_equiv <> ofs:115 var
+R15762:15762 VST.concurrency.compiler.mem_equiv <> v:116 var
+R15766:15769 Coq.Init.Datatypes <> Some constr
+R15771:15772 VST.concurrency.compiler.mem_equiv <> m':117 var
+R15781:15789 VST.concurrency.compiler.mem_equiv <> Max_equiv def
+R15791:15791 VST.concurrency.compiler.mem_equiv <> m:113 var
+R15793:15794 VST.concurrency.compiler.mem_equiv <> m':117 var
+R15835:15846 VST.concurrency.compiler.mem_equiv <> store_max_eq thm
+R15835:15846 VST.concurrency.compiler.mem_equiv <> store_max_eq thm
+R15835:15846 VST.concurrency.compiler.mem_equiv <> store_max_eq thm
+R15835:15846 VST.concurrency.compiler.mem_equiv <> store_max_eq thm

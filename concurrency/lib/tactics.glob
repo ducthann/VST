@@ -1,0 +1,74 @@
+DIGEST 62421f43d0bbb9e556852452099a37fd
+FVST.concurrency.lib.tactics
+R15:41 Coq.Classes.RelationClasses <> <> lib
+R59:92 Coq.Relations.Relation_Definitions <> <> lib
+R110:128 compcert.lib.Coqlib <> <> lib
+R164:182 compcert.lib.Axioms <> <> lib
+R763:765 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R763:765 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R818:820 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R818:820 Coq.Init.Logic <> ::type_scope:x_'='_x not
+def 1439:1445 <> neq_rel
+binder 1448:1448 <> A:1
+R1457:1464 Coq.Relations.Relation_Definitions <> relation def
+R1466:1466 VST.concurrency.lib.tactics <> A:1 var
+R1481:1481 VST.concurrency.lib.tactics <> A:1 var
+binder 1477:1477 <> x:2
+binder 1479:1479 <> y:3
+R1488:1491 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1487:1487 VST.concurrency.lib.tactics <> x:2 var
+R1492:1492 VST.concurrency.lib.tactics <> y:3 var
+inst 1511:1523 <> Symmetric_neq
+binder 1533:1533 <> A:4
+R1537:1545 Coq.Classes.RelationClasses <> Symmetric class
+R1547:1547 VST.concurrency.lib.tactics <> A:4 var
+R1550:1556 VST.concurrency.lib.tactics <> neq_rel def
+R1558:1558 VST.concurrency.lib.tactics <> A:4 var
+R1690:1693 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1690:1693 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1783:1786 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1783:1786 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1829:1835 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1837:1838 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1829:1835 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1837:1838 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1926:1929 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1926:1929 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2010:2013 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2010:2013 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2044:2050 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R2052:2053 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R2044:2050 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R2052:2053 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4355:4365 Coq.Classes.RelationClasses <> Equivalence class
+R4355:4365 Coq.Classes.RelationClasses <> Equivalence class
+R4978:4980 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4965:4971 Coq.Init.Logic <> eq_refl constr
+ind 5555:5558 <> MARK
+constr 5579:5584 <> Marked
+binder 5561:5561 <> T:5
+R5572:5572 VST.concurrency.lib.tactics <> T:5 var
+binder 5570:5570 <> a:6
+R5587:5590 VST.concurrency.lib.tactics <> MARK:7 ind
+R5594:5594 VST.concurrency.lib.tactics <> a:6 var
+R5592:5592 VST.concurrency.lib.tactics <> T:5 var
+scheme 5555:5558 <> MARK_rect
+scheme 5555:5558 <> MARK_ind
+scheme 5555:5558 <> MARK_rec
+scheme 5555:5558 <> MARK_sind
+R5643:5646 VST.concurrency.lib.tactics <> MARK ind
+R5643:5646 VST.concurrency.lib.tactics <> MARK ind
+R5712:5717 VST.concurrency.lib.tactics <> Marked constr
+R7371:7381 compcert.lib.Coqlib <> modusponens thm
+R7750:7753 Coq.Init.Logic <> True ind
+R7904:7907 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7904:7907 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R8087:8089 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8087:8089 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8173:8175 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8173:8175 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8606:8608 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8621:8636 compcert.lib.Axioms <> proof_irr prfax
+R10847:10849 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10847:10849 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11162:11164 Coq.Init.Logic <> ::type_scope:x_'='_x not
