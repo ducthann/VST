@@ -58,6 +58,8 @@ Require Import VST.concurrency.juicy.semax_preservation.
 Require Import VST.concurrency.juicy.semax_simlemmas.*)
 Require Import VST.concurrency.common.dry_machine_lemmas.
 Require Import VST.concurrency.common.dry_machine_step_lemmas.
+Require Import VST.concurrency.juicy.memLt. (* added memLt *)
+
 Import ThreadPool.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -355,229 +357,6 @@ Section Safety.
 
    *)
 
-  Definition memLt m1 m2 := permMapLt (getCurPerm m1) (getCurPerm m2) /\
-                              Mem.mem_contents m1 = Mem.mem_contents m2 /\
-                              Mem.nextblock m1 = Mem.nextblock m2.
-
-  Lemma memPerm_permMapLt m1 m2:
-    permMapLt (getCurPerm m1) (getCurPerm m2) ->
-    ∀ (b0 : block) (ofs : Z) (p : permission),
-      Mem.perm m1 b0 ofs Cur p → Mem.perm m2 b0 ofs Cur p.
-  Proof.
-    intros HpermLt b???.
-    rewrite /Mem.perm /Mem.perm_order' in H |-*.
-    rewrite /permMapLt /Mem.perm_order'' /getCurPerm in HpermLt.
-    specialize (HpermLt b ofs).
-    rewrite ! Maps.PMap.gmap in HpermLt.
-    destruct ((Mem.mem_access m2) # b ofs Cur);
-    destruct ((Mem.mem_access m1) # b ofs Cur); try contradiction.
-    eapply perm_order_trans; eauto.
-  Qed.
-  
-  Lemma memLt_valid_pointer:
-    forall m1 m2 b z, 
-      memLt m1 m2 ->
-      Mem.valid_pointer m1 b z = true ->
-      Mem.valid_pointer m2 b z = true.
-  Proof.
-    intros.
-    destruct H as [? [? ?]].
-    unfold Mem.valid_pointer in *.
-    destruct (Mem.perm_dec m1 b z Cur Nonempty); inv H0.
-    destruct (Mem.perm_dec m2 b z Cur Nonempty); try reflexivity.
-    contradiction n. clear n.
-    eapply memPerm_permMapLt; eauto.
-  Qed.
-
-  Lemma memLt_weak_valid_pointer:
-    forall m1 m2 b z, 
-      memLt m1 m2 ->
-      Mem.weak_valid_pointer m1 b z = true ->
-      Mem.weak_valid_pointer m2 b z = true.
-  Proof.
-    intros.
-    unfold Mem.weak_valid_pointer in *.
-    rewrite -> orb_true_iff in *.
-    destruct H0; [left|right]; eapply memLt_valid_pointer; eauto.
-  Qed.
-
-
-
-
-  (*
-  Lemma unaryop_mem_lessdef {op u t m v m2}
-    (V: Cop.sem_unary_operation op u t m = Some v)
-    (M : memLt m m2):
-    Cop.sem_unary_operation op u t m2 = Some v.
-  Proof. destruct op; simpl; inv V; try econstructor.
-         unfold sem_notbool, bool_val in *.
-         remember (classify_bool t) as c.
-         destruct c; trivial.
-         destruct u; trivial.
-         simple_if_tac; trivial.
-         destruct (Mem.weak_valid_pointer m _ _) eqn: Hm; inv H0.
-         rewrite (mem_lessdef_weak_valid_pointer _ _ _ _ M); trivial.
-  Qed.
-*)
-
-  
-
-  Lemma unaryop_memLt {op u t m v m2}
-    (V : Cop.sem_unary_operation op u t m = Some v)
-    (M : memLt m m2):
-    Cop.sem_unary_operation op u t m2 = Some v.
-  Proof.
-    rewrite /Cop.sem_unary_operation in V |-*.
-    destruct op; simpl; inv V; try econstructor.
-    rewrite /Cop.sem_notbool /Cop.bool_val in H0 |-*.
-    remember (Cop.classify_bool t) as c.
-    destruct c; auto.
-    destruct u; auto.
-    simple_if_tac; auto.
-    destruct (Mem.weak_valid_pointer m _ _) eqn: Hm; inv H0.
-    rewrite (memLt_weak_valid_pointer _ _ _ _ M); auto.
-  Qed.
-
-  
-  Lemma sem_cast_memLt {v t d m m2 v'} (M : memLt m m2):
-    Cop.sem_cast v t d m = Some v' -> Cop.sem_cast v t d m2 = Some v'.
-  Proof.
-    unfold Cop.sem_cast; intros.
-    destruct (Cop.classify_cast t d); trivial.
-    destruct v; trivial.
-    simple_if_tac; trivial.
-    destruct (Mem.weak_valid_pointer m _ _) eqn: Hm; inv H.
-    rewrite (memLt_weak_valid_pointer _ _ _ _ M); trivial.
-  Qed.
-  
-  Lemma sem_binarith_memLt {f1 f2 f3 f4 v1 t1 v2 t2 v' m m2} (M : memLt m m2):
-    Cop.sem_binarith f1 f2 f3 f4 v1 t1 v2 t2 m = Some v' ->
-    Cop.sem_binarith f1 f2 f3 f4 v1 t1 v2 t2 m2 = Some v'.
-  Proof.
-    Search Cop.sem_binarith.
-    Locate Clight_mem_lessdef.sem_binarith_mem_lessdef.
-    unfold Cop.sem_binarith; intros.
-    destruct (Cop.sem_cast v1 t1 _ m) eqn: Hcast1; inv H.
-    destruct (Cop.sem_cast v2 t2 _ m) eqn: Hcast2; inv H1.
-    erewrite !(sem_cast_memLt  M); eauto.
-  Qed.
-
-
-  
-  Lemma cmplu_bool_lessdef {v1 v2 f b m m2} (M : memLt m m2):
-    Val.cmplu_bool (Mem.valid_pointer m) f v1 v2 = Some b ->
-    Val.cmplu_bool (Mem.valid_pointer m2) f v1 v2 = Some b.
-  Proof.
-  Admitted.
-
-
-  
-  Lemma cmp_ptr_lessdef {v1 v2 f b m m2} (M : memLt m m2):
-    Cop.cmp_ptr m f v1 v2 = Some b ->
-    Cop.cmp_ptr m2 f v1 v2 = Some b.
-  Proof.
-  Admitted.
-  
-  Lemma sem_cmp_mem_lessdef {f v1 t1 v2 t2 b m m2} (M : memLt m m2):
-    Cop.sem_cmp f v1 t1 v2 t2 m = Some b -> Cop.sem_cmp f v1 t1 v2 t2 m2 = Some b.
-  Proof.
-    unfold Cop.sem_cmp; intros.
-    destruct (Cop.classify_cmp t1 t2).
-    destruct v1; inv H.
-  Admitted.
-
-  Lemma binaryop_memLt {ge op v1 t1 v2 t2 m v m2}
-    (V: Cop.sem_binary_operation ge op v1 t1 v2 t2 m = Some v)
-    (M: memLt m m2):
-    Cop.sem_binary_operation ge op v1 t1 v2 t2 m2 = Some v.
-  Proof.
-    destruct op; simpl; inv V; try econstructor.
-    + rewrite /Cop.sem_add in H0 |-*.
-      remember (Cop.classify_add t1 t2) as c.
-      destruct c.
-      destruct v1; auto. destruct v1; auto. destruct v1; auto. destruct v1; auto.
-      simpl.
-      erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_sub in *.
-      remember (Cop.classify_sub t1 t2) as c.
-      destruct c.
-      destruct v1; trivial. destruct v1; trivial. destruct v1; trivial.
-      erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_mul in *. erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_div in *. erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_mod in *. erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_and in *. erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_or  in *. erewrite sem_binarith_memLt; eauto.
-    + unfold Cop.sem_xor in *. erewrite sem_binarith_memLt; eauto.
-    + erewrite sem_binarith_memLt; eauto.
-      
-+ erewrite sem_cmp_mem_lessdef; eauto.
-+ erewrite sem_cmp_mem_lessdef; eauto.
-+ erewrite sem_cmp_mem_lessdef; eauto.
-+ erewrite sem_cmp_mem_lessdef; eauto.
-+ erewrite sem_cmp_mem_lessdef; eauto.
-+ erewrite sem_cmp_mem_lessdef; eauto.
-Qed.
-*)
-    
-
-  Lemma memLt_loadbytes : forall m1 m2 b ofs len v,
-      memLt m1 m2 ->
-      Mem.loadbytes m1 b ofs len = Some v -> Mem.loadbytes m2 b ofs len = Some v.
-  Proof.
-    Transparent Mem.loadbytes.
-    unfold Mem.loadbytes; intros.
-    if_tac in H0; inv H0.
-    destruct H as (HpermLt & ? & ?).
-    assert ( ∀ (b0 : block) (ofs : Z) (p : permission),
-               Mem.perm m1 b0 ofs Cur p → Mem.perm m2 b0 ofs Cur p) as Hmem.
-    { eapply memPerm_permMapLt; auto. }
-    rewrite if_true; auto.
-    2 :{ intros ??; auto. }
-    do 2 f_equal.
-    rewrite H; auto.
-  Qed.
-
-  Lemma eval_expr_eval_lvalue_memLt ge ve te m:
-     (forall (e : expr) (v : val),
-        eval_expr ge ve te m e v ->
-        forall m2 : mem, memLt m m2 -> eval_expr ge ve te m2 e v) /\
-     (forall (e : expr) (b : block) (i : ptrofs) (bf: bitfield),
-        eval_lvalue ge ve te m e b i bf ->
-        forall m2 : mem, memLt m m2 -> eval_lvalue ge ve te m2 e b i bf).
-Proof.
-  apply eval_expr_lvalue_ind; intros; try solve [econstructor; eauto].
-  + econstructor; eauto.
-    eapply unaryop_memLt; eauto.
-  + econstructor; eauto. (* eapply binaryop_mem_lessaloc; eauto. *) admit.
-  + econstructor; eauto. rewrite <- H1. symmetry. 
-    (* apply sem_cast_mem_lessaloc; trivial. *) admit.
-  + econstructor; eauto.
-    destruct H2 as [M1 [M2 M3]].
-    inv H1; simpl in *.
-  - eapply deref_loc_value; eauto.
-    simpl.
-    destruct (Mem.load_loadbytes _ _ _ _ _ H3) as [vals [X Y]]; subst.
-    apply Mem.load_valid_access in H3.
-    destruct H3.
-    eapply Mem.loadbytes_load; trivial.
-    eapply memLt_loadbytes; eauto.
-    repeat split; auto.
-  - apply deref_loc_reference; trivial.
-  - apply deref_loc_copy; trivial.
-  - apply deref_loc_bitfield; auto.
-     inv H2. econstructor; eauto.
-    destruct (Mem.load_loadbytes _ _ _ _ _ H7) as [vals [X Y]]; subst.
-    apply Mem.load_valid_access in H7. destruct H7.
-    unfold Mem.loadv.
-    rewrite Y.
-    eapply Mem.loadbytes_load; trivial.
-    eapply memLt_loadbytes; eauto.
-    repeat split; auto.
-  Admitted.
-
- 
-  
   Lemma cl_step_step m1 m2 (c c': CC_core):
     forall m1', memLt m1 m2 ->
            cl_step ge c m1 c' m1' -> exists m2', cl_step ge c m2 c' m2' /\ memLt m1' m2'.
@@ -586,13 +365,47 @@ Proof.
     inv H0.
     eexists; esplit.
     eapply step_assign; eauto.
-    eapply eval_expr_eval_lvalue_memLt; eauto.
+    apply Clight_evsem.assign_locT_ax2 in H4.
+    destruct H4 as (?& Hassign).
+    eapply assign_locT_sub_memLt with (m1 := m2) in Hassign.
+    destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
+    Search eval_lvalue .
+    eapply eval_expr_eval_lvalue_memLt; eauto; econstructor; auto. auto.
+    eapply eval_expr_eval_lvalue_memLt; eauto; econstructor.
+    erewrite sem_cast_memLt; eauto.
+    
+    Locate assign_loc.
+    Search compcert.cfrontend.Clight.assign_loc.
+    Check ev_elim.
     
 
+    
+    eapply Clight_evsem.assign_locT_ax1.
+    apply Clight_evsem.assign_locT_ax2 in H4.
+    destruct H4 as (?& Hassign).
+    eapply assign_locT_sub_memLt with (m1 := m2) in Hassign.
+    destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
+    2 : { auto. }
+    2 :{ 
+    eapply Hassign.
+    Search Clight_evsem.assign_locT.
+
+    destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
+    
+    
+    Search assign_loc .
+    rewrite /memLt in H.
+    eapply Hassign.
+    instantiate (1 := x0).
+    
+    instantiate (1 := m2).
+    eauto.
+    
+    Search Clight_evsem.assign_locT. 
+    Search assign_loc.
+    Search Cop.sem_cast.
 
     
-    Search cl_step.
-    econstructor.
     eapply Clight_mem_lessdef.eval_expr_eval_lvalue_mem_lessalloc; eauto.
     rewrite /mem_lessdef.mem_lessalloc.
     {
