@@ -96,13 +96,13 @@ Set Bullet Behavior "Strict Subproofs".
   Proof. eapply memPerm_order_permMapLt. Qed.
 
   Lemma range_perm_memLt m1 m2 (Hp : permMapLt (getCurPerm m1) (getCurPerm m2)):
-    ∀ (b : block) (ofs : Z) (p : permission) len,
-    Mem.range_perm m1 b ofs (ofs + len) Cur p ->
-      Mem.range_perm m2 b ofs (ofs + len) Cur p.
+    ∀ (b : block) (lo hi : Z) (p : permission),
+    Mem.range_perm m1 b lo hi Cur p ->
+      Mem.range_perm m2 b lo hi Cur p.
   Proof.
     unfold Mem.range_perm, Mem.perm in *.
     intros ?????Hperm??Hofs.
-    specialize ((Hperm ofs0) Hofs).
+    specialize ((Hperm ofs) Hofs).
     eapply memPerm_order_permMapLt; eauto.
   Qed.
   
@@ -325,6 +325,22 @@ Proof.
     repeat split; auto.
   Qed.
 
+Lemma eval_expr_memLt {ge ve te m m2 e v} (M:memLt m m2):
+  eval_expr ge ve te m e v -> eval_expr ge ve te m2 e v.
+Proof. intros. eapply eval_expr_eval_lvalue_memLt; eauto. Qed.
+
+Lemma eval_exprlist_memLt {ge ve te}:
+  forall al tyargs vargs m m2 (M:memLt m m2)
+         (E:eval_exprlist ge ve te m al tyargs vargs),
+    eval_exprlist ge ve te m2 al tyargs vargs.
+Proof.
+  induction al; simpl; intros; inv E.
+  econstructor.
+  apply (eval_expr_memLt M) in H1.
+  apply (sem_cast_memLt M) in H2.
+  econstructor; eauto.
+Qed.
+
 (* veric.Clight_evsem *)
 Transparent Mem.storebytes.
 
@@ -370,4 +386,75 @@ Proof.
     eapply Mem.store_storebytes, storebytes_sub in H9 as (? & ? & ?); eauto.
     do 2 eexists; eauto; econstructor; constructor; eauto.
     apply Mem.storebytes_store; eauto.
+Qed.
+
+Transparent Mem.free.
+
+Lemma memLt_free: forall m m' b lo hi (FL: Mem.free m b lo hi = Some m') m1 (PLE: memLt m m1),
+      exists m1', Mem.free m1 b lo hi = Some m1' /\ memLt m' m1'.
+Proof.
+  intros.
+  specialize (Mem.free_range_perm _ _ _ _ _ FL).
+  intros.
+  assert (RF: Mem.range_perm m1 b lo hi Cur Freeable).
+  { destruct PLE. red; intros.
+    specialize (H _ H2).
+    rewrite /permMapLt /getCurPerm in H0 |- *.
+    rewrite /Mem.perm /Mem.perm_order' /Mem.perm_order'' /= in H0 |- *.
+    rewrite /Mem.perm /Mem.perm_order' in H.
+    specialize (H0 b ofs).
+    repeat rewrite Maps.PMap.gmap in H0 |- *.
+    destruct ((Mem.mem_access m1) # b ofs Cur);
+      destruct ((Mem.mem_access m) # b ofs Cur); try contradiction.
+    eapply perm_order_trans; eauto.
+  }
+  destruct (Mem.range_perm_free m1 b lo hi RF) as [mm MM].
+  exists mm; split; trivial.
+  destruct PLE.
+  split; intros.
+  - rewrite /permMapLt /getCurPerm in H0 |- *.
+    intros.
+    repeat rewrite Maps.PMap.gmap in H0 |- *.
+    remember ((Mem.mem_access mm) # b0 ofs Cur) as q; symmetry in Heqq.
+      destruct q; simpl in *.
+    * remember ((Mem.mem_access m') # b0 ofs Cur) as w; symmetry in Heqw.
+      pose proof (memsem_lemmas.free_access_inv _ _ _ _ _ MM) as HMM.
+      pose proof (memsem_lemmas.free_access_inv _ _ _ _ _ FL) as HFL.
+      eapply HMM in Heqq.
+      destruct w; trivial.
+      eapply HFL in Heqw.
+      specialize (H0 b0 ofs).
+      rewrite /Mem.perm_order'' /= in H0.
+      repeat rewrite Maps.PMap.gmap in H0.
+      rewrite Heqq Heqw in H0; auto.
+    * remember ((Mem.mem_access m') # b0 ofs Cur) as w; symmetry in Heqw.
+      destruct w; trivial.
+      pose proof (memsem_lemmas.free_access_inv _ _ _ _ _ FL) as HFL.
+      edestruct (memsem_lemmas.free_access_inv_None _ _ _ _ _ MM); eauto.
+      destruct H2 as [? [? [? ?]]]; subst.
+      + rewrite (Mem.free_result _ _ _ _ _ FL) /= in Heqw.
+        rewrite PMap.gss in Heqw.
+        remember (zle lo ofs&& zlt ofs hi ) as t; destruct t; try discriminate.
+        destruct (zle lo ofs); destruct (zlt ofs hi); subst; try discriminate; lia.
+      + specialize (H0 b0 ofs).
+        repeat rewrite Maps.PMap.gmap in H0.
+        eapply HFL in Heqw.
+        destruct H2 as ([?| [? | ?]] & ?); rewrite H3 Heqw in H0; trivial.
+  - destruct H1; rewrite (Mem.free_result _ _ _ _ _ FL);
+    rewrite (Mem.free_result _ _ _ _ _ MM); split; auto.
+  Qed.
+
+
+Lemma free_list_memLt:
+  forall l (m1 m2 : mem) (m1' : Mem.mem'),
+    memLt m1 m2 ->
+    Mem.free_list m1 l = Some m1' ->
+    exists m2' : Mem.mem',
+      Mem.free_list m2 l = Some m2' /\ memLt m1' m2'.
+Proof.
+  induction l; simpl; intros.
+  { inv H0; eauto. }
+  destruct a as ((?, ?), ?).
+  destruct (Mem.free m1 _ _ _) eqn: Hfree; inv H0.
+  eapply memLt_free in Hfree as (? & -> & ?); eauto.
 Qed.
