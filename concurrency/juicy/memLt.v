@@ -159,6 +159,21 @@ Set Bullet Behavior "Strict Subproofs".
   Qed.
 *)
 
+  Lemma bool_val_memLt {u t m m2 b} 
+    (V : Cop.bool_val u t m = Some b)
+    (M : memLt m m2):
+    Cop.bool_val u t m2 = Some b.
+  Proof.
+    rewrite /Cop.bool_val in V |- *.
+    remember (Cop.classify_bool t) as c.
+    destruct c; auto.
+    destruct u; auto.
+    simple_if_tac; auto.
+    destruct (Mem.weak_valid_pointer m _ _) eqn: Hm; inv V.
+    rewrite (memLt_weak_valid_pointer _ _ _ _ M); auto.
+  Qed.
+    
+
   Lemma unaryop_memLt {op u t m v m2}
     (V : Cop.sem_unary_operation op u t m = Some v)
     (M : memLt m m2):
@@ -296,7 +311,10 @@ Set Bullet Behavior "Strict Subproofs".
         forall m2 : mem, memLt m m2 -> eval_lvalue ge ve te m2 e b i bf).
 Proof.
   apply eval_expr_lvalue_ind; intros; try solve [econstructor; eauto].
-  + econstructor; eauto.
+  + Search eval_expr Cop.sem_unary_operation.
+    Print eval_expr.
+    Check eval_Eunop.
+    eapply eval_Eunop; eauto.
     eapply unaryop_memLt; eauto.
   + econstructor; eauto. eapply binaryop_memLt; eauto.
   + econstructor; eauto. rewrite <- H1. symmetry.

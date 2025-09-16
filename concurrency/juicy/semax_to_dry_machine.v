@@ -357,72 +357,105 @@ Section Safety.
 
    *)
 
+  (*
+    b1 :
+    Max : Writable
+    Cur : Readable
+
+    Cur : Writable 
+
+   *)
+
+
   Lemma cl_step_step m1 m2 (c c': CC_core):
     forall m1', memLt m1 m2 ->
            cl_step ge c m1 c' m1' -> exists m2', cl_step ge c m2 c' m2' /\ memLt m1' m2'.
   Proof.
     intros.
     inv H0.
-    eexists; esplit.
-    eapply step_assign; eauto.
+    (* 1st case *)
     apply Clight_evsem.assign_locT_ax2 in H4.
     destruct H4 as (?& Hassign).
     eapply assign_locT_sub_memLt with (m1 := m2) in Hassign.
     destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
-    Search eval_lvalue .
+    eexists; esplit.
+    eapply step_assign; eauto.
     eapply eval_expr_eval_lvalue_memLt; eauto; econstructor; auto. auto.
     eapply eval_expr_eval_lvalue_memLt; eauto; econstructor.
     erewrite sem_cast_memLt; eauto.
-    
-    Locate assign_loc.
-    Search compcert.cfrontend.Clight.assign_loc.
-    Check ev_elim.
-    
-
-    
-    eapply Clight_evsem.assign_locT_ax1.
-    apply Clight_evsem.assign_locT_ax2 in H4.
-    destruct H4 as (?& Hassign).
-    eapply assign_locT_sub_memLt with (m1 := m2) in Hassign.
-    destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
-    2 : { auto. }
-    2 :{ 
-    eapply Hassign.
-    Search Clight_evsem.assign_locT.
-
-    destruct Hassign as (m2' & HmemLt1 & Hassign); auto.
-    
-    
-    Search assign_loc .
-    rewrite /memLt in H.
-    eapply Hassign.
-    instantiate (1 := x0).
-    
-    instantiate (1 := m2).
-    eauto.
-    
-    Search Clight_evsem.assign_locT. 
-    Search assign_loc.
-    Search Cop.sem_cast.
-
-    
-    eapply Clight_mem_lessdef.eval_expr_eval_lvalue_mem_lessalloc; eauto.
-    rewrite /mem_lessdef.mem_lessalloc.
-    {
-      rewrite /memLt in H.
-      destruct H as (Hperm & Hcontent & Hnextblock).
-      repeat split.
-      - Transparent Mem.loadbytes.
-        rewrite /Mem.loadbytes.
-        extensionality b1 ofs1 n1.
-        admit.
-      - Transparent Mem.perm.
-        rewrite /Mem.perm.
-        extensionality b1 ofs1 n1.
-        f_equal.
-        Search Mem.mem_access. 
-        
-
+    eapply Clight_evsem.assign_locT_ax1; eauto. auto. auto.
+    (* 2nd case *)
+    eexists; esplit.
+    eapply step_set; eapply eval_expr_memLt; eauto. auto.
+    (* 3rd case *)
+    eexists; esplit.
+    eapply step_call; eauto.
+    eapply eval_expr_memLt; eauto.
+    eapply eval_exprlist_memLt; eauto. auto.
+    (* 4th case *)
+    eexists; esplit.
+    eapply step_builtin; eauto.
+    eapply eval_exprlist_memLt; eauto.
+    Check Events.external_call_mem_extends.
+    admit. admit.
+    (* 5th case *)
+    eexists; esplit.
+    econstructor; eauto. auto.
+    (* 6th case *)
+    eexists; esplit. econstructor; eauto. auto.
+    (* 7th case *)
+    eexists; esplit. econstructor; eauto. auto.
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eexists; esplit.
+    eapply step_ifthenelse; eauto.
+    eapply eval_expr_memLt; eauto.
+    eapply bool_val_memLt; eauto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    eexists; esplit. econstructor; eauto. auto.
+    eexists; esplit. econstructor; eauto. auto.
+    eexists; esplit. econstructor; eauto. auto.
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eapply free_list_memLt with (m2 := m2) in H1.
+    destruct H1 as (? & H1 & ?). try done.
+    eexists; esplit.
+    eapply step_return_0.
+    instantiate (1 := x). apply H1. auto. auto.
+    (**)
+    eapply free_list_memLt with (m2 := m2) in H3.
+    destruct H3 as (? & H3 & ?). try done.
+    eexists; esplit.
+    econstructor.
+    eapply eval_expr_memLt; eauto.
+    eapply sem_cast_memLt; eauto.
+    instantiate (1 := x); auto. auto. auto.
+    (**)
+    eapply free_list_memLt with (m2 := m2) in H2.
+    destruct H2 as (? & H2 & ?).
+    eexists; esplit.
+    eapply step_skip_call; eauto. auto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    eapply eval_expr_eval_lvalue_memLt; eauto; econstructor; auto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    (**)
+    eexists; esplit. eapply step_internal_function.
+    Search function_entry2.
+    Search alloc_variables.
+    admit. admit.
+    (**)
+    eexists; esplit. econstructor; eauto. auto.
+    admit. admit.
+    eexists; esplit. econstructor; eauto. auto.
   Admitted.
 
   Lemma permMapLt_cur: forall p m (Hlt : permMapLt (getCurPerm p) (getCurPerm m)),
@@ -435,6 +468,21 @@ Section Safety.
     rewrite /getMaxPerm /getCurPerm.
     repeat (rewrite Maps.PMap.gmap).
     apply Mem.access_max.
+  Qed.
+
+ 
+  Lemma permMapLt_cur_restr: forall (m : mem) (max : access_map) (Hlt : permMapLt max (getMaxPerm m))
+                               (Hmax : permMapLt (getMaxPerm m) max),
+      permMapLt (getCurPerm m) (getCurPerm (restrPermMap Hlt)).
+  Proof.
+    intros???? b ofs.
+    pose proof (@mem_equiv.getCur_restr max m Hlt) as Heq.
+    eapply (perm_order''_trans _ ((getMaxPerm m) # b ofs)); last first; try apply getCur_Max.
+    rewrite /mem_equiv.access_map_equiv in Heq.
+    rewrite /permMapLt /Mem.perm_order'' in Hmax.
+    specialize (Heq b).
+    specialize (Hmax b ofs).
+    by rewrite -Heq in Hmax.
   Qed.
   
   Lemma jsafe_jsafe_perm : forall `{!VSTGS unit Σ} max E z c p, p = max ->
@@ -455,26 +503,19 @@ Section Safety.
       destruct H as (? & ?).
       iExists _, x.
       iSplit.
-      {
-        destruct H.
-        iPureIntro.
-        simpl. done.
-      }
+      { destruct H; try done. }
       destruct H as (Hcl & HmemLt).
       rewrite /memLt in HmemLt.
       destruct HmemLt as (Hperm & Hcontent & Hnext).
+      2 : { split; auto. apply permMapLt_cur_restr; auto. }
       iSplitL "S".
       { iExists (getCurPerm m').
         assert (permMapLt (getCurPerm m') (getMaxPerm x)) as Hltm'.
         { apply permMapLt_cur; auto. }
         iExists Hltm'.
+
+
         
-        Check restrPermMap_idem.
-
-          Search permMapLt getCurPerm.
-          Check restr_Max_eq.
-          Search permMapLt .
-
 
 
           
