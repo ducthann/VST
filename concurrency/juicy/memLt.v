@@ -476,3 +476,89 @@ Proof.
   destruct (Mem.free m1 _ _ _) eqn: Hfree; inv H0.
   eapply memLt_free in Hfree as (? & -> & ?); eauto.
 Qed.
+
+Lemma perm_order_cur m1 m2 b ofs (H : permMapLt (getCurPerm m1) (getCurPerm m2)):
+  Mem.perm_order'' ((Mem.mem_access m2) # b ofs Cur) ((Mem.mem_access m1) # b ofs Cur).
+Proof.
+  rewrite /permMapLt /Mem.perm_order'' /getCurPerm in H |- *.
+  specialize (H b ofs).
+  by rewrite ! Maps.PMap.gmap in H.
+Qed.
+
+Lemma memLt_alloc :
+    forall m1 m2 lo hi m1' b,
+      memLt m1 m2 ->
+      Mem.alloc m1 lo hi = (m1', b) ->
+      exists m2',
+        Mem.alloc m2 lo hi = (m2', b)
+        /\ memLt m1' m2'.
+  Proof.
+    intros.
+    remember (Mem.alloc m2 lo hi). destruct p; symmetry in Heqp.
+    assert (B: b0 = b).
+    { apply Mem.alloc_result in H0.
+      apply Mem.alloc_result in Heqp.
+      destruct H as (? & ? & ?).
+      subst; auto.
+    }
+    subst b0.
+    eexists m; split; trivial.
+    Transparent Mem.alloc.
+    rewrite /Mem.alloc in H0, Heqp.
+    Opaque Mem.alloc.
+    inv H0.
+    destruct H as (? & ? & ?).
+    split; simpl; intros; rewrite /permMapLt /getCurPerm /=.
+    - intros.
+      repeat rewrite Maps.PMap.gmap.
+      repeat rewrite PMap.gsspec.
+      rewrite H1. 
+      destruct (peq b (Mem.nextblock m1)).
+      + destruct (if zle lo ofs && zlt ofs hi then Some Freeable else None); simpl; trivial.
+        apply perm_refl.
+      + apply perm_order_cur; auto.
+    - rewrite H0 H1; split; auto.
+   Qed.
+
+  Lemma alloc_variables_memLt_gen ge :
+    forall xs e_in m1 m2 e1 m1',
+      memLt m1 m2 ->
+      alloc_variables ge e_in m1 xs e1 m1' ->
+      exists m2',
+        alloc_variables ge e_in m2 xs e1 m2' /\ memLt m1' m2'.
+  Proof.
+    induction xs as [| [id ty] xs IH]; intros e_in m1 e1 m1' m2 Hlt Halloc; simpl in *.
+    - eexists e1; split.
+      inv Halloc; auto.
+      apply alloc_variables_nil.
+      inv Halloc; auto.
+    - inversion Halloc as [ | ?????? b0 m0 e_mid Halloc1 Htail1 ]; subst.
+      edestruct memLt_alloc as (m2a & Halloc2 & Hlt12); eauto.
+      specialize (IH (PTree.set id (b0,ty) e_in) m3 m2a m1' m2 Hlt12 Htail1).
+      destruct IH as (e2 & m2' & HallocTail2' & Hlt'); auto.
+      eexists _; split; eauto.
+      eapply alloc_variables_cons; eauto.
+      destruct Hlt as (? & ? & Hnblock).
+      apply Mem.alloc_result in Halloc1, Halloc2.
+      rewrite -Halloc1 -Halloc2 in Hnblock.
+      split; auto.
+  Qed.
+
+  Lemma alloc_variables_memLt_gen1 ge :
+    forall xs e_in m1 m2 e1 m1',
+      memLt m1 m2 ->
+      alloc_variables ge e_in m1 xs e1 m1' ->
+      exists m2' e2,
+        alloc_variables ge e_in m2 xs e2 m2' /\ memLt m1' m2'.
+  Proof.
+    induction xs as [| [id ty] xs IH]; intros e_in m1 e1 m1' m2 Hlt Halloc; simpl in *.
+    - eexists _, _; split.
+      eapply alloc_variables_nil.
+      inv Halloc; auto.
+    - inversion Halloc as [ | ?????? b0 m0 e_mid Halloc1 Htail1 ]; subst.
+      edestruct memLt_alloc as (m2a & Halloc2 & Hlt12); eauto.
+      specialize (IH (PTree.set id (b0,ty) e_in) m3 m2a m1' m2 Hlt12 Htail1).
+      destruct IH as (e2 & m2' & HallocTail2' & Hlt'); auto.
+      eexists _, _; split; eauto.
+      eapply alloc_variables_cons; eauto.
+  Qed.
