@@ -11,6 +11,7 @@ Require Import compcert.common.Memdata.
 Require Import compcert.common.Values.
 
 Require Import VST.msl.Coqlib2.
+
 Require Import VST.msl.eq_dec.
 Require Import VST.veric.external_state.
 Require Import VST.veric.juicy_mem.
@@ -369,13 +370,11 @@ Section Safety.
 
   Axiom external_call_memLt
     : ∀ (ef : external_function) (ge : Senv.t) (vargs : list val) (m1 : mem) 
-        (t : Events.trace) (vres : val) (m2 m1' : mem) (vargs' : list val),
+        (t : Events.trace) (vres : val) (m2 m1' : mem),
       Events.external_call ef ge vargs m1 t vres m2
       → memLt m1 m1'
-      → Val.lessdef_list vargs vargs'
-      → ∃ (vres' : val) (m2' : mem),
-          (Events.external_call ef ge vargs' m1' t vres' m2'
-           ∧ Val.lessdef vres vres'
+      → ∃ (m2' : mem),
+          (Events.external_call ef ge vargs m1' t vres m2'
            ∧ memLt m2 m2' ∧ Mem.unchanged_on (Events.loc_out_of_bounds m1) m1' m2')%type.
 
   Lemma alloc_step_step m1 m2 xs e:
@@ -413,10 +412,7 @@ Section Safety.
     eapply step_builtin; eauto.
     eapply eval_exprlist_memLt; eauto.
     eapply external_call_memLt in H3; eauto.
-    destruct H3 as (?&?&?&?&?&?); eauto.
-    Print Val.lessdef. admit.
     admit. admit.
-    Check Events.external_call_mem_extends.
     (* 5th case *)
     eexists; esplit.
     econstructor; eauto. auto.
@@ -489,12 +485,49 @@ Section Safety.
     repeat (rewrite Maps.PMap.gmap).
     apply Mem.access_max.
   Qed.
-
+  
+  Lemma restr_permMapLt: forall (m1 m2 : mem) (M: memLt m1 m2)
+      (M1: getMaxPerm m2 = getMaxPerm m1) (Hlt : permMapLt (getCurPerm m1) (getMaxPerm m2)),
+      restrPermMap Hlt = m1.
+  Proof.
+    intros.
+    destruct M as (? & ? & ? & ?).
+    pose proof (Mem_canonical_useful m1) as Hcanon.
+    destruct m1, m2.
+    apply Mem.mkmem_ext.
+    simpl in * ; auto.
+    destruct mem_access, mem_access0; simpl.
+    apply f_equal_prod; auto.
+    - extensionality; extensionality k.
+      destruct k; auto.
+      simpl in *.
+      rewrite /getMaxPerm /= in M1.
+      inv M1.
+      by specialize (f_equal (fun f => f x) H4).
+    - rewrite /getMaxPerm /= in M1.
+      inv M1.
+      apply PTree.extensionality; intros.
+      pose proof (f_equal (fun tr => PTree.get i tr) H5) as Hb.
+      rewrite !PTree.gmap1 in Hb.
+      rewrite PTree.gmap.
+      destruct (PTree.get i t1) as [f1|] eqn:E1;
+        destruct (PTree.get i t0) as [f2|] eqn:E2; simpl in *; try congruence.
+      inversion Hb as [Hf]; clear Hb; subst.
+      f_equal.
+      clear H4.
+      extensionality ofs k.
+      destruct k; simpl.
+      + exact (f_equal (fun g => g ofs) Hf).
+      + rewrite getCurPerm_correct /permission_at /PMap.get /=.
+        rewrite E2; auto.
+    - auto.
+   Qed.
+  
   Lemma permMapLt_cur_restr: forall (m : mem) (max : access_map) (Hlt : permMapLt max (getMaxPerm m))
                                (Hmax : permMapLt (getMaxPerm m) max),
       permMapLt (getCurPerm m) (getCurPerm (restrPermMap Hlt)).
   Proof.
-    intros???? b ofs.
+    intros ???? b ofs.
     pose proof (@mem_equiv.getCur_restr max m Hlt) as Heq.
     eapply (perm_order''_trans _ ((getMaxPerm m) # b ofs)); last first; try apply getCur_Max.
     rewrite /mem_equiv.access_map_equiv in Heq.
@@ -504,173 +537,43 @@ Section Safety.
     by rewrite -Heq in Hmax.
   Qed.
 
-  Lemma jsafe_jsafe_perm1 : forall `{!VSTGS unit Σ} max E z c p, p = max ->
-    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢ jsafe_perm max E z c p.
+  (* remove p = max, then change jsafe_perm max E z c p into jsafe_perm p E z c p *)
+  Lemma jsafe_jsafe_perm : forall `{!VSTGS unit Σ} E z c p,
+    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢ jsafe_perm p E z c p.
   Proof.
     intros.
-    iLöb as "IH" forall (p H z c).
+    iLöb as "IH" forall (p z c).
     rewrite jsafe_unfold jsafe_perm_unfold /jsafe_pre /jsafe_perm_pre.
     iIntros ">H !>" (?? Hmax) "S".
     subst; pose proof (partial_order_antisym mem_equiv.permMapLt_order _ _ Hlt Hmax) as Heq.
-(*    iDestruct "S" as "((% & (% & %Hlock) & Hm) & Hz)". *)
-    iDestruct ("H" with "S") as "[H | [H | H]]".
-    - by iLeft.
-    - iRight; iLeft.
-      iMod "H" as (???) "(S & Hsafe)".
-      (* do we need to bring back mem_sub for this? *)
-      assert (exists m'', corestep (cl_core_sem ge) c (restrPermMap Hlt) c' m'' /\ exists p' (Hlt' : permMapLt p' (getMaxPerm m')), m'' = restrPermMap Hlt') as (? & ? & ? & Hlt' & ->) by admit.
-      iIntros "!>"; iExists _, _; iSplit; first done.
-      iSplitL "S".
-      + assert (permMapLt (getCurPerm m') (getMaxPerm (restrPermMap Hlt'))) as Hltm'.
-        { rewrite restr_Max_eq; apply cur_lt_max. }
-        iExists _, Hltm'. rewrite restrPermMap_idem.
-        rewrite restrPermMap_eq //=.
-      + iNext; iApply ("IH" with "[%] Hsafe").
-        admit. (* something about how perms being maxxed carries forward *)
-    - iRight; iRight.
-      iDestruct "H" as (??? (? & ?)) "H".
-      assert (ext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge)
-       (sig_args (ef_sig e)) args z (restrPermMap Hlt)) by admit.
-      iExists _, _, _; iSplit; first done.
-      iIntros "!>" (?????).
-      iMod ("H" with "[%] [%]") as (??) "(S & Hsafe)"; [done..|].
-      iIntros "!>"; iExists _; iSplit; first done.
-      iFrame; iApply ("IH" with "[%] Hsafe").
-  Admitted.
-  
-  Lemma jsafe_jsafe_perm : forall `{!VSTGS unit Σ} max E z c p, p = max ->
-    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢ jsafe_perm max E z c p.
-  Proof.
-    intros.
-    iLöb as "IH" forall (p H z c).
-    rewrite jsafe_unfold jsafe_perm_unfold /jsafe_pre /jsafe_perm_pre.
-    iIntros ">H !>" (?? Hmax) "S".
-    subst; pose proof (partial_order_antisym mem_equiv.permMapLt_order _ _ Hlt Hmax) as Heq.
-(*    iDestruct "S" as "((% & (% & %Hlock) & Hm) & Hz)". *)
     iDestruct ("H" with "S") as "[H | [H | H]]".
     - by iLeft.
     - iRight; iLeft.
       iMod "H" as (???) "(S & Hsafe)".
       iIntros "!>".
-      eapply (cl_step_step _ _) in H.
+      eapply (cl_step_step _ (restrPermMap Hlt)) in H.
       destruct H as (? & ?).
-      iExists _, x.
+      rewrite /cl_step in H.
+      iExists c', x.
       iSplit.
       { destruct H; try done. }
       destruct H as (Hcl & HmemLt).
-      rewrite /memLt in HmemLt.
-      destruct HmemLt as (Hperm & Hcontent & Hnext).
-      2 : { split; auto. apply permMapLt_cur_restr; auto. }
+      destruct HmemLt as (Hperm & Hcontent & Hnext & HgetMax).
+      2 :
+      { repeat split; auto.
+        apply permMapLt_cur_restr; auto.
+        rewrite restr_Max_eq; auto.
+      }
       iSplitL "S".
       { iExists (getCurPerm m').
         assert (permMapLt (getCurPerm m') (getMaxPerm x)) as Hltm'.
         { apply permMapLt_cur; auto. }
         iExists Hltm'.
-        assert (restrPermMap Hltm' = m').
-        { intros.
-          pose proof (Mem_canonical_useful m') as Hcanon.
-          destruct m'; simpl; apply Mem.mkmem_ext; simpl in *; try done.
-          destruct mem_access; simpl.
-          apply f_equal_prod.
-          - extensionality; extensionality k.
-            simpl in *.
-            destruct (Mem.mem_access x).
-            simpl.
-            destruct k. simpl. admit. admit.
-          - simpl.
-            apply trivial_ptree_map; intros.
-            extensionality; extensionality k.
-            destruct k; try done.
-            rewrite getCurPerm_correct /permission_at /PMap.get /=.
-            rewrite H //.
-
-
-
-        
-
-
-          
-
-
-            Hperm : permMapLt (getCurPerm m') (getCurPerm x)
-
-                      permMapLt (getCurPerm m') (getMaxPerm x)
-                 
-          rewrite /permMapLt.
-
-          rewrite restr_Max_eq; apply cur_lt_max. }
-
-        
-        rewrite /state_interp.
-        
-        rewrite /memLt in HmemLt.
-        Search restrPermMap.
-      
-      iIntros "!>"; iExists _, _; iSplit; first done.
-      iSplitL "S".
-
-      
+        rewrite restr_permMapLt; auto.
+        split; auto.
+      }
+      (* iNext; iApply ("IH" with "Hsafe"). *)
       admit.
-      Search permMapLt.
-      Check mem_equiv.useful_permMapLt_trans.
-      Search mem_equiv.access_map_equiv.
-      Search getCurPerm restrPermMap.
-      Check  mem_equiv.permMapLt_equiv.
-      assert (permMapLt p1 (getMaxPerm m)) as Hlt1.
-      { eapply mem_equiv.permMapLt_equiv; done. }
-      rewrite /getCurPerm /=.
-      extensionality.
-      
-        
-        
-        instantiate (1 := x).
-      simpl in *.
-      Check mem_sub.
-      iIntros "!>"; iExists _, _; iSplit; first done.
-      
-      (* do we need to bring back mem_sub for this? *)
-      assert (exists m'', corestep (cl_core_sem ge) c (restrPermMap Hlt) c' m'' /\ exists p' (Hlt' : permMapLt p' (getMaxPerm m')), m'' = restrPermMap Hlt') as (? & ? & ? & Hlt' & ->).
-   (*   {
-        assert (Hlt1:= mem_max_lt_max m').
-        eexists.
-        split; eauto.
-        rewrite /mem_equiv.access_map_equiv in Heq.
-        assert (Hlt2:= mem_max_lt_max m).
-        apply (@restrPermMap_ext max (getMaxPerm m) m Hlt Hlt2) in Heq.
-        induction H.
-        assert (restrPermMap Hlt = m).
-        {
-          Check  restrPermMap_eq.
-          Search restrPermMap.
-          
-        rewrite Heq.
-        rewrite /cl_step in H |- *.
-        try done.
-        inversion H; subst; eauto.
-        
-        assert (mem_max_lt_max
-        eapply (@restrPermMap_ext max (getMaxPerm m) m) in Heq.
-        eapply restrPermMap_ext in Heq.
-        Locate "#".
-        Search permMapLt.
-        Search mem_equiv.access_map_equiv.
-        Search restrPermMap .
-        Check (@restrPermMap_eq m).
-        Search mem_equiv.access_map_equiv.
-        eapply mem_equiv.Cur_equiv_restr in Heq; eauto.
-        simpl in Heq.
-        Check mem_equiv.cur_equiv_restr_mem_equiv.
-        Search cl_step.
-        instantiate (1:= Hmax). *)
-
-      by admit.
-      iIntros "!>"; iExists _, _; iSplit; first done.
-      iSplitL "S".
-      + assert (permMapLt (getCurPerm m') (getMaxPerm (restrPermMap Hlt'))) as Hltm'.
-        { rewrite restr_Max_eq; apply cur_lt_max. }
-        iExists _, Hltm'; rewrite restrPermMap_idem restrPermMap_eq //.
-      + iNext; iApply ("IH" with "[%] Hsafe").
-        admit. (* something about how perms being maxxed carries forward *)
     - iRight; iRight.
       iDestruct "H" as (??? (? & ?)) "H".
       assert (ext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge)
@@ -679,8 +582,8 @@ Section Safety.
       iIntros "!>" (?????).
       iMod ("H" with "[%] [%]") as (??) "(S & Hsafe)"; [done..|].
       iIntros "!>"; iExists _; iSplit; first done.
-      iFrame; iApply ("IH" with "[%] Hsafe").
-      simpl in H, H4.
+  (*  iFrame; iApply ("IH" with "[%] Hsafe").
+      simpl in H, H4. *)
   Admitted.
 
   Definition thread_safe `{!VSTGS unit Σ} max (tp : dtp) i :=

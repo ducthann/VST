@@ -72,7 +72,7 @@ Set Bullet Behavior "Strict Subproofs".
    *)
   Definition memLt m1 m2 := permMapLt (getCurPerm m1) (getCurPerm m2) /\
                               Mem.mem_contents m1 = Mem.mem_contents m2 /\
-                              Mem.nextblock m1 = Mem.nextblock m2.
+                              Mem.nextblock m1 = Mem.nextblock m2 /\ getMaxPerm m1 = getMaxPerm m2.
 
   Lemma memPerm_order_permMapLt m1 m2:
     permMapLt (getCurPerm m1) (getCurPerm m2) ->
@@ -301,7 +301,7 @@ Set Bullet Behavior "Strict Subproofs".
     do 2 f_equal.
     rewrite H; auto.
   Qed.
-
+  
   Lemma eval_expr_eval_lvalue_memLt ge ve te m:
      (forall (e : expr) (v : val),
         eval_expr ge ve te m e v ->
@@ -311,17 +311,15 @@ Set Bullet Behavior "Strict Subproofs".
         forall m2 : mem, memLt m m2 -> eval_lvalue ge ve te m2 e b i bf).
 Proof.
   apply eval_expr_lvalue_ind; intros; try solve [econstructor; eauto].
-  + Search eval_expr Cop.sem_unary_operation.
-    Print eval_expr.
-    Check eval_Eunop.
-    eapply eval_Eunop; eauto.
+  + eapply eval_Eunop; eauto.
     eapply unaryop_memLt; eauto.
   + econstructor; eauto. eapply binaryop_memLt; eauto.
   + econstructor; eauto. rewrite <- H1. symmetry.
     rewrite H1. symmetry. eapply sem_cast_memLt; eauto.
   + econstructor; eauto.
-    destruct H2 as [M1 [M2 M3]].
-    inv H1; simpl in *.
+    rewrite /memLt in H2.
+    destruct H2 as [M1 [M2 [M3 M4]]].
+    inv H1. simpl in *.
   - eapply deref_loc_value; eauto.
     simpl.
     destruct (Mem.load_loadbytes _ _ _ _ _ H3) as [vals [X Y]]; subst.
@@ -330,17 +328,29 @@ Proof.
     eapply Mem.loadbytes_load; trivial.
     eapply memLt_loadbytes; eauto.
     repeat split; auto.
+    repeat rewrite Coqlib3.map_map1 /= in H1.
+    rewrite /getMaxPerm.
+    destruct (Mem.mem_access m) as [o t].
+    destruct (Mem.mem_access m2) as [o2 t2].
+    simpl in *.
+    refine (f_equal2 pair _ _); auto.
+    simpl.
+    repeat rewrite Coqlib3.map_map1; auto.
   - apply deref_loc_reference; trivial.
   - apply deref_loc_copy; trivial.
   - apply deref_loc_bitfield; auto.
      inv H2. econstructor; eauto.
-    destruct (Mem.load_loadbytes _ _ _ _ _ H7) as [vals [X Y]]; subst.
-    apply Mem.load_valid_access in H7. destruct H7.
+    destruct (Mem.load_loadbytes _ _ _ _ _ H8) as [vals [X Y]]; subst.
+    apply Mem.load_valid_access in H8. destruct H8.
     unfold Mem.loadv.
     rewrite Y.
     eapply Mem.loadbytes_load; trivial.
     eapply memLt_loadbytes; eauto.
     repeat split; auto.
+    rewrite /getMaxPerm.
+    destruct (Mem.mem_access m) as [o t].
+    destruct (Mem.mem_access m2) as [o2 t2].
+    refine (f_equal2 pair _ _); auto. 
   Qed.
 
 Lemma eval_expr_memLt {ge ve te m m2 e v} (M:memLt m m2):
@@ -407,6 +417,20 @@ Proof.
 Qed.
 
 Transparent Mem.free.
+From compcert.common Require Import Memory.
+
+Lemma PMap_map_set {A B} (f : A -> B) (i:positive) (x:A) (m:PMap.t A) :
+  PMap.map f (PMap.set i x m) = PMap.set i (f x) (PMap.map f m).
+Proof.
+  rewrite /PMap.map /PMap.set /=.
+  f_equal.
+  apply PTree.extensionality; intro j.
+  destruct (peq i j) as [->|Hneq].
+  - rewrite !PTree.gmap1 ! PTree.gss; auto.
+  - rewrite !PTree.gmap1.
+    rewrite !PTree.gso; auto.
+    rewrite PTree.gmap1; auto.
+Qed.
 
 Lemma memLt_free: forall m m' b lo hi (FL: Mem.free m b lo hi = Some m') m1 (PLE: memLt m m1),
       exists m1', Mem.free m1 b lo hi = Some m1' /\ memLt m' m1'.
@@ -458,9 +482,30 @@ Proof.
         repeat rewrite Maps.PMap.gmap in H0.
         eapply HFL in Heqw.
         destruct H2 as ([?| [? | ?]] & ?); rewrite H3 Heqw in H0; trivial.
-  - destruct H1; rewrite (Mem.free_result _ _ _ _ _ FL);
-    rewrite (Mem.free_result _ _ _ _ _ MM); split; auto.
-  Qed.
+  - repeat split; last first.
+    + destruct H1 as (? & ? & ?).
+      unfold Mem.free in *.
+      rewrite if_true in FL; auto.
+      rewrite if_true in MM; auto.
+      rewrite / Mem.unchecked_free /= in FL, MM.
+      inversion FL; subst.
+      inversion MM; subst.
+      rewrite /getMaxPerm /=.
+      rewrite ! PMap_map_set.
+      have Hb := f_equal (fun M => M # b) H3.
+      rewrite !PMap.gmap in Hb.
+      f_equal.
+      simpl in *;
+        rewrite /getMaxPerm /= in H3;
+        extensionality.
+      destruct (zle lo x && zlt x hi); auto.
+      exact (f_equal (fun h => h x) Hb).
+      rewrite /getMaxPerm /= in H3. auto.
+    + destruct H1 as (? & ? & ?); rewrite (Mem.free_result _ _ _ _ _ FL);
+        rewrite (Mem.free_result _ _ _ _ _ MM); simpl. auto.
+    + destruct H1 as (? & ? & ?); rewrite (Mem.free_result _ _ _ _ _ FL);
+        rewrite (Mem.free_result _ _ _ _ _ MM); simpl. auto.
+Qed.
 
 
 Lemma free_list_memLt:
@@ -485,6 +530,7 @@ Proof.
   by rewrite ! Maps.PMap.gmap in H.
 Qed.
 
+
 Lemma memLt_alloc :
     forall m1 m2 lo hi m1' b,
       memLt m1 m2 ->
@@ -498,7 +544,7 @@ Lemma memLt_alloc :
     assert (B: b0 = b).
     { apply Mem.alloc_result in H0.
       apply Mem.alloc_result in Heqp.
-      destruct H as (? & ? & ?).
+      destruct H as (? & ? & ? & ?).
       subst; auto.
     }
     subst b0.
@@ -507,7 +553,7 @@ Lemma memLt_alloc :
     rewrite /Mem.alloc in H0, Heqp.
     Opaque Mem.alloc.
     inv H0.
-    destruct H as (? & ? & ?).
+    destruct H as (? & ? & ? & ?).
     split; simpl; intros; rewrite /permMapLt /getCurPerm /=.
     - intros.
       repeat rewrite Maps.PMap.gmap.
@@ -517,7 +563,20 @@ Lemma memLt_alloc :
       + destruct (if zle lo ofs && zlt ofs hi then Some Freeable else None); simpl; trivial.
         apply perm_refl.
       + apply perm_order_cur; auto.
-    - rewrite H0 H1; split; auto.
+    - repeat split; auto; try rewrite H0 H1 H2; auto.
+      rewrite H2; auto.
+      rewrite /mem_equiv.access_map_equiv /getMaxPerm /= in H3 |- *.
+      rewrite H1.
+      set (i := Mem.nextblock m1).
+      set (x := fun ofs (_:perm_kind) =>
+                  if zle lo ofs && zlt ofs hi then Some Freeable else None).
+      set (f := fun (g: Z -> perm_kind -> option permission) ofs => g ofs Max).
+      rewrite !(PMap_map_set f i x).
+      change (PMap.map f (Mem.mem_access m1))
+        with (PMap.map (fun g ofs => g ofs Max) (Mem.mem_access m1)).
+      change (PMap.map f (Mem.mem_access m2))
+        with (PMap.map (fun g ofs => g ofs Max) (Mem.mem_access m2)).
+      rewrite H3. auto.
    Qed.
 
   Lemma alloc_variables_memLt_gen ge :
