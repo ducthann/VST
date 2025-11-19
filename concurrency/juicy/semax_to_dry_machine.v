@@ -83,10 +83,65 @@ Definition thread_gen_heapGS `{!conc_gen_heapGS Σ} g := GenHeapGS _ _ _ _ (gen_
 
 Definition thread_mem_auth `{!conc_gen_heapGS Σ} g m := mem_auth(gen_heapGS0 := thread_gen_heapGS g) m.
 
+(*
+Definition access_equiv (m: mem) k r := (access_at m k Cur) = (perm_of_res r).
+
+Definition access_map_rmap m phi: forall (loc: positive * Z),
+    access_equiv m loc phi.
+    (access_at m loc Cur) = (perm_of_res (phi @ loc)).
+*)
+
+Definition access_equiv (m: mem) k (r : prodO dfracO (optionO (leibnizO resource))) :=
+  (access_at m k Cur) = (perm_of_res r).
+
+Definition access_map_rmap (m: mem) σ : Prop :=
+  forall loc, access_equiv m loc (σ @ loc).
+
 Definition conc_mem_auth `{!conc_gen_heapGS Σ} m (perms : gmap nat (gname * access_map)) := ∃ σs : gmap nat (resource_map.rmapUR _ _ _),
-  ([∗ map] '(g,p);σ∈perms;σs, ⌜∃ Hp : permMapLt p (getMaxPerm m), coherent (restrPermMap Hp) σ⌝ ∧
+  ([∗ map] '(g,p);σ∈perms;σs,
+     ⌜∃ Hp : permMapLt p (getMaxPerm m),
+         coherent (restrPermMap Hp) σ (*/\ access_map_rmap (restrPermMap Hp) σ *) ⌝ ∧
     resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := conc_gen_heap_inG)) g 1 σ) ∗
   let σ := [^op map] σ∈σs, σ in <affine> ⌜✓ σ ∧ coherent m σ⌝.
+
+
+
+(*
+Definition conc_mem_auth1 `{!conc_gen_heapGS Σ} m (perms : gmap nat (gname * access_map)) := ∃ σs : gmap nat (resource_map.rmapUR _ _ _),
+    ([∗ map] '(g,p);σ∈perms;σs,
+       ⌜∃ Hp : permMapLt p (getMaxPerm m),
+           coherent (restrPermMap Hp) σ /\ access_map_rmap Hp σ
+
+                                             ⌝ ∧
+                                             resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := conc_gen_heap_inG)) g 1 σ) ∗
+      let σ := [^op map] σ∈σs, σ in <affine> ⌜✓ σ ∧ coherent m σ⌝.
+*)
+
+
+
+(*
+  Definition access_cohere (m: mem) k (r : prodO dfracO (optionO (leibnizO resource))) :=
+    Mem.perm_order'' (access_at m k Cur) (perm_of_res r).
+
+ *)
+
+(*
+  perms : gmap nat (gname * access_map) : for each thread id
+
+σs : gmap nat (rmapUR ...) : for each thread id, a ghost snapshot σ in heap - record the thread-local ghost view of memory that must be coherent with those perms?
+
+([∗ map]  ... ∈ perms; σs, ...) is a zip over two maps keyed by the same domain.
+perms : gmap nat (gname * access_map) - At key i: value (g,p).
+σs : gmap nat (rmapUR ...) - At key i: value σ.
+
+
+If σs = {0↦σ0, 1↦σ1}, then [^op map] σi ∈ σs, σi = σ0 ∙ σ1. 
+
+If σs = ∅, then it equals ε.
+
+\sigma_i is combination of all the point to for thread i
+two different thread owns dont conflict, at most one. 
+ *)
 
 Definition thread_VSTGS `{!conc_VSTGS OK_ty Σ} g := Build_VSTGS _ _ (HeapGS _ _ (thread_gen_heapGS g) _) _.
 
@@ -131,25 +186,448 @@ Proof.
   iApply thread_conc_mem_auth; iFrame.
 Qed.
 
+(*
+Definition equal_on_perm (p : access_map) (m m' : mem) : Prop :=
+  ∀ b ofs, p !! (b,ofs) = Some _ → Mem.equal m m' b ofs.
+*)
+
+Definition add_fresh_block (b : Values.block) (cur : access_map) : access_map :=
+  PMap.set b (fun _ => None) cur.
+
+(* Half-open range [lo, hi) implemented via length = Z.to_nat (hi - lo) *)
+Definition setPerm_range (p : option permission)
+  (b : Values.block) (lo hi : Z) (cur : access_map)
+  : access_map :=
+  if Z.leb hi lo then cur
+  else setPermBlock p b lo cur (Z.to_nat (hi - lo)).
+
+Definition remove_region (b : Values.block) (lo hi : Z) (cur : access_map)
+  : access_map := setPerm_range None b lo hi cur.
+
+Definition add_region (b : Values.block) (lo hi : Z) (perm : permission) (cur : access_map)
+  : access_map := setPerm_range (Some perm) b lo hi cur.
+
+Record OpSC (i : nat) (m m' : mem)
+            (p : access_map)
+            (perms : gmap nat (gname * access_map)) : Prop := {
+
+  (* 1) Allocation shape: either no fresh block, 
+      or exactly one fresh block. *)
+  sc_nextblock :
+      Mem.nextblock m' = Mem.nextblock m
+   \/ Mem.nextblock m' = Pos.succ (Mem.nextblock m) ;
+
+ 
+  (* 3) Every OTHER thread's stored map p' remains 
+            strictly below the NEW Max. *)
+  sc_others_still_lt :
+    forall j g' p', j ≠ i → perms !! j = Some (g', p') →
+      permMapLt p' (getMaxPerm m') ;
+
+
+    (* 4) The SELF thread’s stored map also stays < NEW Max *)
+  sc_self_still_lt :
+    permMapLt p (getMaxPerm m') ;
+
+    sc_self_cur_shape :
+    getCurPerm m' = getCurPerm m
+    \/ (exists b, b = Mem.nextblock m /\
+              getCurPerm m' = add_fresh_block b (getCurPerm m)) (* malloc *)
+    \/ (∃ b lo hi,                              (* free / unlock *)
+          getCurPerm m' = remove_region b lo hi (getCurPerm m));  
+
+    (*
+  (* 4) The new current permission for thread i *)
+  sc_self_cur_shape :
+        getCurPerm m' = getCurPerm m
+     \/ (exists (b : Values.block), b = Mem.nextblock m ∧           (* malloc *)
+              getCurPerm m' = add_fresh_block b (getCurPerm m))
+     \/ (∃ b lo hi,                              (* free / unlock *)
+              getCurPerm m' = remove_region b lo hi (getCurPerm m))
+     \/ (∃ b lo hi,                              (* lock acquire*)
+              getCurPerm m' = add_region b lo hi (getCurPerm m)) ; *)
+
+}.
+
+Definition writable_at (p : access_map) (l : positive * Z) : Prop :=
+  match (p # (fst l)) (snd l) with
+  | Some q => perm_order q Writable   (* or just: perm_order Writable q *)
+  | None   => False
+  end.
+
+Definition perm_at (p : access_map) (b : positive) (ofs : Z) : option permission :=
+  (p # b) ofs.
+
+
+Lemma writable_at_equiv (p:access_map) (l:positive*Z) :
+  (match (p # (fst l)) (snd l) with
+   | Some q => perm_order q Writable
+   | None   => False
+   end)
+  <->
+    Mem.perm_order'' ((p # (fst l)) (snd l)) (Some Writable).
+Proof.
+  unfold Mem.perm_order''.
+  destruct ((p # (fst l)) (snd l)) as [q|]; cbn; split; auto.
+Qed.
+
+(* p is writable at location l = (b, ofs) *)
+Definition writable_at1 (p : access_map) (l : positive * Z) : Prop :=
+  exists q : permission,
+    perm_at p (fst l) (snd l) = Some q
+    /\ perm_order Writable q.
+
+Definition contents_at (m : mem) (l : positive * Z) : memval :=
+  ZMap.get (snd l) ((Mem.mem_contents m) # (fst l)).
+
+Inductive SelfOp :=
+| SO_id                                 (* no-op / pure store *)
+| SO_alloc (b : Values.block)                  (* malloc: fresh block b = nextblock m *)
+| SO_free  (b : Values.block) (lo hi : Z).     (* free: drop [lo,hi) on block b *)
+
+Record OpSC1 (i : nat) (m m' : mem)
+            (p : access_map) (perms : gmap nat (gname * access_map)) : Prop := {
+  sc_self : SelfOp;
+
+  sc_self_eqs :
+    match sc_self with
+    | SO_id =>
+        getCurPerm m' = p /\
+        getMaxPerm m' = getMaxPerm m /\
+        Mem.nextblock m' = Mem.nextblock m /\
+          (forall loc, contents_at m loc = contents_at m' loc \/ writable_at p loc)
+
+    | SO_alloc b =>
+        b = Mem.nextblock m /\
+        getCurPerm m' = add_fresh_block b p /\
+        getMaxPerm m' = add_fresh_block b (getMaxPerm m) /\
+        Mem.nextblock m' = Pos.succ (Mem.nextblock m)
+
+    | SO_free b lo hi =>
+        getCurPerm m' = remove_region b lo hi p /\
+        getMaxPerm m' = remove_region b lo hi (getMaxPerm m) /\
+        Mem.nextblock m' = Mem.nextblock m
+    end;
+
+  (* All *other* threads remain strictly below the NEW Max. *)
+  sc_others_still_lt1 :
+    ∀ j g' p', j ≠ i → perms !! j = Some (g', p') →
+      permMapLt p' (getMaxPerm m');
+
+}.
+
+(* forall l, Mem.contents m l = Mem.contents m' l \/  p = Writable to l  *)
+
+Check @restrPermMap _
+                    {|
+                      Mem.mem_contents := Mem.mem_contents _;
+                      Mem.mem_access := Mem.mem_access _;
+                      Mem.nextblock := Mem.nextblock _
+                    |} .
+
+
+Lemma writable_at_perm_order_cases
+  (p : access_map) (loc : positive * Z) (x : option permission) :
+  writable_at p loc -> p # (loc.1) loc.2 = x -> x = Some Freeable \/ x = Some Writable.
+Proof.
+  rewrite /writable_at.
+  destruct (p # (loc.1) loc.2) as [q|] eqn: Hp; [|contradiction].
+  intros; destruct x as [r|]; try tauto.
+  - inv H0. inv H. by right. by left.
+  - discriminate.
+Qed.
+
+Lemma access_at_restrPermMap_Cur p m loc (Hlt : permMapLt p (getMaxPerm m)):
+  access_at (restrPermMap Hlt) loc Cur = p # (loc.1) loc.2 .
+Proof.
+  destruct loc as [b ofs].
+  assert (Hacc: forall m b ofs, access_at m (b,ofs) Cur = (getCurPerm m) # b ofs).
+  { rewrite /getCurPerm /access_at /=. intros; by rewrite Maps.PMap.gmap. }
+  rewrite Hacc.
+  pose proof (mem_equiv.getCur_restr p m Hlt) as Heq.
+  specialize (Heq b).
+  by rewrite Heq.
+Qed.
+
+Definition writable_dfrac (dq : dfrac) : Prop :=
+  match dq with
+  | DfracOwn (Share sh) => writable0_share sh
+  | _ => False
+  end.
+
+Lemma lookup_Some_VAL_from_perm_Free_Writable σ loc :
+  ✓ (σ : resource_map.rmapUR _ _ _) ->
+  perm_of_res (σ @ loc) = Some Freeable \/ perm_of_res (σ @ loc) = Some Writable ->
+  exists (dq : dfrac) (rsh : readable_dfrac dq) (v0 : agree (leibnizO resource)),
+    σ !! loc = Some (shared.YES dq rsh v0) /\ writable_dfrac dq.
+Proof.
+  intros Hv.
+  rewrite /resource_at /resR_to_resource;
+  destruct (σ !! loc) as [s|] eqn:Hlk; rewrite Hlk; simpl.
+  2: {
+    intros. if_tac in H; try done.
+    destruct H; try done.
+  }
+  destruct (shared.val_of s) as [av|] eqn:Hval; simpl;
+  destruct (shared.dfrac_of s) eqn: E1.
+  destruct s0;
+  destruct (`(resource_map.elem_of_agree av)); simpl;
+    destruct x; try intros; rewrite /perm_of_sh in H; repeat if_tac in H; try congruence; try (destruct H; try done).
+  - exists (shared.dfrac_of s); rewrite E1 ; destruct s; simpl in E1; subst; last first; try inv E1.
+    exists rsh, v0; split; try done.
+  - exists (shared.dfrac_of s); rewrite E1 ; destruct s; simpl in E1; subst; last first; try inv E1.
+    exists rsh, v0; split; try done.
+  - destruct (`(resource_map.elem_of_agree av)) eqn : Ha; simpl;
+    destruct x; last first; intros; try done; destruct H; try done;
+    assert (Hv1: ✓ (σ !! loc)); try done;
+    rewrite Hlk Some_valid in Hv1;
+    rewrite /shared.dfrac_of in E1;
+    destruct s; last first;
+    inv E1; subst; simpl in *; destruct Hv1 as ((? & ? & ?) & ?); rewrite /perm_of_sh' in H;
+    destruct s0; rewrite /perm_of_sh in H; repeat if_tac in H; try done; inv H0.
+    pose proof writable_top.
+    by rewrite /share_top /= in H.
+  - intros; destruct (shared.dfrac_of s); destruct s0; destruct H; try if_tac in H; try done.
+  - intros. destruct H; try done.
+Qed.
+
+(*
+Lemma lookup_Some_VAL_from_perm_Readable σ loc :
+  ✓ (σ : resource_map.rmapUR _ _ _) ->
+  perm_of_res (σ @ loc) = Some Writable ->
+  exists (dq : dfrac) (rsh : readable_dfrac dq) (v0 : agree (leibnizO resource)),
+    σ !! loc = Some (shared.YES dq rsh v0) /\ writable_dfrac dq.
+Proof.
+  intros Hv.
+  rewrite /resource_at /resR_to_resource;
+  destruct (σ !! loc) as [s|] eqn:Hlk; rewrite Hlk; simpl.
+  2: {
+    intros. rewrite -> if_true in H; auto. discriminate.
+  }
+  destruct (shared.val_of s) as [av|] eqn:Hval; simpl;
+  destruct (shared.dfrac_of s) eqn: E1.
+  destruct s0;
+  destruct (`(resource_map.elem_of_agree av)); simpl;
+  destruct x; try intros; rewrite /perm_of_sh in H; repeat if_tac in H; try congruence.
+  - exists (shared.dfrac_of s).
+    rewrite E1 /=;
+    destruct s;
+    simpl in E1; subst; last first; try inv E1.
+    exists rsh, v0; split; try done.
+  - destruct (`(resource_map.elem_of_agree av)) eqn : Ha; simpl.
+    destruct x; last first; intros; try done.
+    destruct (Mem.perm_order'_dec _ _); last first; try discriminate.
+    assert (Hv1: ✓ (σ !! loc)); try done.
+    rewrite Hlk Some_valid in Hv1.
+    rewrite /shared.dfrac_of in E1.
+    destruct s; last first.
+    inv E1.
+    subst.
+    simpl in *.
+    destruct Hv1 as (Hv1 & ?).
+    destruct Hv1 as (? & ? & ?).
+    rewrite /perm_of_sh' in H.
+    destruct s0.
+    rewrite /perm_of_sh in H.
+    repeat if_tac in H; try done.
+    inv H1. try done.
+  - intros; destruct (shared.dfrac_of s); destruct s0; try if_tac in H; try done; done.
+  - try done.
+Qed.
+*)
+
+(*
+Lemma test 
+  (σ: resource_map.rmapUR _ _ _) (dq1 dq2 : dfrac) (rsh1: readable_dfrac dq1) (rsh2: readable_dfrac dq2) (v1 v2 : agree (leibnizO resource)):
+  ✓ (Some (shared.YES dq1 rsh1 v1) ⋅ Some (shared.YES dq2 rsh2 v2)). 
+*)
+
+Lemma writable_readable_dfrac_excl dq1 dq :
+  writable_dfrac dq1 →
+  readable_dfrac dq →
+  ¬ ✓ (dq1 ⋅ dq).
+Proof.
+  intros Hw Hr.
+  assert (forall dq, writable_dfrac dq ->
+          exists sh, dq = DfracOwn (Share sh) /\ writable0_share sh).
+  {
+    rewrite /writable_dfrac.
+    intros.
+    destruct dq0; try done.
+    destruct s; try done.
+    exists sh. split; auto. }
+  apply H in Hw.
+  destruct Hw as (? & (? & ?)).
+  clear H.
+  Search readable_dfrac share_writable.
+  intros Hcontra.
+  subst.
+  rewrite ora_comm in Hcontra.
+  Check dfrac_valid_own_readable.
+  apply dfrac_valid_own_readable in Hcontra; auto.
+  destruct Hcontra as (? & (? & ?)).
+  inv H.
+  done.
+Qed.
+ 
 Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
-  conc_mem_auth m perms ⊢ ∃ Hp : permMapLt p (getMaxPerm m), thread_mem_auth g (restrPermMap Hp) ∗ True.
+  conc_mem_auth m perms ⊢ (∃ Hp : permMapLt p (getMaxPerm m),
+      thread_mem_auth g (restrPermMap Hp)) ∗
+        (∀ m', ⌜OpSC1 i m m' p perms⌝ ∧
+                 thread_mem_auth g m' -∗
+              ∃ m_all, conc_mem_auth m_all (<[i:=(g, getCurPerm m')]>perms)).
 Proof.
   rewrite /conc_mem_auth; intros.
   iIntros "(% & H & %)".
-  iDestruct (big_sepM2_lookup_iff with "H") as %Hlookup.
-  destruct (Hlookup i) as ((? & ?) & _); first done.
-  rewrite big_sepM2_lookup_acc // /=.
-  iDestruct "H" as "(((% & %) & $) & H)".
-  iExists _; done.
-Qed.
+  iDestruct (big_sepM2_delete_l _ _ _ i (g, p) with "H") as "H"; auto.
+  iDestruct "H" as (?) "(% & (% & H) & Hbig)".
+  destruct H0 as (Hv & Hchr).
+  destruct H2 as (Hlt & H2). 
+  rename x2 into σ.
+  iSplitL "H".
+  { iExists _. iFrame; eauto. }
+  simpl.
+  iIntros (m') "(%HSc & H)".
+  rewrite /thread_mem_auth /mem_auth.
+  iDestruct "H" as (σ') "(% & H)".
+  destruct HSc.
+  destruct sc_self.
+  destruct sc_self_eqs as (Hcur_eq & Hmax_eq & Hnxt_eq & Hloc).
+  - (* Mem.nextblock m' = Mem.nextblock m /\ getCurPerm m' = getCurPerm m *)
+    unshelve
+    iExists (Mem.mkmem (Mem.mem_contents m') (Mem.mem_access m) (Mem.nextblock m) _ _ _).
+    apply Mem.access_max.
+    apply Mem.nextblock_noaccess.
+    apply Mem.contents_default.
+    setoid_rewrite (big_sepM2_delete_l _ _ _ i (g, p)) at 2; auto.
+    iDestruct (resource_map.resource_map_auth_valid with "H") as %(_ & Hvalid).
+    iExists (<[i := σ']>σs).
+    iSplit.
+    + iExists σ'.
+      iSplit; first rewrite lookup_insert //.
+      iSplitR "Hbig".
+      iFrame. iPureIntro.
+      split; auto.
+      rewrite /getMaxPerm /=.
+      exists Hlt.
+      replace (@restrPermMap _
+                             {|
+                               Mem.mem_contents := Mem.mem_contents m';
+                               Mem.mem_access := Mem.mem_access m;
+                               Mem.nextblock := Mem.nextblock m
+                             |} 
+                             Hlt) with m'; auto.
+      symmetry.
+      {
+        pose proof (Mem_canonical_useful m') as Hcanon.
+        destruct m'; simpl; apply Mem.mkmem_ext; simpl in *; try done.
+        destruct mem_access; simpl.
+        apply f_equal_prod.
+        * extensionality; extensionality k.
+          destruct k; auto.
+          simpl in *.
+          rewrite /getMaxPerm /= in Hmax_eq.
+          inv Hmax_eq.
+          by specialize (f_equal (fun f => f x) H4).
+        * rewrite /getMaxPerm /= in Hmax_eq.
+          inv Hmax_eq.
+          apply PTree.extensionality; intros.
+          pose proof (f_equal (fun tr => PTree.get i0 tr) H5) as Hb.
+          rewrite !PTree.gmap1 in Hb.
+          rewrite PTree.gmap.
+          destruct (PTree.get i0 t0) as [f1|] eqn:E1;
+            destruct (PTree.get i0 (Mem.mem_access m).2) as [f2|] eqn:E2;
+            simpl in *; try congruence.
+          inversion Hb as [Hf]; clear Hb; subst.
+          f_equal.
+          clear H4.
+          extensionality ofs k.
+          destruct k; simpl.
+          { symmetry. exact (f_equal (fun g => g ofs) Hf). }
+          { rewrite getCurPerm_correct /permission_at /PMap.get /= E1; auto. }
+       }
+       rewrite ! delete_insert_delete /getMaxPerm /=.
+       iApply (big_sepM2_mono with "Hbig"); intros.
+       destruct y1.
+       do 4 f_equiv.
+       rewrite / impl /coherent.
+       intros.
+       split; auto.
+       * intros; apply H5; auto.         
+       * destruct (Hloc loc) as [Hmem_eq | Hwrite].
+         ** rewrite /contents_at in Hmem_eq.
+            rewrite /coherent_loc /contents_cohere /resource_at /juicy_mem.contents_at in H5 |- *.
+            split.
+            intros.
+            rewrite - Hmem_eq.
+            apply H5; auto.
+            rewrite /access_cohere in H5 |- *.
+            apply H5.
+         ** unfold coherent_loc in H5 |- *.
+            specialize (Hvalid loc).
+            split.
+            unfold contents_cohere, contents_at in *.
+            rewrite /resource_at.
+            intros.
+            rewrite /resR_to_resource /= in H6.
+            rewrite /coherent /coherent_loc /access_cohere /contents_cohere in H2.
+            specialize (H2 loc).
+            destruct H2 as (? & ? & ?).
+            pose proof (access_at_restrPermMap_Cur p m loc Hlt) as Haccess.
+            rewrite Haccess in H8.
+            rewrite /shared.val_of in H6.
+            destruct (y2 !! loc) eqn: E; last first.
+            { rewrite E in H6. inv H6. }
+            rewrite E /= in H6.
+            destruct s; last first. inv H6.
+            simpl in H6.
+            rewrite (big_opM_delete (λ _ x, x) σs i) in Hv; eauto.
+            pose proof Hv as Hv'.
+            rewrite (big_opM_delete (λ _ x, x) (delete i σs) k) in Hv; eauto.
+            specialize (Hv loc).
+            rewrite ! gmap.lookup_op in Hv.
+            rewrite /valid in Hv.
+            rewrite cmra_assoc in Hv.
+            apply cmra_valid_op_l in Hv.
+            rewrite E in Hv.
+            assert (Heq: access_map_rmap (restrPermMap Hlt) σ). admit.
+            rewrite /access_map_rmap /access_equiv in Heq.
+            rewrite Heq in Haccess.
+            apply writable_at_perm_order_cases with (x := perm_of_res (σ @ loc)) in Hwrite; auto.
+            apply lookup_Some_VAL_from_perm_Free_Writable in Hwrite.
 
+            destruct Hwrite as (dq1 & rsh1 & v1 & Hsl & Hwdf).
+            rewrite Hsl in Hv.
+            apply shared.shared_valid in Hv.
+            rewrite shared.YES_op' in Hv.
+            destruct Hv as (? & ?).
+            destruct (shared.readable_dfrac_dec _).
+            simpl in *.
+            pose proof (writable_readable_dfrac_excl dq1 dq).
+            specialize (H11 Hwdf rsh). done.
+            simpl in *.
+            inv H9.
+            eapply (cmra_valid_op_l (A := ora_cmraR _ )); done.
+            apply H5.
+          + iPureIntro.
+            rewrite /coherent in H0, H2, Hchr.
+            split; auto.
+            pose proof Hv as Hv'.
+            rewrite (big_opM_delete (λ _ x, x) σs i σ) // in Hv.
+            apply (cmra_valid_op_r (A := ora_cmraR _ )) in Hv; try done.
+            erewrite (big_opM_delete (λ _ x, x) _ i); eauto.
+            instantiate (1 := σ').
+            2: { rewrite lookup_insert; auto. }
+            rewrite delete_insert_delete.
+Admitted.
+            
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
-  conc_state_interp m perms z ⊢ ∃ Hp : permMapLt p (getMaxPerm m), thread_state_interp g (restrPermMap Hp) z ∗ True.
+  conc_state_interp m perms z ⊢ ∃ Hp : permMapLt p (getMaxPerm m), thread_state_interp g (restrPermMap Hp) z ∗ (∀ m', thread_state_interp g m' z -∗ conc_mem_auth m' (<[i:=(g, getCurPerm m')]>perms)).
 Proof.
-  iIntros (?) "(? & $)"; by iApply conc_mem_auth_lookup.
-Qed.
+  (* iIntros (?) "(? & $)"; by iApply conc_mem_auth_lookup. *)
+  Admitted.
 
 Lemma init_conc_VST: forall Z `{!VSTGpreS Z Σ} (z : Z),
   ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ HH : conc_gen_heapGS Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ, ∃ γ0,
@@ -773,6 +1251,21 @@ Section Safety.
   Admitted.
 *)
 
+  Section Scratch.
+    Variable tp : dtp.
+    Variable i  : nat.
+    Variable cnt : containsThread tp i.
+
+
+    Check (getThreadR cnt).
+    (* Coq usually simplifies this: *)
+    Print res.  (* confirms it's Resources -> Type *)
+    Check Resources.
+
+    (* Check the projection form *)
+    Check ((getThreadR cnt).1).
+  End Scratch.
+
   Definition thread_safe max (tp : dtp) i g :=
     ∃ cnti : containsThread tp i,
     match getThreadC cnti with
@@ -909,7 +1402,8 @@ Section Safety.
     assert (locks_coherent tp (`init_mem) ∅) as Hlocks by done.
     forget (proj1_sig init_mem) as m.
     forget (@nil Events.machine_event) as tr.
-    assert (forall i (cnti : containsThread tp i), (snd <$> perms) !! i = Some (getThreadR cnti).1) as Hperms.
+    assert (forall i (cnti : containsThread tp i), (snd <$> perms) !! i = Some (getThreadR cnti).1)
+      as Hperms.
     { intros [|]; done. }
     clearbody perms tp.
     set (ls := ∅) in Hlocks |- *.
@@ -925,10 +1419,10 @@ Section Safety.
     2: {
       iApply step_fupd_intro; first done; iNext.
       iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
-         { rewrite step_fupdN_plain_forall //.
-           iIntros.
-           iApply ("IH" with "[%] [%] [%] [%] [%] locks S Hsafe"); done.
-         }
+      { rewrite step_fupdN_plain_forall //.
+        iIntros.
+        iApply ("IH" with "[%] [%] [%] [%] [%] locks S Hsafe"); done.
+      }
       iApply (step_fupdN_mono with "H"); iPureIntro.
       intros Hsafe.
       eapply HybridMachineSig.HybridCoarseMachine.AngelSafe
@@ -937,7 +1431,8 @@ Section Safety.
       rewrite /containsThread /= /OrdinalPool.containsThread.
       intros ?.
       pose proof (@ssrnat.leP (S i) (pos.n (OrdinalPool.num_threads tp))) as Hle; inv Hle;
-           [lia | congruence]. }
+           [lia | congruence].
+    }
     rewrite {2}/threads_safe.
     iPoseProof (big_sepL_lookup_acc_impl with "[$Hsafe]") as "Hsafe".
     apply lookup_seq; eauto.
@@ -947,10 +1442,10 @@ Section Safety.
       destruct (cl_halted s) eqn: Hhalt; [|destruct (cl_at_external s) eqn: Hat_ext].
       + (* halted *)
         assert (HybridMachineSig.halted_thread cnti Int.zero) as Hhalt'.
-        { econstructor; eauto.
-          hnf; rewrite Hhalt //. }
+        { econstructor; eauto. hnf; rewrite Hhalt //. }
         iApply step_fupd_intro; first done; iNext.
-        iAssert (threads_safe (getMaxPerm m) tp (fst <$> perms)) with "[Hsafei Hsafe]" as "Hsafe".
+        iAssert (threads_safe (getMaxPerm m) tp (fst <$> perms))
+          with "[Hsafei Hsafe]" as "Hsafe".
         { iApply "Hsafe".
           * iIntros "!>" (????) "H"; iApply "H".
           * iFrame "%"; iExists cnti; rewrite Hi //. }
@@ -997,8 +1492,8 @@ Section Safety.
         iMod ("Hsafei" with "[%] S") as "[Hhalt | [Hstep | Hext]]".
         { split; [apply mem_equiv.getCur_restr | apply restr_Max_eq]. }
         { iDestruct "Hhalt" as %(? & Hhalt' & ?); done. }
-        2: { iDestruct "Hext" as (??? (Hext & ?)) "?".
-             simpl in Hext; congruence. }
+        2: { iDestruct "Hext" as (??? (Hext & ?)) "?". simpl in Hext; congruence. }
+        (* HStep *)
         iMod "Hstep" as (?? Hstep) "(S & Hsafei)".
         assert (corestep (cl_core_sem ge) s (restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1) c' m') as Hstep'.
         { by erewrite restrPermMap_irr. }
@@ -1018,7 +1513,11 @@ Section Safety.
           destruct (decide (i = j)).
           { subst; rewrite lookup_insert OrdinalPool.gssThreadRes //. }
           { rewrite lookup_insert_ne // OrdinalPool.gsoThreadRes //; apply Hperms. }
-        * admit. (* need to build an updated conc_state_interp *)
+        * rewrite /conc_state_interp /thread_state_interp.
+          simpl in *.
+          Search permMapLt getMaxPerm getCurPerm.
+          rewrite /conc_mem_auth.
+          admit. (* need to build an updated conc_state_interp *)
         * iApply "Hsafe".
           -- iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & % & Hsafe)".
              iExists (cntUpdate _ _ cnti cnti0).
