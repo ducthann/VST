@@ -380,6 +380,37 @@ Proof.
   destruct Hcontra as (? & (Hsh & ?)).
   by inv Hsh.
 Qed.
+
+
+Lemma big_opM_lookup_None_components
+  (σs : gmap nat (resource_map.rmapUR share address (leibnizO resource))) loc :
+  ([^op map] σ ∈ σs, σ) !! loc = None →
+  ∀ i σi, σs !! i = Some σi → σi !! loc = None.
+Proof.
+  intros Hbig i σi Hlookup.
+  revert i σi Hlookup.
+  revert Hbig.
+  induction σs using map_ind; intros.
+  - rewrite lookup_empty in Hlookup; try done.
+  - set σ' := ([^op map] σ ∈ <[i:=x]> m, σ).
+    have Hσ' : σ' = x ⋅ ([^op map] σ ∈ delete i m, σ).
+    { subst σ'.
+      admit. }
+    subst σ'.
+    rewrite Hσ' in Hbig.
+
+Admitted.
+
+Lemma big_opM_all_None (σs : gmap nat (resource_map.rmapUR share address (leibnizO resource))) loc :
+  (∀ i σi, σs !! i = Some σi → σi !! loc = None) →
+  ([^op map] σ ∈ σs, σ) !! loc = None.
+Proof.
+  intros Hall.
+  induction σs using map_ind.
+  - admit.
+  - 
+Admitted.
+  
  
 Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
@@ -531,8 +562,34 @@ Proof.
             instantiate (1 := σ').
             2: { rewrite lookup_insert; auto. }
             rewrite delete_insert_delete.
+            admit.
+
+            rewrite /coherent /=.
+            split.
+            ++ intros.
+               pose proof H3 as Hl.
+               apply Hchr in H3.
+               rewrite Hnxt_eq in H0.
+               apply H0 in Hl.
+               have Hcomponents :
+                 ∀ j σj, σs !! j = Some σj → σj !! loc = None.
+               { eapply big_opM_lookup_None_components; eauto. }
+               assert (Hall' :
+                        ∀ j σj, (<[i:=σ']> σs) !! j = Some σj → σj !! loc = None).
+               {
+                 intros j σj Hlookup.
+                 destruct (decide (j = i)) as [->|Hneq].
+                 - rewrite lookup_insert in Hlookup.
+                   inv Hlookup; auto.
+                 - rewrite lookup_insert_ne // in Hlookup.
+                   apply Hcomponents in Hlookup; auto.
+               }
+               by apply big_opM_all_None.
 Admitted.
-            
+
+
+
+
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
   conc_state_interp m perms z ⊢ ∃ Hp : permMapLt p (getMaxPerm m), thread_state_interp g (restrPermMap Hp) z ∗ (∀ m', thread_state_interp g m' z -∗ conc_mem_auth m' (<[i:=(g, getCurPerm m')]>perms)).
