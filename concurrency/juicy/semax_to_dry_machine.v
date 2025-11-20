@@ -104,27 +104,6 @@ Definition conc_mem_auth `{!conc_gen_heapGS Σ} m (perms : gmap nat (gname * acc
     resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := conc_gen_heap_inG)) g 1 σ) ∗
   let σ := [^op map] σ∈σs, σ in <affine> ⌜✓ σ ∧ coherent m σ⌝.
 
-
-
-(*
-Definition conc_mem_auth1 `{!conc_gen_heapGS Σ} m (perms : gmap nat (gname * access_map)) := ∃ σs : gmap nat (resource_map.rmapUR _ _ _),
-    ([∗ map] '(g,p);σ∈perms;σs,
-       ⌜∃ Hp : permMapLt p (getMaxPerm m),
-           coherent (restrPermMap Hp) σ /\ access_map_rmap Hp σ
-
-                                             ⌝ ∧
-                                             resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := conc_gen_heap_inG)) g 1 σ) ∗
-      let σ := [^op map] σ∈σs, σ in <affine> ⌜✓ σ ∧ coherent m σ⌝.
-*)
-
-
-
-(*
-  Definition access_cohere (m: mem) k (r : prodO dfracO (optionO (leibnizO resource))) :=
-    Mem.perm_order'' (access_at m k Cur) (perm_of_res r).
-
- *)
-
 (*
   perms : gmap nat (gname * access_map) : for each thread id
 
@@ -249,15 +228,11 @@ Record OpSC (i : nat) (m m' : mem)
 
 }.
 
-Definition writable_at (p : access_map) (l : positive * Z) : Prop :=
+Definition can_store_at (p : access_map) (l : positive * Z) : Prop :=
   match (p # (fst l)) (snd l) with
   | Some q => perm_order q Writable   (* or just: perm_order Writable q *)
   | None   => False
   end.
-
-Definition perm_at (p : access_map) (b : positive) (ofs : Z) : option permission :=
-  (p # b) ofs.
-
 
 Lemma writable_at_equiv (p:access_map) (l:positive*Z) :
   (match (p # (fst l)) (snd l) with
@@ -270,12 +245,6 @@ Proof.
   unfold Mem.perm_order''.
   destruct ((p # (fst l)) (snd l)) as [q|]; cbn; split; auto.
 Qed.
-
-(* p is writable at location l = (b, ofs) *)
-Definition writable_at1 (p : access_map) (l : positive * Z) : Prop :=
-  exists q : permission,
-    perm_at p (fst l) (snd l) = Some q
-    /\ perm_order Writable q.
 
 Definition contents_at (m : mem) (l : positive * Z) : memval :=
   ZMap.get (snd l) ((Mem.mem_contents m) # (fst l)).
@@ -295,7 +264,7 @@ Record OpSC1 (i : nat) (m m' : mem)
         getCurPerm m' = p /\
         getMaxPerm m' = getMaxPerm m /\
         Mem.nextblock m' = Mem.nextblock m /\
-          (forall loc, contents_at m loc = contents_at m' loc \/ writable_at p loc)
+          (forall loc, contents_at m loc = contents_at m' loc \/ can_store_at p loc)
 
     | SO_alloc b =>
         b = Mem.nextblock m /\
@@ -328,9 +297,9 @@ Check @restrPermMap _
 
 Lemma writable_at_perm_order_cases
   (p : access_map) (loc : positive * Z) (x : option permission) :
-  writable_at p loc -> p # (loc.1) loc.2 = x -> x = Some Freeable \/ x = Some Writable.
+  can_store_at p loc -> p # (loc.1) loc.2 = x -> x = Some Freeable \/ x = Some Writable.
 Proof.
-  rewrite /writable_at.
+  rewrite /can_store_at.
   destruct (p # (loc.1) loc.2) as [q|] eqn: Hp; [|contradiction].
   intros; destruct x as [r|]; try tauto.
   - inv H0. inv H. by right. by left.
@@ -392,82 +361,24 @@ Proof.
 Qed.
 
 (*
-Lemma lookup_Some_VAL_from_perm_Readable σ loc :
-  ✓ (σ : resource_map.rmapUR _ _ _) ->
-  perm_of_res (σ @ loc) = Some Writable ->
-  exists (dq : dfrac) (rsh : readable_dfrac dq) (v0 : agree (leibnizO resource)),
-    σ !! loc = Some (shared.YES dq rsh v0) /\ writable_dfrac dq.
-Proof.
-  intros Hv.
-  rewrite /resource_at /resR_to_resource;
-  destruct (σ !! loc) as [s|] eqn:Hlk; rewrite Hlk; simpl.
-  2: {
-    intros. rewrite -> if_true in H; auto. discriminate.
-  }
-  destruct (shared.val_of s) as [av|] eqn:Hval; simpl;
-  destruct (shared.dfrac_of s) eqn: E1.
-  destruct s0;
-  destruct (`(resource_map.elem_of_agree av)); simpl;
-  destruct x; try intros; rewrite /perm_of_sh in H; repeat if_tac in H; try congruence.
-  - exists (shared.dfrac_of s).
-    rewrite E1 /=;
-    destruct s;
-    simpl in E1; subst; last first; try inv E1.
-    exists rsh, v0; split; try done.
-  - destruct (`(resource_map.elem_of_agree av)) eqn : Ha; simpl.
-    destruct x; last first; intros; try done.
-    destruct (Mem.perm_order'_dec _ _); last first; try discriminate.
-    assert (Hv1: ✓ (σ !! loc)); try done.
-    rewrite Hlk Some_valid in Hv1.
-    rewrite /shared.dfrac_of in E1.
-    destruct s; last first.
-    inv E1.
-    subst.
-    simpl in *.
-    destruct Hv1 as (Hv1 & ?).
-    destruct Hv1 as (? & ? & ?).
-    rewrite /perm_of_sh' in H.
-    destruct s0.
-    rewrite /perm_of_sh in H.
-    repeat if_tac in H; try done.
-    inv H1. try done.
-  - intros; destruct (shared.dfrac_of s); destruct s0; try if_tac in H; try done; done.
-  - try done.
-Qed.
-*)
-
-(*
 Lemma test 
   (σ: resource_map.rmapUR _ _ _) (dq1 dq2 : dfrac) (rsh1: readable_dfrac dq1) (rsh2: readable_dfrac dq2) (v1 v2 : agree (leibnizO resource)):
   ✓ (Some (shared.YES dq1 rsh1 v1) ⋅ Some (shared.YES dq2 rsh2 v2)). 
 *)
 
 Lemma writable_readable_dfrac_excl dq1 dq :
-  writable_dfrac dq1 →
-  readable_dfrac dq →
-  ¬ ✓ (dq1 ⋅ dq).
+  writable_dfrac dq1 → readable_dfrac dq → ¬ ✓ (dq1 ⋅ dq).
 Proof.
   intros Hw Hr.
-  assert (forall dq, writable_dfrac dq ->
-          exists sh, dq = DfracOwn (Share sh) /\ writable0_share sh).
-  {
-    rewrite /writable_dfrac.
-    intros.
-    destruct dq0; try done.
-    destruct s; try done.
-    exists sh. split; auto. }
-  apply H in Hw.
+  assert (Hwdf: forall dq, writable_dfrac dq -> exists sh, dq = DfracOwn (Share sh) /\ writable0_share sh).
+  { intros; destruct dq0; destruct s; try done; exists sh;  by split. }
+  apply Hwdf in Hw.
   destruct Hw as (? & (? & ?)).
-  clear H.
-  Search readable_dfrac share_writable.
-  intros Hcontra.
-  subst.
+  intros Hcontra; subst.
   rewrite ora_comm in Hcontra.
-  Check dfrac_valid_own_readable.
   apply dfrac_valid_own_readable in Hcontra; auto.
-  destruct Hcontra as (? & (? & ?)).
-  inv H.
-  done.
+  destruct Hcontra as (? & (Hsh & ?)).
+  by inv Hsh.
 Qed.
  
 Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
