@@ -562,6 +562,9 @@ Proof.
             instantiate (1 := σ').
             2: { rewrite lookup_insert; auto. }
             rewrite delete_insert_delete.
+            intros ?.
+            Search op lookup.
+            rewrite gmap.lookup_op.
             admit.
 
             rewrite /coherent /=.
@@ -571,6 +574,19 @@ Proof.
                apply Hchr in H3.
                rewrite Hnxt_eq in H0.
                apply H0 in Hl.
+               apply (None_equiv_eq (A := (shared.sharedR (leibnizO resource)))).
+               rewrite lookup_proper.
+               2: {
+                 apply (big_opM_delete (M:= gmap.gmapO _ (@shared.sharedO share share_instance (leibnizO resource))) (B := gmap.gmapO _ (@shared.sharedO share share_instance (leibnizO resource)))).
+                 
+               About None_equiv_eq.
+               Check ([^op map] σ0 ∈ <[i:=σ']> σs, σ0) !! loc .
+               
+               rewrite lookup_proper.
+               2: {
+               apply (big_opM_delete (M:= gmap.gmapO _ (@shared.sharedO share share_instance (leibnizO resource))) (B := gmap.gmapO _ (@shared.sharedO share share_instance (leibnizO resource)))).
+               setoid_rewrite (big_opM_delete (B := resource_map.rmapUR _ _ _) (λ _ x, x) ( <[i:=σ']> σs) i).
+               
                have Hcomponents :
                  ∀ j σj, σs !! j = Some σj → σj !! loc = None.
                { eapply big_opM_lookup_None_components; eauto. }
