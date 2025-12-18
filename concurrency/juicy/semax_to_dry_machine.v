@@ -280,8 +280,10 @@ Definition permMapsDisjoint_at
 
 Inductive SelfOp :=
 | SO_id                                 (* no-op / pure store *)
-| SO_alloc (b : Values.block)                  (* malloc: fresh block b = nextblock m *)
+| SO_alloc (b : Values.block) (lo hi : Z)                 (* malloc: fresh block b = nextblock m *)
 | SO_free  (b : Values.block) (lo hi : Z).     (* free: drop [lo,hi) on block b *)
+
+Check setPermBlock.
 
 Record OpSC1 (i : nat) (m m' : mem)
             (p : access_map) (perms : gmap nat (gname * access_map)) : Prop := {
@@ -295,10 +297,14 @@ Record OpSC1 (i : nat) (m m' : mem)
         Mem.nextblock m' = Mem.nextblock m /\
           (forall loc, contents_at m loc = contents_at m' loc \/ can_store_at p loc)
 
-    | SO_alloc b =>
+    | SO_alloc b lo hi =>
         b = Mem.nextblock m /\
-        getCurPerm m' = add_fresh_block b p /\
-        getMaxPerm m' = add_fresh_block b (getMaxPerm m) /\
+        (* getCurPerm m' = add_fresh_block b p /\
+        getMaxPerm m' = add_fresh_block b (getMaxPerm m) /\ *)
+        getCurPerm m' =
+            setPermBlock (Some Freeable) b lo p (Z.to_nat (hi - lo)) /\
+        getMaxPerm m' =
+            setPermBlock (Some Freeable) b lo (getMaxPerm m) (Z.to_nat (hi - lo)) /\
         Mem.nextblock m' = Pos.succ (Mem.nextblock m)
 
     | SO_free b lo hi =>
@@ -317,6 +323,8 @@ Record OpSC1 (i : nat) (m m' : mem)
     forall i j, j <> i -> permMapsDisjoint_at perms i j;
 
 }.
+
+Print Mem.alloc.
 
 Check @restrPermMap _
                     {|
@@ -467,7 +475,221 @@ Proof.
       simpl in *;  destruct dq; destruct s; destruct (`(resource_map.elem_of_agree v0));
       specialize (H0 v); easy.
 Qed.
-  
+
+Lemma permMapLt_trans (p q r : access_map) :
+  permMapLt p q -> permMapLt q r -> permMapLt p r.
+Proof.
+  unfold permMapLt; intros Hpq Hqr b ofs.
+  eapply mem_lemmas.po_trans; eauto.
+Qed.
+
+Lemma permMapLt_getMax_setPermBlock_Freeable
+  (m : mem) (b : positive) (lo hi : Z) :
+  permMapLt (getMaxPerm m)
+    (setPermBlock (Some Freeable) b lo (getMaxPerm m) (Z.to_nat (hi - lo))).
+Proof.
+  rewrite / permMapLt.
+  intros b' ofs'.
+  destruct (peq b' b) as [->|Hb].
+  - destruct (Z_le_dec lo ofs') as [Hlo|Hlo].
+    + destruct (Z_lt_dec ofs' (lo + Z.of_nat (Z.to_nat (hi - lo)))) as [Hhi|Hhi].
+      * rewrite setPermBlock_same; last first. lia.
+        apply perm_order''_Freeable.
+      * rewrite setPermBlock_other_1; last first. lia.
+        apply po_refl.
+    + rewrite setPermBlock_other_1; last first. lia.
+      apply po_refl.
+  - rewrite setPermBlockFunc_other_2; auto.
+    apply po_refl.
+Qed.
+
+Lemma permMapLt_after_setPermBlock_Freeable
+  (p : access_map) (m m' : mem) (b : positive) (lo hi : Z) :
+  permMapLt p (getMaxPerm m) ->
+  getMaxPerm m' = setPermBlock (Some Freeable) b lo (getMaxPerm m) (Z.to_nat (hi - lo)) ->
+  permMapLt p (getMaxPerm m').
+Proof.
+  intros Hlt Hmax_eq.
+  rewrite /permMapLt.
+  eapply permMapLt_trans; [exact Hlt|].
+  rewrite Hmax_eq.
+  apply permMapLt_getMax_setPermBlock_Freeable.
+Qed.
+
+Lemma getCurPerm_setPermBlock_or
+  (m' : mem) (b : Values.block) (lo hi : Z)
+  (p : access_map)
+  (Hcur : getCurPerm m' = setPermBlock (Some Writable) b lo p (Z.to_nat (hi - lo)))
+  (b' : positive) (ofs' : Z) :
+  (getCurPerm m') # b' ofs' = Some Writable \/
+    (getCurPerm m') # b' ofs' = p # b' ofs'.
+Proof.
+  rewrite Hcur.
+  destruct (setPermBlock_or (Some Writable) b lo (Z.to_nat (hi - lo)) p b' ofs')
+    as [H|H].
+  - left; exact H.
+  - right; exact H.
+Qed.
+
+Lemma setPermBlock_other
+  (p: option permission) (b b0: positive) (lo: Z) (pmap: access_map) (sz: nat) :
+  b0 <> b ->
+  (setPermBlock p b lo pmap sz) # b0 = pmap # b0.
+Proof.
+  revert lo pmap.
+  induction sz as [|sz IH]; intros lo pmap Hb; simpl.
+  - reflexivity.
+  - unfold setPerm; simpl.
+    rewrite PMap.gso; auto.
+Qed.
+
+Lemma getCurPerm_nextblock_none (m : mem) (ofs : Z) :
+  (getCurPerm m) # (Mem.nextblock m) ofs = None.
+Proof.
+  destruct ((getCurPerm m) # (Mem.nextblock m) ofs) as [q|] eqn:Hq; [|reflexivity].
+  exfalso.
+  assert (Mem.perm m (Mem.nextblock m) ofs Cur q) as Hperm.
+  { rewrite /Mem.perm.
+    rewrite /getCurPerm /= in Hq.
+    rewrite PMap.gmap in Hq.
+    rewrite Hq.
+    apply perm_refl.
+  }
+  pose proof (Mem.perm_valid_block _ _ _ _ _ Hperm).
+  rewrite /Mem.valid_block /Plt in H.
+  lia.
+Qed.
+
+Check setPermBlock.
+
+Search setPermBlock fst.
+
+Lemma setPerm_fst
+  (p : option permission) (b : positive) (ofs : Z) (pmap : access_map) :
+  (setPerm p b ofs pmap).1 = pmap.1.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma setPermBlock_fst
+  (p : option permission) (b : positive) (ofs : Z) (pmap : access_map) (len : nat) :
+  (setPermBlock p b ofs pmap len).1 = pmap.1.
+Proof.
+  induction len; simpl.
+  - reflexivity.
+  - exact IHlen.
+Qed.
+
+
+Lemma setPermBlock_tree_lookup_at_b
+  (p : option permission) (b : positive) (ofs : Z)
+  (pmap : access_map) (n : nat) :
+  ((setPermBlock p b ofs pmap n).2 !! b)%maps =
+    match n with
+    | 0%nat => (pmap.2 !! b)%maps
+    | S _   => Some (PMap.get b (setPermBlock p b ofs pmap n))
+    end.
+Proof.
+  destruct n as [|n]; simpl.
+  - reflexivity.
+  - rewrite ! PTree.gss.
+    f_equal.
+    rewrite PMap.gss. auto.
+Qed.
+
+Lemma setPermBlock_tree_is_Some
+  (p : option permission) (b : positive) (ofs : Z)
+  (pmap : access_map) (n : nat) :
+  n <> 0%nat ->
+  is_Some ((setPermBlock p b ofs pmap n).2 !! b)%maps.
+Proof.
+  intros Hn.
+  destruct n as [|n]; [contradiction|].
+  rewrite setPermBlock_tree_lookup_at_b.
+  eexists; reflexivity.
+Qed.
+
+Lemma setPerm_tree_gso
+  (p : option permission) (b i : positive) (ofs : Z) (pmap : access_map) :
+  i <> b ->
+  ((setPerm p b ofs pmap).2 !! i)%maps = (pmap.2 !! i)%maps.
+Proof.
+  intro Hi.
+  unfold setPerm.
+  simpl.
+  rewrite PTree.gso; auto.
+Qed.
+
+Lemma setPermBlock_tree_gso
+  (p : option permission) (b : positive) (lo : Z)
+  (pmap : access_map) (n : nat) (i : positive) :
+  i <> b ->
+  ((setPermBlock p b lo pmap n).2 !! i)%maps = (pmap.2 !! i)%maps.
+Proof.
+  intro Hi.
+  induction n as [|n IH]; simpl; try done.
+  rewrite setPerm_tree_gso; auto.
+Qed.
+
+
+(* A tiny lemma: projecting Max after setting a whole block function is
+   the same as setting the projected Max function. *)
+Lemma map_Max_after_set_lookup (m : mem) (lo hi : Z) :
+  ∀ (b' : positive) (ofs : Z),
+    (setPermBlock (Some Freeable) (Mem.nextblock m) lo
+       (PMap.map (λ (f : Z → perm_kind → option permission) (ofs0 : Z), f ofs0 Max)
+          (Mem.mem_access m))
+       (Z.to_nat (hi - lo))) # b' ofs
+    =
+      (PMap.map (λ (f : Z → perm_kind → option permission) (ofs0 : Z), f ofs0 Max)
+         (PMap.set (Mem.nextblock m)
+            (λ (ofs0 : Z) (_ : perm_kind),
+              if zle lo ofs0 && zlt ofs0 hi then Some Freeable else None)
+            (Mem.mem_access m))) # b' ofs.
+Proof.
+  intros.
+  have Hna : (Mem.mem_access m) # (Mem.nextblock m) ofs Max = None.
+  { (* nextblock has no permissions *)
+    eapply Mem.nextblock_noaccess.
+    apply (Plt_strict (Mem.nextblock m)).
+  }
+  destruct (peq b' (Mem.nextblock m)) as [->|Hneq].
+  - (* b' = nb *)
+    rewrite PMap.gmap.
+    rewrite PMap.gss.
+    
+    destruct (zle lo ofs && zlt ofs hi) eqn: E.
+    + rewrite setPermBlock_same; auto.
+      admit.
+    + rewrite setPermBlock_other_1.
+      unfold PMap.map, PMap.get; simpl.
+      rewrite PTree.gmap1.
+      unfold option_map.
+      destruct (((Mem.mem_access m).2 !! Mem.nextblock m)%maps) as [g1|] eqn:Hb; simpl.
+      * unfold PMap.get in Hna.
+        rewrite Hb in Hna. done.
+      * unfold PMap.get in Hna.
+        rewrite Hb in Hna. done.
+      * apply andb_false_iff in E.
+        destruct E as [Hr1 | Hr2].
+        ** rewrite /zle in Hr1.
+           destruct (Z_le_gt_dec lo ofs) as [Hl1 | Hge]; try done.
+           left. lia.
+        ** rewrite /zlt in Hr2.
+           destruct (Z_lt_dec ofs hi) as [Hl1 | Hge]; try done.
+           right.
+           have Hlen : (Z.of_nat (Z.to_nat (hi - lo)) = hi - lo)%Z.
+           { apply Z2Nat.id.
+                     (*Need hi - lo >= 0*)
+                     admit.
+           }
+           rewrite Hlen. lia.
+  - rewrite PMap.gmap.
+    rewrite PMap.gso; auto.
+    rewrite setPermBlock_other_2; auto.
+    rewrite PMap.gmap; auto.
+Admitted.
+
 Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
   conc_mem_auth m perms ⊢ (∃ Hp : permMapLt p (getMaxPerm m),
@@ -615,10 +837,321 @@ Proof.
             { apply (perm_order_clash (a # (loc.1) loc.2) (p # (loc.1) loc.2)); done. }
             specialize (sc_perm_disjoint0 loc.1 loc.2); easy.
           + rewrite lookup_insert -Hcur_eq; auto.
-       - 
+  - (* getCurPerm m' = add_fresh_block b p
+                  ∧ getMaxPerm m' = add_fresh_block b (getMaxPerm m)
+                    ∧ Mem.nextblock m' = Pos.succ (Mem.nextblock m) *)
+
+    (*
+      m = m1 + m2 + m3
+      m_all = m1' + m2 + m3
+     *)
+    Print Mem.alloc.
+    Check (Mem.alloc m lo hi).
+    unshelve iExists (fst (Mem.alloc m lo hi)).
+    (*
+    unshelve
+      iExists (Mem.mkmem (Mem.mem_contents m') _ (Mem.nextblock m') _ _ _).
+    apply Mem.access_max.
+    apply Mem.nextblock_noaccess.
+    apply Mem.contents_default. *)
+    setoid_rewrite (big_sepM2_delete_l _ _ _ i (g, getCurPerm m')) at 2; auto.
+    iDestruct (resource_map.resource_map_auth_valid with "H") as %(_ & Hvalid).
+    destruct sc_self_eqs as (Hblk & Hcur_eq & Hmax_eq & Hnxt_eq).
+    iExists (<[i := σ']>σs).
+    + iExists σ'.
+      iSplit; first rewrite lookup_insert //.
+      iSplitR "Hbig".
+      iFrame. iPureIntro.
+      split; auto.
+      rewrite /getMaxPerm /=.
+      assert (Hlt1: permMapLt (getCurPerm m')
+                      (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Max)
+                         (Mem.mem_access (Mem.alloc m lo hi).1))).
+      { rewrite /permMapLt.
+        Transparent Mem.alloc.
+        rewrite /Mem.alloc.
+        intros b1 ofs1.
+        rewrite Hcur_eq.
+        simpl.
+        destruct (Pos.eq_dec b1 (Mem.nextblock m)) as [->|Hneq].
+        simpl.
+        rewrite ! PMap.gmap.
+        rewrite PMap.gss.
+        destruct (zle lo ofs1 && zlt ofs1 hi) eqn:Hrange.
+        - apply perm_order''_Freeable.
+        - simpl.
+          subst b.
+          destruct ((setPermBlock (Some Freeable) _ _ _ _) # _ ofs1) eqn: E.
+          rewrite setPermBlockFunc_other_1 in E; last first.
+          apply andb_false_iff in Hrange.
+          unfold Coqlib.zle in Hrange.
+          destruct Hrange as [Hr1 | Hr2].
+          destruct (Z_le_gt_dec lo ofs1) as [Hle | Hgt]; try done.
+          lia.
+          unfold Coqlib.zlt in Hr2.
+          destruct (Z_lt_dec ofs1 hi) as [Hlt1 | Hge]; try done.
+          right. (* Should I have hi >= lo *)
+          admit.
+          pose proof (getCurPerm_nextblock_none m ofs1).
+          admit.
+          done.
+        - rewrite ! PMap.gmap.
+          subst.
+          rewrite PMap.gso; auto.
+          rewrite setPermBlock_other_2; auto.
+          pose proof Hlt as Hlt1.
+          specialize (Hlt1 b1 ofs1).
+          rewrite /getMaxPerm /= in Hlt1.
+          rewrite PMap.gmap in Hlt1.
+          done.
+       }
+       exists Hlt1.
+      assert (restrPermMap Hlt1 = m').
+      {
+        pose proof (Mem_canonical_useful m') as Hcanon.
+        destruct m'; simpl; apply Mem.mkmem_ext; simpl in *; try done.
+        simpl in *.
+        subst.
+        admit.
+        destruct mem_access eqn: E; simpl.
+        apply f_equal_prod.
+        * extensionality; extensionality k.
+          destruct k; auto.
+          simpl in *.
+          rewrite /getMaxPerm /= in Hmax_eq.
+          pose proof (f_equal (@fst _ _) Hmax_eq) as Hfst.
+          simpl in Hfst.
+          rewrite setPermBlock_fst /= in Hfst.
+          pose proof (f_equal (fun f => f x) Hfst) as Hx.
+          simpl in Hx.
+          symmetry; exact Hx.
+        * rewrite /getMaxPerm /= in Hmax_eq.
+          
+          have Hmax_tree := f_equal snd Hmax_eq.
+          simpl in Hmax_tree.
+          apply PTree.extensionality; intros.
+          rewrite PTree.gmap.
+          destruct (Pos.eq_dec i0 (Mem.nextblock m)) as [->|Hneq].
+        + rewrite PTree.gss.
+          destruct ((t0 !! Mem.nextblock m)%maps) as [f|] eqn:Ht.
+          unfold option_map.
+          f_equal.
+          apply functional_extensionality; intro ofs.
+          apply functional_extensionality; intro k.
+          destruct k; simpl.
+          pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Hmax_eq)
+            as Hlook.
+          unfold PMap.get, PMap.map in Hlook.
+          rewrite PTree.gmap1 /= in Hlook.
+          rewrite Ht in Hlook.
+          simpl in Hlook.
+          destruct (zle lo ofs && zlt ofs hi) eqn:Hrange.
+          ** set (sb :=
+                    setPermBlock (Some Freeable) (Mem.nextblock m) lo
+                      ( (fun ofs : Z => (Mem.mem_access m).1 ofs Max)
+                        , PTree.map1 (fun (f : Z -> perm_kind -> option permission) (ofs : Z) => f ofs Max)
+                            (Mem.mem_access m).2)
+                      (Z.to_nat (hi - lo))).
+             have Hlohi : (lo <= ofs < hi)%Z.
+             { move: Hrange.
+               rewrite andb_true_iff.
+               move=> [Hzle Hzlt].
+               unfold zle in Hzle.
+               unfold zlt in Hzlt.
+               destruct (Z_le_gt_dec lo ofs) as [Hle | Hgt]; try done.
+               destruct (Z_lt_dec ofs hi) as [Hl1 | Hgt1]; try done.
+             }
+             have Hsb_range : (lo <= ofs < lo + Z.of_nat (Z.to_nat (hi - lo)))%Z.
+             {
+               have Hlen : (Z.of_nat (Z.to_nat (hi - lo)) = hi - lo)%Z.
+               { apply Z2Nat.id. (*Need hi - lo >= 0*)
+                 admit.
+               }
+               rewrite Hlen. lia.
+             }
+             have Hsb_val : sb # (Mem.nextblock m) ofs = Some Freeable.
+             { unfold sb.
+               eapply setPermBlock_same; exact Hsb_range. }
+             have Hlook' : f ofs Max = sb # (Mem.nextblock m) ofs.
+             { unfold sb in *.
+               subst.
+               exact Hlook.
+             }
+             rewrite Hsb_val in Hlook'. done.
+          ** subst.
+            set (sb :=
+                    setPermBlock (Some Freeable) (Mem.nextblock m) lo
+                      ( (fun ofs : Z => (Mem.mem_access m).1 ofs Max)
+                        , PTree.map1 (fun (f : Z -> perm_kind -> option permission) (ofs : Z) => f ofs Max)
+                            (Mem.mem_access m).2)
+                      (Z.to_nat (hi - lo))).
+            have Hlook' : f ofs Max = sb # (Mem.nextblock m) ofs.
+            { unfold sb in *.
+              subst.
+              exact Hlook.
+            }
+            have Hna : (Mem.mem_access m) # (Mem.nextblock m) ofs Max = None.
+            { (* nextblock has no permissions *)
+              eapply Mem.nextblock_noaccess.
+              apply (Plt_strict (Mem.nextblock m)).
+            }
+            have Hsb_val : sb # (Mem.nextblock m) ofs = None.
+            { unfold sb.
+              rewrite setPermBlock_other_1.
+              unfold PMap.map, PMap.get; simpl.
+              rewrite PTree.gmap1.
+              unfold option_map.
+              destruct (((Mem.mem_access m).2 !! Mem.nextblock m)%maps) as [g1|] eqn:Hb; simpl.
+              * unfold PMap.get in Hna.
+                rewrite Hb in Hna. done.
+              * unfold PMap.get in Hna.
+                rewrite Hb in Hna. done.
+              * apply andb_false_iff in Hrange.
+                destruct Hrange as [Hr1 | Hr2].
+                ** rewrite /zle in Hr1.
+                   destruct (Z_le_gt_dec lo ofs) as [Hl1 | Hge]; try done.
+                   left. lia.
+                ** rewrite /zlt in Hr2.
+                   destruct (Z_lt_dec ofs hi) as [Hl1 | Hge]; try done.
+                   right.
+                   have Hlen : (Z.of_nat (Z.to_nat (hi - lo)) = hi - lo)%Z.
+                   {
+                     apply Z2Nat.id.
+                     (*Need hi - lo >= 0*)
+                     admit.
+                   }
+                   rewrite Hlen. lia.
+             }
+             rewrite Hsb_val in Hlook'. done.
+          ** rewrite /getCurPerm /=.
+             rewrite ! PMap.gmap.
+             pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Hcur_eq)
+               as Hlook.
+             simpl in Hlook.
+             rewrite /getCurPerm /= in Hlook.
+             unfold Maps.PMap.get; simpl.
+             rewrite Ht. auto.
+          ** have Hmap_nb :
+               (PTree.map1 (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Cur) t0
+                  !! Mem.nextblock m)%maps = None.
+             { rewrite PTree.gmap1.
+               rewrite Ht. done.
+             }
+             have Hlookup := f_equal (λ tr, (tr !! Mem.nextblock m)%maps) Hmax_tree.
+             subst b.
+             rewrite PTree.gmap1 /= in Hlookup.
+             rewrite Ht in Hlookup.
+             simpl in Hlookup.
+             have Hsome :
+               is_Some
+                 ((setPermBlock (Some Freeable) (Mem.nextblock m) lo
+                     (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Max)
+                        (Mem.mem_access m)) (Z.to_nat (hi - lo))).2 !! Mem.nextblock m)%maps.
+             {
+               apply setPermBlock_tree_is_Some.
+               Search Z.to_nat.
+               have HiLo: (hi > lo)%Z. admit.
+               lia.
+             }
+             exfalso.
+             rewrite - Hlookup in Hsome.
+             clear -Hsome.
+             apply not_eq_None_Some in Hsome. done.
+        + rewrite PTree.gso; auto.
+          destruct (((Mem.mem_access m).2 !! i0)%maps) as [f1|]eqn: Ht1.
+          f_equal.
+          unfold option_map.
+          have Hlook := f_equal (fun tr => (tr !! i0)%maps) Hmax_tree.
+          rewrite PTree.gmap1 in Hlook.
+          subst.
+          rewrite setPermBlock_tree_gso in Hlook; auto.
+          simpl in Hlook.
+          rewrite PTree.gmap1 in Hlook.
+          rewrite Ht1 in Hlook.
+          destruct (t0 !! i0)%maps as [f0|] eqn:Ht0; simpl in Hlook.
+          - inversion Hlook as [Hfun]. clear Hlook.
+            assert (Hmax_pt : forall ofs, f0 ofs Max = f1 ofs Max).
+            { intro ofs. specialize (f_equal (fun g => g ofs) Hfun) as Hofs. exact Hofs. }
+            f_equal.
+            extensionality ofs; extensionality k.
+            destruct k; simpl; try done.
+            rewrite /getCurPerm /=.
+            rewrite ! PMap.gmap.
+            rewrite /getCurPerm /= in Hcur_eq.
+            unfold Maps.PMap.get.
+            simpl.
+            rewrite Ht0. auto.
+          - discriminate.
+          - simpl.
+            pose proof (f_equal (fun tr => (tr !! i0)%maps) Hmax_tree) as Hlook.
+            rewrite PTree.gmap1 in Hlook.
+            subst.
+            rewrite setPermBlock_tree_gso in Hlook; auto.
+            simpl in Hlook.
+            rewrite PTree.gmap1 in Hlook.
+            rewrite Ht1 in Hlook.
+            destruct ((t0 !! i0)%maps) as [f|] eqn:Ht0; simpl in Hlook; try discriminate; try done.
+        }
+        rewrite H3. done.
+      
+      rewrite ! delete_insert_delete /getMaxPerm /=.
+      iApply (big_sepM2_mono with "Hbig"); intros.
+      apply lookup_delete_Some in H4.
+      destruct y1.
+      iIntros "(%Hlt1 & H1)".
+      iFrame "H1".
+      iPureIntro.
+      destruct Hlt1 as (Hlt1 & Hchr).
+      split; auto.
+      destruct H4 as [Hik Hσk].
+      have Hperms_k : perms !! k = Some (g0, a).
+      { rewrite lookup_delete_ne in H3; auto. }
+      have Hlt2: permMapLt a (getMaxPerm m').
+      { eapply sc_others_still_lt2; eauto. }
+      rewrite Hmax_eq in Hlt2.
+      rewrite /getMaxPerm in Hlt2.
+      subst.
+      eexists.
+      split.
+      * intro Hge.
+        rewrite restrPermMap_nextblock /= in Hge.
+        rewrite /coherent in Hchr.
+        apply Hchr.
+        rewrite restrPermMap_nextblock /=. lia.
+      * rewrite /coherent_loc.
+        split.
+        ** unfold contents_cohere in *.
+           intros.
+           specialize (Hchr loc).
+           destruct Hchr as (? & Hchr).
+           rewrite /coherent_loc in Hchr.
+           destruct Hchr as (? & ?).
+           unfold contents_cohere in H6.
+           specialize (H6 v).
+           apply H6 in H4.
+           rewrite restrPermMap_contents /juicy_mem.contents_at /= in H4.
+           rewrite restrPermMap_contents.
+           rewrite /juicy_mem.contents_at /=.
+           admit.
+        ** rewrite /access_cohere.
+           rewrite access_at_restrPermMap_Cur.
+           Unshelve.
+           rewrite /coherent in Hchr.
+           specialize (Hchr loc).
+           destruct Hchr as (? & ?).
+           rewrite /coherent_loc in H5.
+           destruct H5 as (? & ?).
+           rewrite /access_cohere in H6.
+           rewrite access_at_restrPermMap_Cur in H6. auto.
+           unfold permMapLt.
+           intros.
+           rewrite <-map_Max_after_set_lookup.
+           rewrite /permMapLt in Hlt2.
+           specialize (Hlt2 b ofs).
+           auto.
+      + rewrite lookup_insert; auto.
+    - 
 Admitted.
-
-
 
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
