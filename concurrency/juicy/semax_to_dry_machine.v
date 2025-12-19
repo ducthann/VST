@@ -158,7 +158,7 @@ Proof.
   - rewrite /resource_at; erewrite resR_to_resource_eq; done.
 Qed.
 
-(*
+
 Lemma thread_conc_mem_auth `{!conc_VSTGS OK_ty Σ} i g m :
   thread_mem_auth g m ⊢ conc_mem_auth m {[i := (g, getCurPerm m)]}.
 Proof.
@@ -167,11 +167,17 @@ Proof.
   iDestruct (resource_map.resource_map_auth_valid with "H") as %(_ & ?).
   iExists {[i := σ]}; rewrite big_sepM2_singleton; iFrame.
   iPureIntro.
-  split.
-  - split; last done; exists (cur_lt_max m); rewrite restrPermMap_eq //.
+  esplit.
+  exists (cur_lt_max m); rewrite restrPermMap_eq //.
+  done.
+  (*
+  rewrite restrPermMap_eq.
+  - Search permMapLt.
+
+    split; last done; exists (cur_lt_max m); rewrite restrPermMap_eq //.
   - split; first by rewrite big_opM_singleton.
     rewrite -coherent_equiv //.
-    rewrite big_opM_singleton //.
+    rewrite big_opM_singleton //. *)
 Qed.
 
 Lemma thread_conc_state_interp `{!conc_VSTGS OK_ty Σ} i g m z :
@@ -180,7 +186,7 @@ Proof.
   iIntros "(? & $)".
   iApply thread_conc_mem_auth; iFrame.
 Qed.
-*)
+
 
 (*
 Definition equal_on_perm (p : access_map) (m m' : mem) : Prop :=
@@ -189,6 +195,9 @@ Definition equal_on_perm (p : access_map) (m m' : mem) : Prop :=
 
 Definition add_fresh_block (b : Values.block) (cur : access_map) : access_map :=
   PMap.set b (fun _ => None) cur.
+
+(* Definition remove_region (b: Values.block) (lo hi: Z) (pm: access_map) : access_map :=
+  setPermBlock None b lo pm (Z.to_nat (hi - lo)). *)
 
 (* Half-open range [lo, hi) implemented via length = Z.to_nat (hi - lo) *)
 Definition setPerm_range (p : option permission)
@@ -202,48 +211,6 @@ Definition remove_region (b : Values.block) (lo hi : Z) (cur : access_map)
 
 Definition add_region (b : Values.block) (lo hi : Z) (perm : permission) (cur : access_map)
   : access_map := setPerm_range (Some perm) b lo hi cur.
-
-Record OpSC (i : nat) (m m' : mem)
-            (p : access_map)
-            (perms : gmap nat (gname * access_map)) : Prop := {
-
-  (* 1) Allocation shape: either no fresh block, 
-      or exactly one fresh block. *)
-  sc_nextblock :
-      Mem.nextblock m' = Mem.nextblock m
-   \/ Mem.nextblock m' = Pos.succ (Mem.nextblock m) ;
-
- 
-  (* 3) Every OTHER thread's stored map p' remains 
-            strictly below the NEW Max. *)
-  sc_others_still_lt :
-    forall j g' p', j ≠ i → perms !! j = Some (g', p') →
-      permMapLt p' (getMaxPerm m') ;
-
-
-    (* 4) The SELF thread’s stored map also stays < NEW Max *)
-  sc_self_still_lt :
-    permMapLt p (getMaxPerm m') ;
-
-    sc_self_cur_shape :
-    getCurPerm m' = getCurPerm m
-    \/ (exists b, b = Mem.nextblock m /\
-              getCurPerm m' = add_fresh_block b (getCurPerm m)) (* malloc *)
-    \/ (∃ b lo hi,                              (* free / unlock *)
-          getCurPerm m' = remove_region b lo hi (getCurPerm m));  
-
-    (*
-  (* 4) The new current permission for thread i *)
-  sc_self_cur_shape :
-        getCurPerm m' = getCurPerm m
-     \/ (exists (b : Values.block), b = Mem.nextblock m ∧           (* malloc *)
-              getCurPerm m' = add_fresh_block b (getCurPerm m))
-     \/ (∃ b lo hi,                              (* free / unlock *)
-              getCurPerm m' = remove_region b lo hi (getCurPerm m))
-     \/ (∃ b lo hi,                              (* lock acquire*)
-              getCurPerm m' = add_region b lo hi (getCurPerm m)) ; *)
-
-}.
 
 Definition can_store_at (p : access_map) (l : positive * Z) : Prop :=
   match (p # (fst l)) (snd l) with
@@ -285,7 +252,7 @@ Inductive SelfOp :=
 
 Check setPermBlock.
 
-Record OpSC1 (i : nat) (m m' : mem)
+Record OpSC (i : nat) (m m' : mem)
             (p : access_map) (perms : gmap nat (gname * access_map)) : Prop := {
   sc_self : SelfOp;
 
@@ -324,17 +291,11 @@ Record OpSC1 (i : nat) (m m' : mem)
   sc_perm_disjoint:
     forall i j, j <> i -> permMapsDisjoint_at perms i j;
 
+    (*
+ (∃ b lo hi,                              (* lock acquire*)
+              getCurPerm m' = add_region b lo hi (getCurPerm m)) ; *)
+
 }.
-
-Print Mem.alloc.
-
-Check @restrPermMap _
-                    {|
-                      Mem.mem_contents := Mem.mem_contents _;
-                      Mem.mem_access := Mem.mem_access _;
-                      Mem.nextblock := Mem.nextblock _
-                    |} .
-
 
 Lemma writable_at_perm_order_cases
   (p : access_map) (loc : positive * Z) (x : option permission) :
@@ -562,10 +523,6 @@ Proof.
   lia.
 Qed.
 
-Check setPermBlock.
-
-Search setPermBlock fst.
-
 Lemma setPerm_fst
   (p : option permission) (b : positive) (ofs : Z) (pmap : access_map) :
   (setPerm p b ofs pmap).1 = pmap.1.
@@ -581,7 +538,6 @@ Proof.
   - reflexivity.
   - exact IHlen.
 Qed.
-
 
 Lemma setPermBlock_tree_lookup_at_b
   (p : option permission) (b : positive) (ofs : Z)
@@ -703,7 +659,7 @@ Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
   conc_mem_auth m perms ⊢ (∃ Hp : permMapLt p (getMaxPerm m),
       thread_mem_auth g (restrPermMap Hp)) ∗
-        (∀ m', ⌜OpSC1 i m m' p perms⌝ ∧
+        (∀ m', ⌜OpSC i m m' p perms⌝ ∧
                  thread_mem_auth g m' -∗
               ∃ m_all, conc_mem_auth m_all (<[i:=(g, getCurPerm m')]>perms)).
 Proof.
@@ -1168,9 +1124,12 @@ Proof.
            rewrite /access_cohere in H6.
            rewrite access_at_restrPermMap_Cur in H6. auto.
       + rewrite lookup_insert; auto.
-    - Print Mem.alloc.
+    - Print Mem.free.
+      Search Mem.free.
+      Check Mem.free m b lo hi.
+      Check (Mem.alloc m lo hi).
+      (* unshelve iExists (fst (Mem.free m b lo hi)). *)
 Admitted.
-
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
@@ -2065,8 +2024,11 @@ Section Safety.
           { rewrite lookup_insert_ne // OrdinalPool.gsoThreadRes //; apply Hperms. }
         * rewrite /conc_state_interp /thread_state_interp.
           simpl in *.
-          Search permMapLt getMaxPerm getCurPerm.
+          iDestruct "S" as "(? & ?)".
+          iFrame.
           rewrite /conc_mem_auth.
+          iApply "H"; auto.
+          
           admit. (* need to build an updated conc_state_interp *)
         * iApply "Hsafe".
           -- iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & % & Hsafe)".
