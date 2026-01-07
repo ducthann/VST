@@ -283,12 +283,14 @@ Record OpSC (i : nat) (m m' : mem)
 
     | SO_alloc b lo hi =>
         b = Mem.nextblock m /\
-        (* getCurPerm m' = add_fresh_block b p /\
-        getMaxPerm m' = add_fresh_block b (getMaxPerm m) /\ *)
+        (* 
         getCurPerm m' =
             setPermBlock (Some Freeable) b lo p (Z.to_nat (hi - lo)) /\
         getMaxPerm m' =
-            setPermBlock (Some Freeable) b lo (getMaxPerm m) (Z.to_nat (hi - lo)) /\
+            setPermBlock (Some Freeable) b lo (getMaxPerm m) (Z.to_nat (hi - lo)) /\ *)
+        Mem.mem_access m' = PMap.set (Mem.nextblock m)
+           (λ (ofs : Z) (_ : perm_kind), if zle lo ofs && zlt ofs hi then Some Freeable else None)
+              (Mem.mem_access m) /\
         Mem.nextblock m' = Pos.succ (Mem.nextblock m) /\
         Mem.mem_contents m' =
             PMap.set (Mem.nextblock m) (ZMap.init Undef) (Mem.mem_contents m)
@@ -674,6 +676,69 @@ Proof.
     + erewrite access_at_Cur_of_mem_equiv in Hperm; eauto.
 Qed.
 
+
+Lemma max_cur_equiv m m' lo hi
+  (Hlt1 : permMapLt (getCurPerm m')
+           (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Max)
+              (Mem.mem_access (Mem.alloc m lo hi).1)))
+  (Heq : Mem.mem_access m' =
+        PMap.set (Mem.nextblock m)
+          (λ (ofs : Z) (_ : perm_kind), if zle lo ofs && zlt ofs hi then Some Freeable else None)
+          (Mem.mem_access m))
+  (  Hcanon : ∀ (loc : Z) (k : perm_kind), (Mem.mem_access m').1 loc k = None):
+  Mem.mem_access (restrPermMap Hlt1) = Mem.mem_access m'.
+Proof.
+  destruct m'; simpl in *.
+  destruct mem_access eqn: E; simpl.
+  f_equal.
+  - extensionality; extensionality k.
+    destruct k; simpl.
+    rewrite /getMaxPerm /= in Heq.
+    pose proof (f_equal (@fst _ _) Heq) as Hfst.
+    simpl in Hfst.
+    by rewrite Hfst. done.
+  - apply PTree.extensionality; intros.
+    rewrite PTree.gmap.
+    destruct (Pos.eq_dec i (Mem.nextblock m)) as [->|Hneq].
+    + rewrite PTree.gss /=.
+      destruct ((t0 !! Mem.nextblock m)%maps) as [f|] eqn:Ht.
+      2 : { exfalso. inv Heq. rewrite PTree.gss //= in Ht. }
+      f_equal.
+      apply functional_extensionality; intros ofs.
+      apply functional_extensionality; intros k.
+      destruct k; simpl.
+      * pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
+        rewrite /PMap.get Ht /= in Hlook.
+        by rewrite Hlook PTree.gss.
+      * rewrite /getCurPerm /= Heq PMap.gmap.
+        pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
+        rewrite /PMap.get Ht /= in Hlook.
+        by rewrite Hlook !PTree.gss PMap.gss.
+    + rewrite PTree.gso //=.
+      rewrite /option_map /=.
+      destruct (((Mem.mem_access m).2 !! i)%maps) as [f1|] eqn : Ht.
+      destruct (t0 !! i)%maps as [f0|] eqn : Ht1.
+      * f_equal.
+        apply functional_extensionality; intros ofs.
+        apply functional_extensionality; intros k.
+        destruct k; try done.
+        destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
+        rewrite /PMap.set /= in Heq.
+        inv Heq.
+        simpl in Ht.
+        rewrite PTree.gso //= in Ht1.
+        rewrite Ht in Ht1. by inv Ht1.
+        rewrite /getCurPerm /= Heq /= PMap.gmap -Heq /PMap.get /= Ht1 //=.
+      * inv Heq.
+        by rewrite PTree.gso //= Ht in Ht1.
+      * destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
+        rewrite /PMap.set /= in Heq.
+        inv Heq.
+        simpl in Ht.
+        rewrite PTree.gso //=.
+Qed.
+
+
 Lemma conc_mem_auth_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
   conc_mem_auth m perms ⊢ (∃ Hp : permMapLt p (getMaxPerm m),
@@ -715,7 +780,6 @@ Proof.
       split; auto.
       rewrite /getMaxPerm /=.
       exists Hlt.
-      Search coherent.
       replace (@restrPermMap _
                              {|
                                Mem.mem_contents := Mem.mem_contents m';
@@ -828,7 +892,7 @@ Proof.
     unshelve iExists (fst (Mem.alloc m lo hi)).
     setoid_rewrite (big_sepM2_delete_l _ _ _ i (g, getCurPerm m')) at 2; auto.
     iDestruct (resource_map.resource_map_auth_valid with "H") as %(_ & Hvalid).
-    destruct sc_self_eqs as (Hblk & Hcur_eq & Hmax_eq & Hnxt_eq & Hcnt_eq).
+    destruct sc_self_eqs as (Hblk & Hcur_max_eq & Hnxt_eq & Hcnt_eq).
     iExists (<[i := σ']>σs).
     + iExists σ'.
       iSplit; first rewrite lookup_insert //.
@@ -840,181 +904,31 @@ Proof.
                       (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Max)
                          (Mem.mem_access (Mem.alloc m lo hi).1))).
       { rewrite /permMapLt.
-        Transparent Mem.alloc.
-        rewrite /Mem.alloc.
         intros b1 ofs1.
-        rewrite Hcur_eq.
-        simpl.
+        rewrite /getCurPerm /= Hcur_max_eq.
         destruct (Pos.eq_dec b1 (Mem.nextblock m)) as [->|Hneq].
-        simpl.
-        rewrite ! PMap.gmap.
-        rewrite PMap.gss.
-        destruct (zle lo ofs1 && zlt ofs1 hi) eqn:Hrange.
+        rewrite !PMap.gmap PMap.gss.
+        destruct (zle lo ofs1 && zlt ofs1 hi) eqn:Hrange; try done.
         - apply perm_order''_Freeable.
-        - simpl.
-          subst b.
-          destruct ((setPermBlock (Some Freeable) _ _ _ _) # _ ofs1) eqn: E; try done.
-          rewrite setPermBlockFunc_other_1 in E; last first.
-          apply andb_false_iff in Hrange.
-          unfold Coqlib.zle in Hrange.
-          destruct Hrange as [Hr1 | Hr2].
-          destruct (Z_le_gt_dec lo ofs1) as [Hle | Hgt]; try done.
-          lia.
-          unfold Coqlib.zlt in Hr2.
-          destruct (Z_lt_dec ofs1 hi) as [Hlt1 | Hge]; try done.
-          destruct (zlt lo hi). lia.
-          lia.
-          pose proof (getMaxPerm_nextblock_none m ofs1).
-          clear dependent H2.
-          rewrite /permMapLt in Hlt.
-          specialize (Hlt (Mem.nextblock m) ofs1).
-          rewrite H3 in Hlt.
-          by rewrite /Mem.perm_order'' E in Hlt.
-        - rewrite ! PMap.gmap.
-          subst.
-          rewrite PMap.gso; auto.
-          rewrite setPermBlock_other_2; auto.
-          pose proof Hlt as Hlt1.
-          specialize (Hlt1 b1 ofs1).
-          rewrite /getMaxPerm /= in Hlt1.
-          rewrite PMap.gmap in Hlt1; try done.
-       }
+        - rewrite !PMap.gmap PMap.gso //=.
+          exact (Mem.access_max m b1 ofs1).
+      }
       exists Hlt1.
-
       assert (mem_equiv.mem_equiv (restrPermMap Hlt1) m').
       {
-        Print Mem.alloc.
-        assert (Heq: Mem.mem_access m' =
-                  PMap.set (Mem.nextblock m)
-                    (λ (ofs : Z) (_ : perm_kind), if zle lo ofs && zlt ofs hi then Some Freeable else None)
-                    (Mem.mem_access m)). admit.
         pose proof (Mem_canonical_useful m') as Hcanon.
-        destruct m'; simpl in *.
-        destruct mem_access eqn: E; simpl.
+        assert (Hacc_eq: Mem.mem_access (restrPermMap Hlt1) = Mem.mem_access m').
+        { by apply max_cur_equiv. }
         econstructor; try done; last first.
         - rewrite /mem_equiv.content_equiv /Mem.mem_contents /=.
-          by destruct m; rewrite Hcnt_eq.
-        - rewrite /mem_equiv.Max_equiv /mem_equiv.access_map_equiv /getMaxPerm /=.
-          intros.
-          do 3 f_equal.
-          extensionality; extensionality k.
-          destruct k; simpl.
-          rewrite /getMaxPerm /= in Heq.
-          pose proof (f_equal (@fst _ _) Heq) as Hfst.
-          simpl in Hfst.
-          rewrite Hfst. done.
-          done.
-          apply PTree.extensionality; intros.
-          rewrite PTree.gmap.
-          destruct (Pos.eq_dec i0 (Mem.nextblock m)) as [->|Hneq].
-          + rewrite PTree.gss.
-            simpl.
-            destruct ((t0 !! Mem.nextblock m)%maps) as [f|] eqn:Ht.
-            2 : { exfalso. inv Heq. rewrite PTree.gss //= in Ht. }
-            f_equal.
-            apply functional_extensionality; intros ofs.
-            apply functional_extensionality; intros k.
-            destruct k; simpl.
-            ++ pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
-               rewrite /PMap.get Ht /= in Hlook.
-               by rewrite Hlook PTree.gss.
-            ++ rewrite /getCurPerm /=.
-               rewrite Heq /=.
-               rewrite ! PMap.gmap.
-               pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
-               rewrite /PMap.get Ht /= in Hlook.
-               rewrite Hlook.
-               by rewrite !PTree.gss PMap.gss.
-         + rewrite PTree.gso; auto.
-           rewrite /option_map /=.
-           destruct (((Mem.mem_access m).2 !! i0)%maps) as [f1|] eqn : Ht.
-           destruct (t0 !! i0)%maps as [f0|] eqn : Ht1.
-           ++ f_equal.
-              apply functional_extensionality; intros ofs.
-              apply functional_extensionality; intros k.
-              destruct k; try done.
-              destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
-              rewrite /PMap.set /= in Heq.
-              inv Heq.
-              simpl in Ht.
-              rewrite PTree.gso //= in Ht1.
-              rewrite Ht in Ht1. by inv Ht1.
-
-              rewrite /getCurPerm /=.
-              rewrite Heq /=.
-              rewrite PMap.gmap.
-              rewrite <- Heq.
-              rewrite /PMap.get /=.
-              by rewrite Ht1.
-           ++ inv Heq.
-              rewrite PTree.gso //= in Ht1.
-              by rewrite Ht in Ht1.
-           ++ destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
-              rewrite /PMap.set /= in Heq.
-              inv Heq.
-              simpl in Ht.
-              rewrite PTree.gso //=.
-        - rewrite /mem_equiv.Cur_equiv /mem_equiv.access_map_equiv /getCurPerm /=.
-          intros.
-          do 3 f_equal.
-          extensionality; extensionality k.
-          destruct k; simpl.
-          rewrite /getMaxPerm /= in Heq.
-          pose proof (f_equal (@fst _ _) Heq) as Hfst.
-          simpl in Hfst.
-          rewrite Hfst. done.
-          done.
-          apply PTree.extensionality; intros.
-          rewrite PTree.gmap.
-          destruct (Pos.eq_dec i0 (Mem.nextblock m)) as [->|Hneq].
-          + rewrite PTree.gss.
-            simpl.
-            destruct ((t0 !! Mem.nextblock m)%maps) as [f|] eqn:Ht.
-            2 : { exfalso. inv Heq. rewrite PTree.gss //= in Ht. }
-            f_equal.
-            apply functional_extensionality; intros ofs.
-            apply functional_extensionality; intros k.
-            destruct k; simpl.
-            ++ pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
-               rewrite /PMap.get Ht /= in Hlook.
-               by rewrite Hlook PTree.gss.
-            ++ rewrite /getCurPerm /=.
-               rewrite Heq /=.
-               rewrite ! PMap.gmap.
-               pose proof (f_equal (fun am => am # (Mem.nextblock m) ofs) Heq) as Hlook.
-               rewrite /PMap.get Ht /= in Hlook.
-               rewrite Hlook.
-               by rewrite !PTree.gss PMap.gss.
-         + rewrite PTree.gso; auto.
-           rewrite /option_map /=.
-           destruct (((Mem.mem_access m).2 !! i0)%maps) as [f1|] eqn : Ht.
-           destruct (t0 !! i0)%maps as [f0|] eqn : Ht1.
-           ++ f_equal.
-              apply functional_extensionality; intros ofs.
-              apply functional_extensionality; intros k.
-              destruct k; try done.
-              destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
-              rewrite /PMap.set /= in Heq.
-              inv Heq.
-              simpl in Ht.
-              rewrite PTree.gso //= in Ht1.
-              rewrite Ht in Ht1. by inv Ht1.
-
-              rewrite /getCurPerm /=.
-              rewrite Heq /=.
-              rewrite PMap.gmap.
-              rewrite <- Heq.
-              rewrite /PMap.get /=.
-              by rewrite Ht1.
-           ++ inv Heq.
-              rewrite PTree.gso //= in Ht1.
-              by rewrite Ht in Ht1.
-           ++ destruct (Mem.mem_access m) as [o1 t1] eqn:Hacc.
-              rewrite /PMap.set /= in Heq.
-              inv Heq.
-              simpl in Ht.
-              rewrite PTree.gso //=.
-         }
+          intros. simpl.
+          clear -Hcnt_eq.
+          destruct m', m.
+          simpl in *.
+          by rewrite Hcnt_eq.
+        - by apply mem_equiv.mem_access_max_equiv.
+        - by apply mem_equiv.mem_access_cur_equiv.
+      }
       eapply mem_coherent_equiv; eauto. done.
       rewrite ! delete_insert_delete /getMaxPerm /=.
       iApply (big_sepM2_mono with "Hbig"); intros.
@@ -1028,31 +942,14 @@ Proof.
       destruct H4 as [Hik Hσk].
       have Hperms_k : perms !! k = Some (g0, a).
       { rewrite lookup_delete_ne in H3; auto. }
-      have Hlt2: permMapLt a (getMaxPerm m').
-      { eapply sc_others_still_lt2; eauto. }
-      (* rewrite Hmax_eq in Hlt2.
-      rewrite /getMaxPerm in Hlt2.
-      subst.
-      set (m3 := (Mem.alloc m lo hi).1). *)
-      assert (Heq: Mem.mem_access m' =
-                     PMap.set (Mem.nextblock m)
-                       (λ (ofs : Z) (_ : perm_kind), if zle lo ofs && zlt ofs hi then Some Freeable else None)
-                       (Mem.mem_access m)). admit.
-      assert (Hlt3: permMapLt a
-                      (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z), f ofs Max)
-                         (PMap.set (Mem.nextblock m)
-                            (λ (ofs : Z) (_ : perm_kind), if zle lo ofs && zlt ofs hi then Some Freeable else None)
-                            (Mem.mem_access m)))).
-      {
-        
-        rewrite -Heq.
-        rewrite /getMaxPerm in Hlt2. done.
-      }
-      have Hlt3g : permMapLt a (getMaxPerm (Mem.alloc m lo hi).1).
+      have Hlt' : permMapLt a (getMaxPerm (Mem.alloc m lo hi).1).
       { unfold getMaxPerm; cbn [Mem.alloc].
-        exact Hlt3.
+        Transparent Mem.alloc.
+        rewrite /Mem.alloc /=.
+        rewrite <- Hcur_max_eq.
+        eapply sc_others_still_lt2; eauto.
       }
-      exists Hlt3g.
+      exists Hlt'.
       split.
       * intro Hge.
         rewrite restrPermMap_nextblock /= in Hge.
@@ -1081,8 +978,7 @@ Proof.
            rewrite /juicy_mem.contents_at in H4.
            have H4m :
              ZMap.get loc.2 (Mem.mem_contents m) # (loc.1) = v.
-           { (* restrPermMap does not change contents *)
-             pose proof (f_equal (fun f => f loc) (restrPermMap_contents Hlt1)) as Hc.
+           { pose proof (f_equal (fun f => f loc) (restrPermMap_contents Hlt1)) as Hc.
              unfold juicy_mem.contents_at in Hc.
              rewrite Hc in H4. auto.
            }
@@ -1117,47 +1013,6 @@ Proof.
         {
           rewrite /permMapLt.
           intros b1 ofs1.
-          Print Mem.free.
-          Print Mem.range_perm.
-          Check setPermBlock.
-          rewrite Hcur_eq.
-        simpl.
-        destruct (Pos.eq_dec b1 (Mem.nextblock m)) as [->|Hneq].
-        simpl.
-        rewrite ! PMap.gmap.
-        rewrite PMap.gss.
-        destruct (zle lo ofs1 && zlt ofs1 hi) eqn:Hrange.
-        - apply perm_order''_Freeable.
-        - simpl.
-          subst b.
-          destruct ((setPermBlock (Some Freeable) _ _ _ _) # _ ofs1) eqn: E; try done.
-          rewrite setPermBlockFunc_other_1 in E; last first.
-          apply andb_false_iff in Hrange.
-          unfold Coqlib.zle in Hrange.
-          destruct Hrange as [Hr1 | Hr2].
-          destruct (Z_le_gt_dec lo ofs1) as [Hle | Hgt]; try done.
-          lia.
-          unfold Coqlib.zlt in Hr2.
-          destruct (Z_lt_dec ofs1 hi) as [Hlt1 | Hge]; try done.
-          destruct (zlt lo hi). lia.
-          lia.
-          pose proof (getMaxPerm_nextblock_none m ofs1).
-          clear dependent H2.
-          rewrite /permMapLt in Hlt.
-          specialize (Hlt (Mem.nextblock m) ofs1).
-          rewrite H3 in Hlt.
-          by rewrite /Mem.perm_order'' E in Hlt.
-        - rewrite ! PMap.gmap.
-          subst.
-          rewrite PMap.gso; auto.
-          rewrite setPermBlock_other_2; auto.
-          pose proof Hlt as Hlt1.
-          specialize (Hlt1 b1 ofs1).
-          rewrite /getMaxPerm /= in Hlt1.
-          rewrite PMap.gmap in Hlt1; try done.
-          
-        
-      
 Admitted.
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
