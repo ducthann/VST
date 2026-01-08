@@ -773,8 +773,6 @@ Proof.
   iIntros (m') "(%HSc & H)".
   rewrite /thread_mem_auth /mem_auth.
   iDestruct "H" as (σ') "(% & H)".
-  (* assert (Hmr: access_map_rmap m' σ'). admit.
-  assert (Heq: access_map_rmap (restrPermMap Hlt) σ). admit. *)
   destruct HSc.
   destruct sc_self.
   destruct sc_self_eqs as (Hcur_eq & Hmax_eq & Hnxt_eq & Hloc).
@@ -957,10 +955,8 @@ Proof.
       have Hperms_k : perms !! k = Some (g0, a).
       { rewrite lookup_delete_ne in H3; auto. }
       have Hlt' : permMapLt a (getMaxPerm (Mem.alloc m lo hi).1).
-      { unfold getMaxPerm; cbn [Mem.alloc].
-        Transparent Mem.alloc.
-        rewrite /Mem.alloc /=.
-        rewrite <- Hcur_max_eq.
+      { Transparent Mem.alloc.
+        rewrite /getMaxPerm /Mem.alloc /= -Hcur_max_eq.
         eapply sc_others_still_lt2; eauto.
       }
       exists Hlt'.
@@ -1037,32 +1033,8 @@ Proof.
           - rewrite ! PMap.gmap PMap.gso //=.
             exact (Mem.access_max m b1 ofs1).
         }
-        unfold getMaxPerm in *.
-        have access_max' :
-          forall b0 ofs,
-            Mem.perm_order'' (acc # b0 ofs Max) (acc # b0 ofs Cur).
-        { intros. Check Mem.access_max.
-          rewrite /acc.
-          rewrite PMap.gsspec.
-          destruct (peq b0 b) as [-> | Hb].
-          - destruct (zle lo ofs && zlt ofs hi) eqn:Hrange; simpl. done.
-            exact (Mem.access_max m b ofs).
-          - exact (Mem.access_max m b0 ofs).
-        }
-        have nextblock_noaccess' :
-          forall (b0 : Values.block) (ofs : Z) (k : perm_kind),
-            ~ Plt b0 (Mem.nextblock m) ->
-            acc # b0 ofs k = None.
-        { intros.
-          rewrite /acc.
-          rewrite PMap.gsspec.
-          destruct (peq b0 b) as [-> | Hb]; simpl.
-          - destruct (zle lo ofs && zlt ofs hi) eqn:Hrange; simpl. done.
-            by apply Mem.nextblock_noaccess.
-          - by apply Mem.nextblock_noaccess.
-        }
-        set (m_acc :=
-               {| Mem.mem_contents := Mem.mem_contents m;
+        set (m_acc := {|
+                 Mem.mem_contents := Mem.mem_contents m;
                  Mem.mem_access := acc;
                  Mem.nextblock := Mem.nextblock m;
                  Mem.access_max := λ (b0 : positive) (ofs : Z),
@@ -1109,8 +1081,76 @@ Proof.
               by rewrite Hb in Hb0.
               specialize (Hcanon ofs Cur). done. 
         }
-        eapply mem_coherent_equiv; eauto. done.
-        
+        by eapply mem_coherent_equiv; eauto.
+        rewrite ! delete_insert_delete /getMaxPerm /=.
+        iApply (big_sepM2_mono with "Hbig"); intros.
+        apply lookup_delete_Some in H4.
+        destruct y1.
+        iIntros "(%Hlt1 & H1)".
+        iFrame "H1".
+        iPureIntro.
+        split; auto.
+        destruct Hlt1 as (Hlt1 & Hchr).
+        destruct H4 as [Hik Hσk].
+        have Hperms_k : perms !! k = Some (g0, a).
+        { rewrite lookup_delete_ne in H3; auto. }
+        set acc := (PMap.set b
+                      (λ (ofs : Z) (k : perm_kind),
+                        if zle lo ofs && zlt ofs hi then None else (Mem.mem_access m) # b ofs k)
+                      (Mem.mem_access m)).
+        assert (Hlt': permMapLt a (PMap.map (λ (f : Z → perm_kind → option permission) (ofs : Z),
+                                       f ofs Max) acc)).
+        {
+          rewrite /acc.
+          rewrite /getMaxPerm in sc_others_still_lt2.
+          rewrite Hcur_max_eq in sc_others_still_lt2.
+          eapply sc_others_still_lt2; eauto.
+        }
+        exists Hlt'.
+        split.
+        * intro Hge.
+          rewrite restrPermMap_nextblock /= in Hge.
+          rewrite /coherent in Hchr.
+          apply Hchr.
+          rewrite restrPermMap_nextblock /=. lia.
+        * rewrite /coherent_loc.
+          split.
+          ** rewrite /contents_cohere restrPermMap_contents /juicy_mem.contents_at /=.
+             intros.
+             rewrite /coherent in Hchr.
+             specialize (Hchr loc).
+             destruct Hchr as (? & Hchr).
+             rewrite /coherent_loc /contents_cohere in Hchr.
+             destruct Hchr as (Hchr & ?).
+             destruct (peq (loc.1) (Mem.nextblock m)) as [Heq1 | Hneq].
+             { rewrite /resource_at in H4.
+               destruct (y2 !! loc) eqn: E; last first.
+               { rewrite E in H4. inv H4. }
+               rewrite restrPermMap_nextblock in H5.
+               rewrite Heq1 in H5.
+               assert (Hge: (Mem.nextblock m >= Mem.nextblock m)%positive). lia.
+               apply H5 in Hge. done.
+             }
+             apply Hchr in H4.
+             rewrite /juicy_mem.contents_at in H4.
+             have H4m :
+               ZMap.get loc.2 (Mem.mem_contents m) # (loc.1) = v.
+             { pose proof (f_equal (fun f => f loc) (restrPermMap_contents Hlt1)) as Hc.
+               unfold juicy_mem.contents_at in Hc.
+               rewrite Hc in H4. auto.
+             }
+             done.
+          ** rewrite /access_cohere.
+             rewrite access_at_restrPermMap_Cur.
+             Unshelve.
+             rewrite /coherent in Hchr.
+             specialize (Hchr loc).
+             destruct Hchr as (? & ?).
+             rewrite /coherent_loc in H5.
+             destruct H5 as (? & ?).
+             rewrite /access_cohere in H6.
+             rewrite access_at_restrPermMap_Cur in H6. auto.
+        + rewrite lookup_insert; auto.
         
 Admitted.
 
