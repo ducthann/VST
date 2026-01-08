@@ -1084,50 +1084,34 @@ Proof.
             intros. rewrite Hcnt_eq.
             rewrite /Mem.mem_contents /=. done.
           - rewrite /mem_equiv.Max_equiv /mem_equiv.access_map_equiv /getMaxPerm.
-            intros.
-            subst m_acc.
             rewrite Hcur_max_eq.
-            unfold restrPermMap; cbn.
+            intros.
+            simpl.
             apply functional_extensionality; intros ofs.
             destruct (Pos.eq_dec b0 b) as [->|Hb0neq].
-            + rewrite !PMap.gmap.
-              unfold Maps.PMap.get in *; cbn.
-              rewrite !PTree.gmap.
-              rewrite !PTree.gss.  
-              simpl. done.
-            + rewrite !PMap.gmap.
-              unfold Maps.PMap.get in *; cbn.
-              rewrite !PTree.gmap.
-              rewrite !PTree.gso //=.
-              destruct ((Mem.mem_access m).2 !! b0)%maps as [f|] eqn:Hget; simpl.
-              done.
-              done.
+            + by rewrite !PMap.gmap /Maps.PMap.get /= !PTree.gmap !PTree.gss /=.
+            + rewrite !PMap.gmap /Maps.PMap.get !PTree.gmap PTree.gso //=.
+              destruct ((Mem.mem_access m).2 !! b0)%maps; simpl. done. done.
           - rewrite /mem_equiv.Cur_equiv /mem_equiv.access_map_equiv /getCurPerm.
             intros.
-            subst m_acc.
             apply functional_extensionality; intro ofs.
-            rewrite !PMap.gmap.
-            unfold restrPermMap; cbn.
-            destruct ((Mem.mem_access m').2 !! b0)%maps as [f|] eqn:Hb0;simpl.
-            rewrite Hcur_max_eq in Hb0.
-            simpl in Hb0.
-            unfold Maps.PMap.get; cbn.
-            rewrite !PTree.gmap.
-            rewrite Hb0. simpl.
-            rewrite PTree.gmap1.
-            unfold option_map.
-            destruct ((Mem.mem_access m').2 !! b0)%maps as [x|] eqn:Hb; cbn; reflexivity.
-            rewrite Hcur_max_eq in Hb0.
-            simpl in Hb0.
-            unfold Maps.PMap.get; cbn.
-            rewrite !PTree.gmap.
-            rewrite Hb0. simpl.
-            destruct ((Mem.mem_access m').2 !! b0)%maps as [x|] eqn:Hb; cbn.
-            rewrite Hcur_max_eq in Hb.
-            rewrite Hb in Hb0. done.
-            specialize (Hcanon ofs Cur). symmetry. done.
+            rewrite !PMap.gmap /restrPermMap /=.
+            destruct ((Mem.mem_access m').2 !! b0)%maps as [f|] eqn:Hb0; simpl.
+            + rewrite Hcur_max_eq /= /Maps.PMap.get in Hb0.
+              rewrite /Maps.PMap.get /= !PTree.gmap.
+              rewrite Hb0 /= PTree.gmap1 /option_map.
+              destruct ((Mem.mem_access m').2 !! b0)%maps; reflexivity.
+            + rewrite Hcur_max_eq /= in Hb0.
+              rewrite /Maps.PMap.get /= !PTree.gmap.
+              rewrite Hb0 /=.
+              destruct ((Mem.mem_access m').2 !! b0)%maps as [x|] eqn:Hb; simpl.
+              rewrite Hcur_max_eq in Hb.
+              by rewrite Hb in Hb0.
+              specialize (Hcanon ofs Cur). done. 
         }
         eapply mem_coherent_equiv; eauto. done.
+        
+        
 Admitted.
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
