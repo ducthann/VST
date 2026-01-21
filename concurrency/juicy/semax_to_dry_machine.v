@@ -1268,54 +1268,187 @@ Proof.
   destruct ((Mem.mem_access m).2 !! b)%maps; simpl; try done.
 Qed.
 
-(*
-Lemma mem_step_preserve_contents_noW :
-  forall m m',
-    (forall b ofs, Mem.valid_block m b -> ~ Mem.perm m b ofs Cur Writable) ->
-    mem_step m m' ->
-    forall b ofs,
-      ZMap.get ofs (PMap.get b (Mem.mem_contents m)) =
-        ZMap.get ofs (PMap.get b (Mem.mem_contents m')).
+Inductive mem_step_nostore (m m' : mem) : Prop :=
+| ms_alloc_nostore :
+  forall lo hi b',
+    Mem.alloc m lo hi = (m', b') ->
+    mem_step_nostore m m'
+| ms_freelist_nostore :
+  forall l,
+    Mem.free_list m l = Some m' ->
+    mem_step_nostore m m'
+| ms_trans_nostore :
+  forall m'',
+    mem_step_nostore m m'' ->
+    mem_step_nostore m'' m' ->
+    mem_step_nostore m m'.
+
+Lemma mem_step_nostore_is_mem_step m m' :
+  mem_step_nostore m m' -> mem_step m m'.
 Proof.
-  intros m m' HnoW Hstep b ofs.
-  Locate mem_step_obeys_cur_write.
-  Print mem_step.
-  Search restrPermMap.
-  Check Mem_canonical_useful .
-  Search Mem.nextblock Plt.
-  Check memsem_lemmas.mem_step_obeys_cur_write.
-  eapply semantics_lemmas.mem_step_obeys_cur_write; eauto.
-  2 :{  apply HnoW.
-  Check semantics_lemmas.mem_step_obeys_cur_write.
-  intros.
-  induction H0.
-  * revert m ofs0 H H0; induction bytes; intros.
-    Transparent Mem.storebytes.
-    unfold Mem.storebytes in H0.
-    destruct (Mem.range_perm_dec m b0 ofs0
-                (ofs0 + Z.of_nat (length nil)) Cur Writable);
-      inv H0; simpl.
-    destruct (peq b b0). subst b0.
-    rewrite PMap.gss. auto.
-    rewrite PMap.gso; auto.
-    change (a::bytes) with ((a::nil)++bytes) in H0.
-    apply Mem.storebytes_split in H0.
-    destruct H0 as [m1 [? ?]].
-    etransitivity.
-    2: eapply IHbytes; try apply H1.
-    clear H1 IHbytes.
-    unfold Mem.storebytes in H0.
-    Opaque Mem.storebytes.
-    destruct (Mem.range_perm_dec m b0 ofs0
-                (ofs0 + length [a]) Cur Writable).
-      inv H0; simpl.
-    destruct (peq b b0). subst b0.
-    simpl.
-    rewrite PMap.gss.
-    destruct (zeq ofs0 ofs). subst.
-    rewrite ZMap.gss. 
-Admitted.
-*)
+  induction 1.
+  - eapply mem_step_alloc; eauto.
+  - eapply mem_step_freelist; eauto.
+  - eapply mem_step_trans; eauto.
+Qed.
+
+Lemma alloc_mem_contents_pointwise:
+  forall m m' b lo hi,
+    Mem.alloc m lo hi = (m', b) ->
+    forall b' ofs,
+      ZMap.get ofs (Mem.mem_contents m') # b' =
+        (if peq b' b
+         then ZMap.get ofs (ZMap.init Undef)
+         else ZMap.get ofs (Mem.mem_contents m) # b').
+Proof.
+  intros m m' b lo hi Halloc b' ofs.
+  Transparent Mem.alloc.
+  unfold Mem.alloc in Halloc.
+  (* destruct the pair returned by alloc *)
+  destruct (Mem.alloc m lo hi) as [m'' b''] eqn:Hall; inv Halloc.
+  simpl.
+  destruct (peq b' (Mem.nextblock m)); subst.
+  - by rewrite PMap.gss.
+  - by rewrite PMap.gso.
+Qed.
+
+Definition mem_step_has_store (m m' : mem) : Prop :=
+  exists m1 m2 b ofs bytes,
+    mem_step m m1 /\
+      Mem.storebytes m1 b ofs bytes = Some m2 /\
+      mem_step m2 m'.
+
+Lemma mem_step_classify :
+  forall m m' (H : mem_step m m'),
+    mem_step_has_store m m' \/ mem_step_nostore m m'.
+Proof.
+  induction 1 as
+    [ m m' b ofs bytes Hstore                (* storebytes *)
+    | m lo hi b' Halloc                   (* alloc *)
+    | m l Hfree                           (* free_list *)
+    | m m1 m2 H12 IH12 H23 IH23].         (* trans *)
+  - (* storebytes: we expose it directly *)
+    left.
+    exists m, m', b, ofs, bytes.
+    by repeat split; try apply memsem_lemmas.mem_step_refl.
+  - (* alloc: no store here *)
+    right; econstructor; eauto.
+  - (* free_list: no store here *)
+    right. eapply ms_freelist_nostore; eauto.
+  - (* trans case *)
+    destruct IH12 as [Hstore12 | Hnostore12];
+    destruct IH23 as [Hstore23 | Hnostore23].
+    + (* store in first part *)
+      left.
+      destruct Hstore12
+        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
+      exists m1', m2', b, ofs, bytes.
+      split; [assumption|].
+      split; [assumption|].
+      eapply mem_step_trans; eauto.
+    + (* store in second part *)
+      left.
+      destruct Hstore12
+        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
+      exists m1', m2', b, ofs, bytes.
+      repeat split; auto.
+      eapply mem_step_trans; eauto.
+    + (* thrid *)
+      left.
+      destruct Hstore23
+        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
+      exists m1', m2', b, ofs, bytes.
+      repeat split; eauto.
+      eapply mem_step_trans; eauto.
+    + (* no store in either part: whole thing is store-free *)
+      right.
+      eapply ms_trans_nostore; eauto.
+Qed.
+
+Lemma free_list_contents_mem_equiv :
+  forall m l m',
+    Mem.free_list m l = Some m' ->
+    mem_equiv.content_equiv m' m.
+Proof.
+  intros m l.
+  revert m.
+  induction l as [| [[b lo] hi] tl IH]; intros.
+  - simpl in H. inversion H; subst. reflexivity.
+  - simpl in H.
+    destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
+    specialize (IH m1 m').
+    apply IH in H.
+    apply free_contents in Hfree.
+    rewrite /mem_equiv.content_equiv in H |- *.
+    rewrite <- Hfree.
+    intros.
+    by specialize (H b0 ofs).
+Qed.
+
+Lemma valid_block_free_list_1 :
+  forall m l m' b,
+    Mem.free_list m l = Some m' ->
+    Mem.valid_block m b ->
+    Mem.valid_block m' b.
+Proof.
+  intros m l.
+  revert m.
+  induction l as [| [(b0 & lo) hi] tl IH]; simpl; intros m m' b Hfree Hvb.
+  - inversion Hfree; subst; assumption.
+  - destruct (Mem.free m b0 lo hi) eqn:Hfree1; try discriminate.
+    eapply IH; eauto.
+    eapply Mem.valid_block_free_1; eauto.
+Qed.
+
+Lemma mem_step_nostore_preserve_valid_block :
+  forall m m' b,
+    mem_step_nostore m m' ->
+    Mem.valid_block m b ->
+    Mem.valid_block m' b.
+Proof.
+  intros m m' b Hstep.
+  induction Hstep as
+    [ m m' lo hi b' Halloc                      (* alloc *)
+    | m l Hfree                              (* free_list *)
+    | m m1 m2 Hs1 IH1 Hs2 IH2 ]             (* trans *); intros Hvb.
+  - (* alloc case *)
+    eapply Mem.valid_block_alloc; eauto.
+  - (* free_list case *)
+    eapply valid_block_free_list_1; eauto.
+  - (* trans case *)
+    eapply IH2.
+    eapply IH1; assumption.
+Qed.
+
+Lemma mem_step_nostore_preserve_old_contents :
+  forall m m' b ofs,
+    mem_step_nostore m m' ->
+    Mem.valid_block m b ->
+    ZMap.get ofs (Mem.mem_contents m) # b =
+    ZMap.get ofs (Mem.mem_contents m') # b.
+Proof.
+  intros m m' b ofs Hstep Hvb.
+  revert b ofs Hvb.
+  induction Hstep as
+    [ m m' lo hi b_new Halloc              (* alloc case *)
+    | m m' Hfree                          (* free_list case *)
+    | m m1 m2 Hs1 IH1 Hs2 IH2 ].         (* trans case *)
+  - (* alloc *)
+    intros b ofs Hvb.
+    eapply mem_lemmas.alloc_contents; eauto.
+  - (* free_list *)
+    intros b ofs Hvb.
+    by apply free_list_contents_mem_equiv in H.
+  - (* trans *)
+    intros b ofs Hvb.
+    specialize (IH1 b ofs Hvb).
+    (* now we need that b is still valid in m1: alloc/free_list never invalidate *)
+    assert (Hvb1 : Mem.valid_block m2 b).
+    { eapply mem_step_nostore_preserve_valid_block; eauto. }
+    specialize (IH2 b ofs Hvb1).
+    (* chain them *)
+    by rewrite IH1.
+Qed.
 
 Definition sc_others_lt_and_disjoint
   (perms : gmap nat (gname * access_map))
@@ -1572,24 +1705,33 @@ Proof.
         destruct Hchr as (? & Hchr).
         rewrite /coherent_loc /contents_cohere in Hchr.
         destruct Hchr as (Hchr & ?).
-        destruct (peq (loc.1) (Mem.nextblock m)) as [Heq1 | Hneq].
-        { rewrite /resource_at in H7.
-          destruct (y2 !! loc) eqn: E; last first.
-          { rewrite E in H7. inv H7. }
-          rewrite restrPermMap_nextblock in H8.
-          rewrite Heq1 in H8.
-          assert (Hge: (Mem.nextblock m >= Mem.nextblock m)%positive) by lia.
-          by apply H8 in Hge.
-        }
-        apply Hchr in H7.
-        rewrite /juicy_mem.contents_at in H7.
-        have H4m : ZMap.get loc.2 (Mem.mem_contents m) # (loc.1) = v.
-        { pose proof (f_equal (fun f => f loc) (restrPermMap_contents Hlt1)) as Hc.
-          unfold juicy_mem.contents_at in Hc.
-          by rewrite Hc in H7. 
-        }
+        rewrite /resource_at in H7.
+        destruct (y2 !! loc) eqn: E; rewrite E // in H7.
+        destruct s; inv H7.
+        rewrite /resource_at in H9.
+        rewrite E in H9.
+        rewrite /access_cohere in H9.
+        (* prove mem_equiv.content_equiv (restrPermMap Hlt) m' *)
+        destruct (mem_step_classify _ _ H3) as [H1_store | H1_nostore];
+        destruct (mem_step_classify _ _ H4) as [H2_store | H2_nostore].
+        ++ rewrite /mem_step_has_store in H1_store. admit.
+        ++ admit.
+        ++ rewrite /mem_step_has_store in H2_store.
+           Print Mem.perm.
+        ++ 
+       (*
+        assert (Heq_cnt: mem_equiv.content_equiv (restrPermMap Hlt) m'').
+        { rewrite /mem_equiv.content_equiv; intros.
+          assert (forall b ofs,
+                     Mem.valid_block m b -> ~ Mem.perm m b ofs Cur Writable). admit.
+          
+          eapply semantics_lemmas.mem_step_obeys_cur_write; auto.
+        *)  
+          
+        Locate mem_step_obeys_cur_write.
+        Check concurrency.memsem_lemmas.mem_step_obeys_cur_write.
         destruct (classic (exists b ofs,
-                Mem.valid_block m b /\ Mem.perm m b ofs Cur Writable)) as [HexW | HnoW].
+                        ¬ Mem.valid_block m b \/ Mem.perm m b ofs Cur Writable)) as [HexW | HnoW].
         ++ (* WRITE-CAPABLE CASE *)
               admit.
         ++ assert (Hnowrite_pointwise :
@@ -1618,6 +1760,7 @@ Proof.
         rewrite /access_cohere in H9.
         rewrite access_at_restrPermMap_Cur in H9. done.
 Admitted.
+*)
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
