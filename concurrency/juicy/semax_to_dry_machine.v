@@ -2672,7 +2672,23 @@ Section Safety.
         { iPureIntro; split; last done. split.
           * by eapply CLC_corestep_mem.
           * split.
-            - admit.
+            - intros.
+              specialize (Hperms j p').
+              assert (Hsnd : snd <$> perms !! j = Some p').
+              { rewrite H1; simpl; reflexivity. }
+              destruct Hperms as [Hfwd Hbwd].
+              pose proof (Hfwd Hsnd) as [cntj HthreadR].
+              exploit ((CoreLanguageDry.corestep_compatible(Sem := Sem))); eauto.
+              intros [Hlt1 Hlt2].
+              match type of Hlt1 with
+              | permMapLt (getThreadR ?cntj').1 _ =>
+                  set (cntj_upd := cntj') in Hlt1, Hlt2;
+                  clearbody cntj_upd
+              end.
+              assert (Hneq : i <> j) by lia.
+              pose proof (@gsoThreadRes _ Sem _ i j tp cnti cntj Hneq (Krun c') _ cntj_upd)
+                as HgetR_full.
+              by rewrite HgetR_full HthreadR in Hlt1.
             - inv Hinvariant.
               unfold permMapsDisjoint_at; intros.
               rewrite Hpi.
