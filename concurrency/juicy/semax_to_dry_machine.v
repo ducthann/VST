@@ -242,7 +242,7 @@ Definition permMapsDisjoint_at
       let mi := snd pi in
       let mj := snd pj in
       permMapsDisjoint mi mj
-  | _, _ => False
+  | _, _ => True
   end.
 
 Inductive SelfOp :=
@@ -1717,8 +1717,8 @@ Proof.
         ++ rewrite /mem_step_has_store in H1_store. admit.
         ++ admit.
         ++ rewrite /mem_step_has_store in H2_store.
-           Print Mem.perm.
-        ++ 
+           Print Mem.perm. admit.
+        ++ admit. 
        (*
         assert (Heq_cnt: mem_equiv.content_equiv (restrPermMap Hlt) m'').
         { rewrite /mem_equiv.content_equiv; intros.
@@ -1728,7 +1728,7 @@ Proof.
           eapply semantics_lemmas.mem_step_obeys_cur_write; auto.
         *)  
           
-        Locate mem_step_obeys_cur_write.
+(*        Locate mem_step_obeys_cur_write.
         Check concurrency.memsem_lemmas.mem_step_obeys_cur_write.
         destruct (classic (exists b ofs,
                         ¬ Mem.valid_block m b \/ Mem.perm m b ofs Cur Writable)) as [HexW | HnoW].
@@ -1748,7 +1748,7 @@ Proof.
            }
            rewrite /mem_equiv.content_equiv in Heq_cnt.
            specialize (Heq_cnt (loc.1) (loc.2)).
-           admit.
+           admit.*)
       + rewrite /access_cohere.
         rewrite access_at_restrPermMap_Cur.
         Unshelve.
@@ -1760,7 +1760,6 @@ Proof.
         rewrite /access_cohere in H9.
         rewrite access_at_restrPermMap_Cur in H9. done.
 Admitted.
-*)
 
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
@@ -1778,18 +1777,15 @@ Lemma conc_state_interp_lookup1 `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
   conc_state_interp m perms z ⊢ ∃ Hp : permMapLt p (getMaxPerm m),
         thread_state_interp g (restrPermMap Hp) z ∗
-    (∀ m', ⌜mem_step (restrPermMap Hp) m'⌝ ∧
+    (∀ m', ⌜mem_step (restrPermMap Hp) m' /\ sc_others_lt_and_disjoint perms i m'⌝ ∧
              thread_state_interp g m' z -∗
         conc_state_interp m' (<[i:=(g, getCurPerm m')]>perms) z).
 Proof.
-Admitted.
-(*
   iIntros (?) "(H & $)".
   iDestruct (conc_mem_auth_lookup1 with "[$H]") as (?) "($ & H)"; eauto.
   iIntros (?) "(% & (? & $))".
   iApply "H". iSplit; done.
 Qed.
-*)
 
 Lemma init_conc_VST: forall Z `{!VSTGpreS Z Σ} (z : Z),
   ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ HH : conc_gen_heapGS Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ, ∃ γ0,
@@ -2569,9 +2565,14 @@ Section Safety.
     assert (locks_coherent tp (`init_mem) ∅) as Hlocks by done.
     forget (proj1_sig init_mem) as m.
     forget (@nil Events.machine_event) as tr.
-    assert (forall i (cnti : containsThread tp i), (snd <$> perms) !! i = Some (getThreadR cnti).1)
+    assert (forall i r, snd <$> (perms !! i) = Some r <-> ∃ cnti : containsThread tp i, (getThreadR cnti).1 = r)
       as Hperms.
-    { intros [|]; done. }
+    { intros [|] ?; rewrite /perms /tp /= /OrdinalPool.containsThread /=.
+      * rewrite lookup_insert /=.
+        split; [by inversion 1; exists eq_refl | by intros (? & <-)].
+      * rewrite lookup_insert_ne // lookup_empty.
+        split; first done.
+        intros (? & ?); done. }
     clearbody perms tp.
     set (ls := ∅) in Hlocks |- *.
 (*     iAssert (lock_set ls) with "locks" as "locks". *)
@@ -2651,7 +2652,8 @@ Section Safety.
         eapply HybridMachineSig.HybridCoarseMachine.AngelSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
         eapply HybridMachineSig.suspend_step; eauto.
       + (* corestep: HybridMachineSig.thread_step *)
-        pose proof (Hperms _ cnti) as Hpermi.
+        edestruct Hperms as [_ Hpermi].
+        spec Hpermi; first by exists cnti.
         rewrite !lookup_fmap in Hgi Hpermi.
         destruct (perms !! (0 + i)) as [(?, p)|] eqn: Hpi; inv Hgi; inv Hpermi.
         iDestruct (conc_state_interp_lookup1 with "S") as "(% & S & H)"; first done.
@@ -2667,7 +2669,17 @@ Section Safety.
         iApply step_fupd_intro; first done; iNext.
         apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hstep' as (? & Hstep').
         iDestruct ("H" with "[$S]") as "S".
-        { iPureIntro; split; last done. by eapply CLC_corestep_mem. }
+        { iPureIntro; split; last done. split.
+          * by eapply CLC_corestep_mem.
+          * split.
+            - admit.
+            - inv Hinvariant.
+              unfold permMapsDisjoint_at; intros.
+              rewrite Hpi.
+              destruct (perms !! j) as [(?,?)|] eqn: Hj; last done.
+              specialize (Hperms j); rewrite Hj /= in Hperms.
+              edestruct Hperms as [(cntj & <-) _]; first done.
+              by apply no_race_thr0. }
         iSpecialize ("IH" $! _ _ (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) _ (<[i := (g, getCurPerm m')]> perms) with "[%] [%] [%] [%] [%] locks S [Hsafe Hsafei]").
         * intros j cntj.
           destruct (eq_dec j i); first by subst; rewrite gssThreadCode.
@@ -2677,11 +2689,14 @@ Section Safety.
           by eapply ev_step_ax1.
         * by eapply (CoreLanguageDry.corestep_compatible(Sem := Sem)).
         * intros ?; rewrite gsoThreadLPool. (*eapply Hlocks. need to know that coresteps don't mess with locks *) admit.
-        * intros j cntj. setoid_rewrite fmap_insert.
-          pose proof (OrdinalPool.cntUpdate' cntj) as cntj'.
+        * intros j r.
           destruct (decide (i = j)).
-          { subst; rewrite lookup_insert OrdinalPool.gssThreadRes //. }
-          { rewrite lookup_insert_ne // OrdinalPool.gsoThreadRes //; apply Hperms. }
+          { subst; rewrite lookup_insert; setoid_rewrite (gssThreadRes cnti); split.
+            - inversion 1; by exists (OrdinalPool.cntUpdate _ _ cnti cnti).
+            - by intros (? & <-). }
+          { rewrite lookup_insert_ne // Hperms.
+            setoid_rewrite (gsoThreadRes cnti); last done.
+            split; intros (? & ?); eauto. }
         * iApply "Hsafe".
           -- iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & % & Hsafe)".
              rewrite lookup_fmap in H2.
@@ -2693,27 +2708,14 @@ Section Safety.
              iExists (cntUpdate _ _ cnti cnti).
              rewrite gssThreadCode gssThreadRes //.
         * (* Work from here *)
-          iApply (step_fupdN_mono with "[IH]").
-          iIntros "_".
-          iPureIntro;
-          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe.
+          iApply (step_fupdN_mono with "IH").
+          iPureIntro; intros.
+          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last done.
           rewrite /HybridMachineSig.MachStep /=.
           change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
           change m' with (HybridMachineSig.diluteMem m') at 3.
           eapply HybridMachineSig.thread_step; first done.
-          eapply step_dry.
-          simpl. repeat try done. done. done.
-          simpl in *. eauto. done. simpl in *.
-
-          (*
-          
-          iPureIntro; intros Hsafe.
-          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe, Hsafe.
-          rewrite /HybridMachineSig.MachStep /=.
-          change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
-          change m' with (HybridMachineSig.diluteMem m') at 3.
-          eapply HybridMachineSig.thread_step; first done.
-          by eapply step_dry. *) admit. admit. *)
+          by eapply step_dry.
     - admit. (* Kblocked: HybridMachineSig.sync_step *)
      (* pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi.
       rewrite jsafe_perm_unfold /jsafe_perm_pre.
