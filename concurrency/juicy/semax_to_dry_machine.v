@@ -1522,16 +1522,19 @@ Proof.
   assert (mem_equiv.access_map_equiv (getMaxPerm (restrPermMap Hlt)) (getMaxPerm m)) as HMax.
   { apply mem_equiv.restr_Max_equiv. } *)
   remember (restrPermMap Hlt).
-  (* forget (restrPermMap Hlt) as m0. *)
   clear H2.
-  
-(*  iInduction HSc as [| | |] "IH" forall (m Hlt).
-
-  (* iInduction HSc as [| | |] "IH". *)
-  iDestruct "H" as (σ') "(% & H)".
+  iStopProof.
+  generalize dependent m; generalize dependent p; generalize dependent perms.
+  induction HSc; intros; subst; iIntros "(Hbig & H)".
   4 :{ 
-  iDestruct ("IH1" with "[//][Hbig //] [H //]") as "IH2".
-    iApply "IH2".
+    iDestruct (IHHSc2 (<[i:=(g, getCurPerm m'')]>perms) with "[-]") as (?) "Hbig".
+    { intros ????; rewrite lookup_insert_ne //; by apply sc_others_still_lt. }
+    { (* stay disjoint *) admit. }
+    { apply lookup_insert. }
+    { symmetry; apply restrPermMap_eq. }
+    { rewrite delete_insert_delete; iFrame.
+      admit. (* other threads still coherent *) }
+    rewrite insert_insert; iFrame.
   } 
   - pose proof H1 as Hst.
     pose proof H1 as Hst1.
