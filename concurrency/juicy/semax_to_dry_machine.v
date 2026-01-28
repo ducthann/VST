@@ -1524,7 +1524,9 @@ Proof.
   remember (restrPermMap Hlt).
   (* forget (restrPermMap Hlt) as m0. *)
   clear H2.
-  iInduction HSc as [] "IH" forall (m Hlt Heqm0).
+  
+  iInduction HSc as [| | |] "IH" forall (m Hlt).
+
   (* iInduction HSc as [| | |] "IH". *)
   iDestruct "H" as (σ') "(% & H)".
   4 :{ 
