@@ -2668,11 +2668,20 @@ Section Safety.
         { by erewrite restrPermMap_irr. }
         iApply step_fupd_intro; first done; iNext.
         apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hstep' as (? & Hstep').
+        assert (mem_compatible (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m') as Hcompat'
+          by by eapply (CoreLanguageDry.corestep_compatible(Sem := Sem)).
         iDestruct ("H" with "[$S]") as "S".
         { iPureIntro; split; last done. split.
           * by eapply CLC_corestep_mem.
           * split.
-            - admit.
+            - intros ???? Hj.
+              specialize (Hperms j); rewrite Hj /= in Hperms.
+              edestruct Hperms as [(cntj & <-) _]; first done.
+              inv Hcompat'.
+              unshelve exploit compat_th0.
+              2: by eapply cntUpdate.
+              rewrite gsoThreadRes //.
+              by intros (? & ?).
             - inv Hinvariant.
               unfold permMapsDisjoint_at; intros.
               rewrite Hpi.
@@ -2687,7 +2696,7 @@ Section Safety.
           rewrite gsoThreadCode //; apply Htp_wf.
         * eapply (CoreLanguageDry.corestep_invariant(Sem := Sem)); try done.
           by eapply ev_step_ax1.
-        * by eapply (CoreLanguageDry.corestep_compatible(Sem := Sem)).
+        * apply Hcompat'.
         * intros ?; rewrite gsoThreadLPool. (*eapply Hlocks. need to know that coresteps don't mess with locks *) admit.
         * intros j r.
           destruct (decide (i = j)).
