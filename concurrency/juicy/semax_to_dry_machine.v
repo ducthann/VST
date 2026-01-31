@@ -1490,6 +1490,147 @@ Definition sc_others_lt_and_disjoint
   (* permMapsDisjoint in invariant *)
   (∀ j, j ≠ i → permMapsDisjoint_at perms i j).
 
+Lemma free_preserve_disjoint_and_lt :
+  forall (m m1 : mem) (b : positive) (lo hi : Z) (a : access_map),
+    permMapLt a (getMaxPerm m) ->
+    permMapsDisjoint (getCurPerm m) a ->
+    Mem.free m b lo hi = Some m1 ->
+    permMapsDisjoint (getCurPerm m1) a /\ permMapLt a (getMaxPerm m1).
+Proof.
+  intros m m1 b lo hi a Hlt Hdis Hfree.
+  Transparent Mem.free.
+  unfold Mem.free in Hfree.
+  destruct (Mem.range_perm_dec m b lo hi Cur Freeable); try discriminate.
+  inv Hfree.
+  split.
+  - unfold permMapsDisjoint in *.
+    intros.
+    destruct (Pos.eq_dec b0 b) as [->|Hbneq].
+    + rewrite /getCurPerm PMap.gmap PMap.gss /=.
+      destruct (zle lo ofs) as [Hle|Hnle];
+        destruct (zlt ofs hi) as [Hltz|Hnlt]; simpl.
+      * by eexists.
+      * specialize (Hdis b ofs) as [pu Hpu].
+        rewrite /getCurPerm PMap.gmap in Hpu.
+        by eexists.
+      * specialize (Hdis b ofs) as [pu Hpu].
+        rewrite /getCurPerm PMap.gmap in Hpu.
+        by eexists.
+      * specialize (Hdis b ofs) as [pu Hpu].
+        rewrite /getCurPerm PMap.gmap in Hpu.
+        by eexists.
+    + specialize (Hdis b0 ofs) as [pu Hpu].
+      rewrite /getCurPerm PMap.gmap in Hpu.
+      exists pu.
+      rewrite /getCurPerm !PMap.gmap PMap.gso //.
+  - unfold permMapLt in *.
+    intros.
+    destruct (Pos.eq_dec b0 b) as [->|Hbneq].
+    + specialize (Hlt b ofs).
+      rewrite /getMaxPerm PMap.gmap PMap.gss.
+      destruct (zle lo ofs) as [Hle|Hnle];
+        destruct (zlt ofs hi) as [Hltz|Hnlt]; simpl.
+      * destruct (a # b ofs) eqn:Ha; try done.
+        rewrite /permMapsDisjoint in Hdis.
+        destruct (Hdis b ofs) as [pu Hpu].
+        have Hperm : Mem.perm m b ofs Cur Freeable.
+        { apply r. lia. }
+        rewrite /Mem.perm in Hperm.
+        rewrite /getCurPerm PMap.gmap in Hpu.
+        destruct ((Mem.mem_access m) # b ofs Cur) as [p1|] eqn:Hacc; try done.
+        rewrite Ha in Hpu.
+        rewrite /perm_union /= in Hpu;
+          destruct p1; try discriminate; inv Hperm.
+      * by rewrite /getCurPerm PMap.gmap in Hlt.
+      * by rewrite /getCurPerm PMap.gmap in Hlt.
+      * by rewrite /getCurPerm PMap.gmap in Hlt.
+   + rewrite /getMaxPerm !PMap.gmap PMap.gso //.
+     specialize (Hlt b0 ofs).
+     by rewrite /getCurPerm PMap.gmap in Hlt.
+Qed.
+
+Lemma free_list_preserve_disjoint_and_lt :
+  forall m l m' a,
+    permMapLt a (getMaxPerm m) ->
+    permMapsDisjoint (getCurPerm m) a ->
+    Mem.free_list m l = Some m' ->
+    permMapsDisjoint (getCurPerm m') a /\
+      permMapLt a (getMaxPerm m').
+Proof.
+  intros m l m' a Hlt Hdis Hfl.
+  generalize dependent m'.
+  generalize dependent m.
+  induction l as [| x tl IH]; intros m Hlt Hdis m' Hfl.
+  - by inv Hfl.
+  - destruct x as [[b lo] hi].
+    simpl in Hfl.
+    destruct (Mem.free m b lo hi) eqn: Hfree; try discriminate.
+    destruct (free_preserve_disjoint_and_lt m m0 b lo hi a Hlt Hdis Hfree)
+      as [Hdis1 Hlt1].
+    eapply IH; eauto.
+Qed.
+
+Lemma mem_step_preserve_disjoint_and_lt :
+  forall (mi mi' : mem) (a : access_map),
+    permMapLt a (getMaxPerm mi) ->
+    permMapsDisjoint (getCurPerm mi) a ->
+    mem_step mi mi' ->
+    permMapsDisjoint (getCurPerm mi') a /\
+      permMapLt a (getMaxPerm mi').
+Proof.
+  intros mi mi' a Hlt Hdis Hs.
+  revert a Hlt Hdis.
+  induction Hs; intros a Hlt Hdis.
+  4 : {
+    destruct (IHHs1 _ Hlt Hdis) as [Hdis1 Hlt1].
+    destruct (IHHs2 _ Hlt1 Hdis1) as [Hdis2 Hlt2].
+    split; auto.
+  }
+  - apply Mem.storebytes_access in H.
+    split.
+    + assert (Hcur: getCurPerm m' = getCurPerm m).
+      { by rewrite /getCurPerm H. }
+      by rewrite Hcur.
+    + assert (Hmax: getMaxPerm m' = getMaxPerm m).
+      { by rewrite /getMaxPerm H. }
+      by rewrite Hmax.
+  - unfold permMapsDisjoint in *.
+    have Hfresh : ~ Mem.valid_block m b'.
+    { eapply Mem.fresh_block_alloc; eauto. }
+    split.
+    + intros.
+      destruct (Pos.eq_dec b b') as [->|Hneq].
+      * have HaNone : a # b' ofs = None.
+        { eapply invalid_block_empty; eauto. }
+        exists ((getCurPerm m') # b' ofs).
+        rewrite HaNone.
+        rewrite /perm_union /=.
+        destruct ((getCurPerm m') # b' ofs) as [p|] eqn:Hc; simpl; reflexivity.
+      * specialize (Hdis b ofs) as [pu Hpu].
+        exists pu.
+        simpl.
+        assert (Hcur: (getCurPerm m') # b ofs = (getCurPerm m) # b ofs).
+        {
+          rewrite /getCurPerm !PMap.gmap.
+          inv H; simpl.
+          rewrite PMap.gso //.
+        }
+        by rewrite Hcur.
+    + unfold permMapLt in *.
+      intros.
+      destruct (Pos.eq_dec b b') as [->|Hneq].
+      * have HaNone : a # b' ofs = None.
+        { eapply invalid_block_empty; eauto. }
+        rewrite HaNone.
+        apply perm_order''_None.
+      * specialize (Hlt b ofs).
+        inv H; simpl.
+        unfold getMaxPerm in *.
+        rewrite !PMap.gmap //= in Hlt |- *.
+        rewrite PMap.gso //.
+  - eapply free_list_preserve_disjoint_and_lt; eauto.
+Qed.
+
 Lemma conc_mem_auth_lookup1 `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
   conc_mem_auth m perms ⊢ ∃ Hp : permMapLt p (getMaxPerm m),
@@ -1511,7 +1652,6 @@ Proof.
   iIntros (m') "(%HSc & H)".
   destruct HSc as (HSc & (sc_others_still_lt & sc_perm_disjoint)).
   rewrite /thread_mem_auth /mem_auth.
-  Print Mem.alloc.
   (* assert (Mem.nextblock (restrPermMap Hlt) = Mem.nextblock m) as Hnxt.
   { apply restrPermMap_nextblock. }
   assert (Mem.mem_contents (restrPermMap Hlt) = Mem.mem_contents m) as Hcnt.
@@ -1537,11 +1677,34 @@ Proof.
       rewrite lookup_insert_ne //.
       rewrite H in H1.
       destruct (perms !! j) eqn: E; last first; try done.
+      rewrite /permMapsDisjoint_at in sc_perm_disjoint0.
+      specialize ((sc_perm_disjoint0 j) Hneq).
+      rewrite H E in sc_perm_disjoint0.
+      destruct p0.
+      specialize ((sc_others_still_lt j g0 a) Hneq E).
       simpl in *.
-      (* stay disjoint *) admit. }
+      eapply (mem_step_preserve_disjoint_and_lt (restrPermMap Hlt) m'' a); eauto.
+      2: { Search getCurPerm restrPermMap.
+           assert (mem_equiv.access_map_equiv (getCurPerm (restrPermMap Hlt)) p).
+           { apply mem_equiv.getCur_restr. }
+           rewrite /mem_equiv.access_map_equiv in H2.
+           rewrite /permMapsDisjoint.
+           intros.
+           specialize (H2 b).
+           rewrite H2. done.
+         }
+     admit.
+    }
     { apply lookup_insert. }
     { symmetry; apply restrPermMap_eq. }
-    { rewrite delete_insert_delete; iFrame. 
+    { rewrite delete_insert_delete; iFrame.
+      iApply (big_sepM2_mono with "Hbig"); intros.
+      destruct y1.
+      do 2 f_equiv.
+      rewrite /impl /coherent.
+      intros (Hlt1 & ?).
+      unshelve eexists.
+      admit.
       admit. (* other threads still coherent *) }
     rewrite insert_insert; iFrame.
   } 
