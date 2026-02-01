@@ -87,7 +87,6 @@ Definition access_equiv (m: mem) k (r : prodO dfracO (optionO (leibnizO resource
 Definition access_map_rmap (m: mem) σ : Prop :=
   forall loc, access_equiv m loc (σ @ loc).
 
-About mem_auth.
 
 (*
 
@@ -170,14 +169,6 @@ Proof.
   esplit.
   exists (cur_lt_max m); rewrite restrPermMap_eq //.
   done.
-  (*
-  rewrite restrPermMap_eq.
-  - Search permMapLt.
-
-    split; last done; exists (cur_lt_max m); rewrite restrPermMap_eq //.
-  - split; first by rewrite big_opM_singleton.
-    rewrite -coherent_equiv //.
-    rewrite big_opM_singleton //. *)
 Qed.
 
 Lemma thread_conc_state_interp `{!conc_VSTGS OK_ty Σ} i g m z :
@@ -186,12 +177,6 @@ Proof.
   iIntros "(? & $)".
   iApply thread_conc_mem_auth; iFrame.
 Qed.
-
-
-(*
-Definition equal_on_perm (p : access_map) (m m' : mem) : Prop :=
-  ∀ b ofs, p !! (b,ofs) = Some _ → Mem.equal m m' b ofs.
-*)
 
 Definition add_fresh_block (b : Values.block) (cur : access_map) : access_map :=
   PMap.set b (fun _ => None) cur.
@@ -648,7 +633,6 @@ Lemma mem_coherent_equiv m1 m2 (σ : resource_map.rmapUR _ _ _):
   mem_equiv.mem_equiv m1 m2 -> coherent m1 σ -> coherent m2 σ.
 Proof.
   intros Heq Hchr.
-  Print mem_equiv.mem_equiv.
   rewrite /coherent in Hchr |- *.
   intros.
   specialize (Hchr loc).
@@ -807,7 +791,7 @@ Qed.
 Lemma content_equiv_contents_at (m1 m2 : mem) (H : mem_equiv.content_equiv m1 m2) :
   forall loc, contents_at m1 loc = contents_at m2 loc.
 Proof.
-  intros [b ofs].               (* loc : positive * Z *)
+  intros [b ofs].
   by unfold contents_at.
 Qed.
 
@@ -1064,7 +1048,6 @@ Proof.
   destruct ((Mem.mem_access m) # b ofs Cur); try done.
 Qed.
   
-
 Lemma storebytes_contents_or_canstore_cur
   p m (Hlt : permMapLt p (getMaxPerm m))
   (m' : Mem.mem) b ofs bytes
@@ -1300,29 +1283,6 @@ Proof.
   destruct ((Mem.mem_access m).2 !! b)%maps; simpl; try done.
 Qed.
 
-Inductive mem_step_nostore (m m' : mem) : Prop :=
-| ms_alloc_nostore :
-  forall lo hi b',
-    Mem.alloc m lo hi = (m', b') ->
-    mem_step_nostore m m'
-| ms_freelist_nostore :
-  forall l,
-    Mem.free_list m l = Some m' ->
-    mem_step_nostore m m'
-| ms_trans_nostore :
-  forall m'',
-    mem_step_nostore m m'' ->
-    mem_step_nostore m'' m' ->
-    mem_step_nostore m m'.
-
-Lemma mem_step_nostore_is_mem_step m m' :
-  mem_step_nostore m m' -> mem_step m m'.
-Proof.
-  induction 1.
-  - eapply mem_step_alloc; eauto.
-  - eapply mem_step_freelist; eauto.
-  - eapply mem_step_trans; eauto.
-Qed.
 
 Lemma alloc_mem_contents_pointwise:
   forall m m' b lo hi,
@@ -1344,58 +1304,6 @@ Proof.
   - by rewrite PMap.gso.
 Qed.
 
-Definition mem_step_has_store (m m' : mem) : Prop :=
-  exists m1 m2 b ofs bytes,
-    mem_step m m1 /\
-      Mem.storebytes m1 b ofs bytes = Some m2 /\
-      mem_step m2 m'.
-
-Lemma mem_step_classify :
-  forall m m' (H : mem_step m m'),
-    mem_step_has_store m m' \/ mem_step_nostore m m'.
-Proof.
-  induction 1 as
-    [ m m' b ofs bytes Hstore                (* storebytes *)
-    | m lo hi b' Halloc                   (* alloc *)
-    | m l Hfree                           (* free_list *)
-    | m m1 m2 H12 IH12 H23 IH23].         (* trans *)
-  - (* storebytes: we expose it directly *)
-    left.
-    exists m, m', b, ofs, bytes.
-    by repeat split; try apply memsem_lemmas.mem_step_refl.
-  - (* alloc: no store here *)
-    right; econstructor; eauto.
-  - (* free_list: no store here *)
-    right. eapply ms_freelist_nostore; eauto.
-  - (* trans case *)
-    destruct IH12 as [Hstore12 | Hnostore12];
-    destruct IH23 as [Hstore23 | Hnostore23].
-    + (* store in first part *)
-      left.
-      destruct Hstore12
-        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
-      exists m1', m2', b, ofs, bytes.
-      split; [assumption|].
-      split; [assumption|].
-      eapply mem_step_trans; eauto.
-    + (* store in second part *)
-      left.
-      destruct Hstore12
-        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
-      exists m1', m2', b, ofs, bytes.
-      repeat split; auto.
-      eapply mem_step_trans; eauto.
-    + (* thrid *)
-      left.
-      destruct Hstore23
-        as [m1' [m2' [b [ofs [bytes [Hpre [Hst Hpost]]]]]]].
-      exists m1', m2', b, ofs, bytes.
-      repeat split; eauto.
-      eapply mem_step_trans; eauto.
-    + (* no store in either part: whole thing is store-free *)
-      right.
-      eapply ms_trans_nostore; eauto.
-Qed.
 
 Lemma free_list_contents_mem_equiv :
   forall m l m',
@@ -1432,62 +1340,12 @@ Proof.
     eapply Mem.valid_block_free_1; eauto.
 Qed.
 
-Lemma mem_step_nostore_preserve_valid_block :
-  forall m m' b,
-    mem_step_nostore m m' ->
-    Mem.valid_block m b ->
-    Mem.valid_block m' b.
-Proof.
-  intros m m' b Hstep.
-  induction Hstep as
-    [ m m' lo hi b' Halloc                      (* alloc *)
-    | m l Hfree                              (* free_list *)
-    | m m1 m2 Hs1 IH1 Hs2 IH2 ]             (* trans *); intros Hvb.
-  - (* alloc case *)
-    eapply Mem.valid_block_alloc; eauto.
-  - (* free_list case *)
-    eapply valid_block_free_list_1; eauto.
-  - (* trans case *)
-    eapply IH2.
-    eapply IH1; assumption.
-Qed.
-
-Lemma mem_step_nostore_preserve_old_contents :
-  forall m m' b ofs,
-    mem_step_nostore m m' ->
-    Mem.valid_block m b ->
-    ZMap.get ofs (Mem.mem_contents m) # b =
-    ZMap.get ofs (Mem.mem_contents m') # b.
-Proof.
-  intros m m' b ofs Hstep Hvb.
-  revert b ofs Hvb.
-  induction Hstep as
-    [ m m' lo hi b_new Halloc              (* alloc case *)
-    | m m' Hfree                          (* free_list case *)
-    | m m1 m2 Hs1 IH1 Hs2 IH2 ].         (* trans case *)
-  - (* alloc *)
-    intros b ofs Hvb.
-    eapply mem_lemmas.alloc_contents; eauto.
-  - (* free_list *)
-    intros b ofs Hvb.
-    by apply free_list_contents_mem_equiv in H.
-  - (* trans *)
-    intros b ofs Hvb.
-    specialize (IH1 b ofs Hvb).
-    (* now we need that b is still valid in m1: alloc/free_list never invalidate *)
-    assert (Hvb1 : Mem.valid_block m2 b).
-    { eapply mem_step_nostore_preserve_valid_block; eauto. }
-    specialize (IH2 b ofs Hvb1).
-    (* chain them *)
-    by rewrite IH1.
-Qed.
-
 Definition sc_others_lt_and_disjoint
   (perms : gmap nat (gname * access_map))
   (i : nat) (m m' : mem) : Prop :=
   (* All other threads remain strictly below the NEW Max. *)
   (∀ j g' p', j ≠ i → perms !! j = Some (g', p') → permMapLt p' (getMaxPerm m')) ∧
-    
+  (* each thread's permissions are less than max *)
   (∀ j g p, i <> j -> perms !! j = Some (g,p) → permMapLt p (getMaxPerm m)) /\
   (* permMapsDisjoint in invariant *)
   (∀ j, j ≠ i → permMapsDisjoint_at perms i j).
@@ -1633,16 +1491,6 @@ Proof.
   - eapply free_list_preserve_disjoint_and_lt; eauto.
 Qed.
 
-(*
-Lemma disjoint_implies_cur_none
-  (m : mem) (a : access_map) :
-  permMapsDisjoint (getCurPerm m) a ->
-  forall b ofs,
-    a # b ofs <> None ->
-    (getCurPerm m) # b ofs = None.
-Admitted.
-*)
-
 Lemma free_list_unchanged_on :
   forall m l m' P,
     Mem.free_list m l = Some m' ->
@@ -1684,7 +1532,6 @@ Proof.
       exact (Hrng i Hi).
     + have Hperm1 : Mem.perm m1 b i Cur Freeable :=
         IH m1 m' b lo hi i Hfl Hin Hi.
-
       assert (Houtside : (b <> b0)%Z \/ (i < lo0)%Z \/ (hi0 <= i)%Z).
       { destruct (peq b b0) as [->|Hneq]; [|left; exact Hneq].
         right.
@@ -1788,12 +1635,11 @@ Proof.
   iStopProof.
   generalize dependent m; generalize dependent p; generalize dependent perms.
   induction HSc; intros; subst; iIntros "(Hbig & H)".
-  4 :{
+  4 : {
     assert (Hcur: mem_equiv.access_map_equiv (getCurPerm (restrPermMap Hlt)) p).
     { apply mem_equiv.getCur_restr. }
     assert (Hdisj: ∀ (j : nat) (g : gname) (a : access_map),
-               j <> i → perms !! j = Some (g, a) ->
-               permMapsDisjoint (getCurPerm m'') a /\
+               j <> i → perms !! j = Some (g, a) -> permMapsDisjoint (getCurPerm m'') a /\
                  permMapLt a (getMaxPerm m'')).
     {
       intros.
@@ -2005,8 +1851,7 @@ Proof.
           with (x := access_at (restrPermMap Hlt) loc Cur) in Hwrite; auto.
         2 : { by rewrite /getCurPerm /access_at PMap.gmap. }
         rewrite /access_at in Hwrite.
-        rewrite restrPermMap_Cur_eq in Hwrite.
-        
+        rewrite restrPermMap_Cur_eq in Hwrite.        
         pose proof (access_at_restrPermMap_Cur a m0 loc Hlt1) as Haccess1.
         rewrite /access_cohere Haccess1 in HpermHlt1.
         assert (Hread: Mem.perm_order' (a # (loc.1) loc.2) Readable).
@@ -2174,10 +2019,11 @@ Proof.
          by rewrite access_at_restrPermMap_Cur in H6.
 Qed.
 
-  
 Lemma conc_state_interp_lookup `{!conc_VSTGS OK_ty Σ} i g p m perms z :
   perms !! i = Some (g, p) →
-  conc_state_interp m perms z ⊢ (∃ Hp : permMapLt p (getMaxPerm m), thread_state_interp g (restrPermMap Hp) z) ∗ (∀ m', ⌜OpSC i m m' p perms⌝ ∧ thread_state_interp g m' z -∗
+  conc_state_interp m perms z ⊢ (∃ Hp : permMapLt p (getMaxPerm m),
+        thread_state_interp g (restrPermMap Hp) z) ∗
+    (∀ m', ⌜OpSC i m m' p perms⌝ ∧ thread_state_interp g m' z -∗
            conc_state_interp m' (<[i:=(g, getCurPerm m')]>perms) z).
 Proof.
   iIntros (?) "(H & $)".
@@ -2525,24 +2371,6 @@ Section Safety.
   Qed.
 
 *)
-
-  (*
-    Hlt : permMapLt max (getMaxPerm m)
-
-    m1 = (getCurPerm m) 
-    m2 = (getCurPerm (restrPermMap Hlt))
-
-   *)
-
-  (*
-    b1 :
-    Max : Writable
-    Cur : Readable
-
-    Cur : Writable 
-
-   *)
-
 
 (*  Axiom external_call_memLt
     : ∀ (ef : external_function) (ge : Senv.t) (vargs : list val) (m1 : mem) 
@@ -2955,11 +2783,6 @@ Section Safety.
          iPureIntro. intros.
          eexists. eexists. split; first done; split; first apply Hinit; done.
     }
-    (* pose proof (proj2_sig init_mem) as Hinit_mem.
-        Search Mem.valid_block Genv.init_mem.
-        pose proof (@Genv.find_symbol_not_fresh _ _ prog
-                      (Ctypes.prog_main prog) b (`init_mem)
-                      Hinit_mem e) as Hvb. *)
     clear Hinit Hsafe.
     rewrite bi.and_elim_l.
     set (tp := initial_machine _ _).
@@ -3134,13 +2957,12 @@ Section Safety.
              rewrite lookup_fmap in H2.
              rewrite lookup_fmap lookup_insert_ne //; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti0).
-             rewrite gsoThreadCode // gsoThreadRes //.
+             rewrite gsoThreadCode // gsoThreadRes //.             
              admit. (* need to know that any changes to getMaxPerm don't invalidate other threads! *)
           -- rewrite lookup_fmap lookup_insert /=; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti).
              rewrite gssThreadCode gssThreadRes //.
-        * (* Work from here *)
-          iApply (step_fupdN_mono with "IH").
+        * iApply (step_fupdN_mono with "IH").
           iPureIntro; intros.
           eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last done.
           rewrite /HybridMachineSig.MachStep /=.
