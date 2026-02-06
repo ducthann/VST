@@ -2,6 +2,8 @@
    directly, along the lines of the sequential adequacy proof (veric/SequentialClight). *)
 Require Import Coq.Strings.String.
 
+From Coq Require Import FunctionalExtensionality.
+
 Require Import compcert.lib.Integers.
 Require Import compcert.common.AST.
 Require Import compcert.cfrontend.Clight.
@@ -61,6 +63,7 @@ Require Import VST.concurrency.common.dry_machine_lemmas.
 Require Import VST.concurrency.common.dry_machine_step_lemmas.
 Require Import VST.concurrency.juicy.memLt. (* added memLt *)
 Require Import iris_ora.algebra.gmap.
+
 
 Import ThreadPool.
 
@@ -2242,6 +2245,7 @@ Section Safety.
 
   Instance Sem : Semantics := ClightSemanticsForMachines.ClightSem (Clight.globalenv CPROOF.(CSL_prog)).
 
+
   Existing Instance HybridMachineSig.HybridCoarseMachine.DilMem.
   Existing Instance HybridMachineSig.HybridCoarseMachine.scheduler.
 
@@ -2269,24 +2273,23 @@ Section Safety.
   Context `{!conc_VSTGS unit Σ}.
 
   Program Definition jsafe_perm_pre g
-    (jsafe : coPset -d> unit -d> CC_core -d> (access_map * access_map) -d> iPropO Σ) :
-    coPset -d> unit -d> CC_core -d> (access_map * access_map) -d> iPropO Σ := λ E z c '(p, max),
-      |={E}=> ∀ m, ⌜mem_equiv.access_map_equiv (getCurPerm m) p ∧ getMaxPerm m = max⌝ → thread_state_interp(*'*) g m z -∗
+    (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
+    coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
+      |={E}=> ∀ m, ⌜mem_equiv.access_map_equiv (getCurPerm m) p ⌝ → thread_state_interp(*'*) g m z -∗
         (∃ i, ⌜halted (cl_core_sem ge) c i ∧ ext_spec_exit (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) (Some (Vint i)) z m⌝) ∨
-        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ thread_state_interp(*'*) g m' z (* ?? *) ∗ ▷ jsafe E z c' (getCurPerm m', getMaxPerm m')) ∨
+        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ thread_state_interp(*'*) g m' z (* ?? *) ∗ ▷ jsafe E z c' (getCurPerm m')) ∨
         (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args) ∧ ext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args z m⌝ ∧
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
             ⌜ext_spec_post (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret z' m'⌝ → |={E}=>
-                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ thread_state_interp(*'*) g m' z' ∗ jsafe E z' c' (getCurPerm m', getMaxPerm m'))).
+                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ thread_state_interp(*'*) g m' z' ∗ jsafe E z' c' (getCurPerm m'))).
 
   Local Instance jsafe_perm_pre_contractive g : Contractive (jsafe_perm_pre g).
   Proof.
     rewrite /jsafe_perm_pre => n jsafe jsafe' Hsafe E z c [??].
     do 14 f_equiv.
     - try f_contractive; repeat f_equiv. apply Hsafe.
-    - f_contractive; repeat f_equiv. apply Hsafe.
+    - try f_contractive; repeat f_equiv. apply Hsafe.
   Qed.
-
 
   Local Definition jsafe_perm_def g : coPset -> unit -> CC_core -> _ -> iProp Σ := fixpoint (jsafe_perm_pre g).
   Local Definition jsafe_perm_aux : seal (jsafe_perm_def). Proof. by eexists. Qed.
@@ -2335,42 +2338,19 @@ Section Safety.
   Qed.
 *)
   Existing Instance mem_equiv.access_map_equiv_Equivalence.
-
-  (*
-  Lemma jsafe_perm_equiv : forall `{!VSTGS unit Σ} p E z c p1 p2, mem_equiv.access_map_equiv p1.1 p2.1 ->
-     jsafe_perm p E z c p1 ⊢ jsafe_perm p E z c p2.
+  
+  Lemma jsafe_perm_equiv : forall `{!VSTGS unit Σ} g E z c
+                             (p1 p2 : access_map), mem_equiv.access_map_equiv p1 p2 -> 
+     jsafe_perm g E z c p1 ⊢ jsafe_perm g E z c p2.
   Proof.
     intros.
-    iLöb as "IH" forall (p z c p1 p2 H).
+    iLöb as "IH" forall (z c p1 p2 H).
     rewrite !jsafe_perm_unfold /jsafe_perm_pre.
-    iIntros ">H !>" (?? (Hmax & Hcur)) "S".
-    assert (permMapLt p1.1 (getMaxPerm m)) as Hlt1.
-    { rewrite -Hcur in Hlt.
-      eapply mem_equiv.permMapLt_equiv; eauto.
-      instantiate (1 := (getMaxPerm m)); try done.
-      rewrite -Hcur. apply cur_lt_max.
-    }
-    iDestruct ("H" $! _ Hlt1 with "[%] S") as "[H | [H | H]]".
-    { split; auto.
-      rewrite -Hcur in H.
-      rewrite /mem_equiv.access_map_equiv in H.
-    - iLeft; done.
-    - iRight; iLeft.
-      iMod "H" as (???) "(S & Hsafe)".
-      Check restrPermMap_ext.
-      iIntros "!>"; iExists _, _; iSplit; first done.
-      iFrame.
-    - iRight; iRight.
-      iDestruct "H" as (????) "H".
-      iExists _, _, _; iSplit.
-      + done.
-      + iNext; iIntros (?????).
-        iMod ("H" with "[%] [%]") as (??) "(? & ?)"; [done..|].
-        iIntros "!>". iExists _. iFrame.
-        iPureIntro. done.
-  Qed.
-
-*)
+    iIntros ">H !>" (? Hcur) "S".
+    assert (Heq: mem_equiv.access_map_equiv (getCurPerm m) p1).
+    { by eapply Equivalence_Transitive; eauto. }
+    iDestruct ("H" $! _ with "[%] S") as "[H | [H | H]]"; auto.
+ Qed.
 
 (*  Axiom external_call_memLt
     : ∀ (ef : external_function) (ge : Senv.t) (vargs : list val) (m1 : mem) 
@@ -2537,19 +2517,23 @@ Section Safety.
     by rewrite -Heq in Hmax.
   Qed.
 
-  Lemma jsafe_jsafe_perm : forall g E z c p1 p2,
+  Lemma jsafe_jsafe_perm : forall g E z c p,
     jsafe(genv_symb := genv_symb_injective)(gen_heapGS0 := thread_gen_heapGS g) (cl_core_sem ge) (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) ge E z c ⊢
-    jsafe_perm g E z c (p1, p2).
+    jsafe_perm g E z c p.
   Proof.
     intros.
-    iLöb as "IH" forall (p1 p2 z c).
+    iLöb as "IH" forall (p z c).
     rewrite jsafe_unfold jsafe_perm_unfold /jsafe_pre /jsafe_perm_pre.
-    iIntros ">H !>" (? (? & <-)) "S".
+    iIntros ">H !>" (? ?) "S".
     iDestruct ("H" with "S") as "[H | [H | H]]".
     - by iLeft.
     - iRight; iLeft.
-      iMod "H" as (??) "($ & $ & Hsafe)".
-      iIntros "!> !>"; by iApply "IH".
+      iMod "H" as (??) "(% & (? & Hsafe))".
+      iIntros "!>".
+      iExists c', m'.
+      iSplit; auto.
+      iFrame.
+      by iApply "IH".
     - iRight; iRight.
       iDestruct "H" as (??? (? & ?)) "H".
       iExists _, _, _; iSplit; first done.
@@ -2558,6 +2542,7 @@ Section Safety.
       by iApply "IH".
   Qed.
 
+  
   (*
   Lemma jsafe_jsafe_perm1 : forall `{!VSTGS unit Σ} max E z c p, p = max ->
    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢ jsafe_perm max E z c p.
@@ -2666,6 +2651,7 @@ Section Safety.
     Check ((getThreadR cnt).1).
   End Scratch.
 
+  (*
   Definition thread_safe max (tp : dtp) i g :=
     ∃ cnti : containsThread tp i,
     match getThreadC cnti with
@@ -2684,6 +2670,26 @@ Section Safety.
 
   Definition threads_safe max (tp : dtp) (gs : gmap nat gname) :=
     [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe max tp i g.
+  *)
+
+  Definition thread_safe (tp : dtp) i g :=
+    ∃ cnti : containsThread tp i,
+      match getThreadC cnti with
+      | Krun c | Kblocked c => jsafe_perm g ⊤ tt c ((getThreadR cnti).1)
+      | Kresume c v =>
+          ∀ c',
+            (* [v] is not used here. The problem is probably coming from
+           the definition of JuicyMachine.resume_thread'. *)
+            ⌜cl_after_external None c = Some c'⌝ →
+            jsafe_perm g ⊤ tt c' ((getThreadR cnti).1)
+      | Kinit v1 v2 =>
+          ∃ q_new,
+    ⌜cl_initial_core ge v1 (v2 :: nil) = Some q_new⌝ ∧
+      jsafe_perm g ⊤ tt q_new ((getThreadR cnti).1)
+  end%I.
+
+  Definition threads_safe (tp : dtp) (gs : gmap nat gname) :=
+    [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe tp i g.
 
   Definition threads_wellformed (tp : dtp) :=
     forall i (cnti : containsThread(ThreadPool := OrdinalPool.OrdinalThreadPool) tp i),
@@ -2755,6 +2761,8 @@ Section Safety.
 
   Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
 
+  
+
   Theorem dry_safety `{!VSTGpreS unit Σ} `{!inG Σ (gmap_view.gmap_viewR address unitR)} sch n : exists b c_init,
     Genv.find_symbol (globalenv prog) (Ctypes.prog_main prog) = Some b /\
     cl_initial_core (globalenv prog) (Vptr b Ptrofs.zero) [] = Some c_init /\
@@ -2792,7 +2800,9 @@ Section Safety.
     assert (threads_wellformed tp) as Htp_wf by done.
     iPoseProof (thread_conc_state_interp O with "S") as "S".
     set (perms := {[0 := (γ0, getCurPerm (`init_mem))]}).
-    iAssert (threads_safe (getMaxPerm (`init_mem)) tp (fst <$> perms)) with "[Hsafe]" as "Hsafe".
+    iAssert (threads_safe (*(getMaxPerm (`init_mem)) *) tp (fst <$> perms)) with "[Hsafe]" as "Hsafe".
+    Search isCanonical.
+    About isCanonical .
     { rewrite /threads_safe /=.
       iSplit; last done.
       iExists γ0; iSplit; first done.
@@ -2849,7 +2859,7 @@ Section Safety.
         assert (HybridMachineSig.halted_thread cnti Int.zero) as Hhalt'.
         { econstructor; eauto. hnf; rewrite Hhalt //. }
         iApply step_fupd_intro; first done; iNext.
-        iAssert (threads_safe (getMaxPerm m) tp (fst <$> perms))
+        iAssert (threads_safe (*(getMaxPerm m)*) tp (fst <$> perms))
           with "[Hsafei Hsafe]" as "Hsafe".
         { iApply "Hsafe".
           * iIntros "!>" (????) "H"; iApply "H".
@@ -2896,7 +2906,8 @@ Section Safety.
         iDestruct (conc_state_interp_lookup1 with "S") as "(% & S & H)"; first done.
         rewrite jsafe_perm_unfold /jsafe_perm_pre.
         iMod ("Hsafei" with "[%] S") as "[Hhalt | [Hstep | Hext]]".
-        { split; [apply mem_equiv.getCur_restr | apply restr_Max_eq]. }
+        { apply mem_equiv.getCur_restr. (*
+          split; [apply mem_equiv.getCur_restr | apply restr_Max_eq]. *) }
         { iDestruct "Hhalt" as %(? & Hhalt' & ?); done. }
         2: { iDestruct "Hext" as (??? (Hext & ?)) "?". simpl in Hext; congruence. }
         (* HStep *)
@@ -2957,8 +2968,11 @@ Section Safety.
              rewrite lookup_fmap in H2.
              rewrite lookup_fmap lookup_insert_ne //; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti0).
-             rewrite gsoThreadCode // gsoThreadRes //.             
-             admit. (* need to know that any changes to getMaxPerm don't invalidate other threads! *)
+             rewrite gsoThreadCode // gsoThreadRes //.
+          (*
+             destruct (getThreadC cnti0) eqn: E.
+             Search jsafe_perm.
+             admit. (* need to know that any changes to getMaxPerm don't invalidate other threads! *) *) 
           -- rewrite lookup_fmap lookup_insert /=; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti).
              rewrite gssThreadCode gssThreadRes //.
@@ -3033,12 +3047,14 @@ Section Safety.
         eapply HybridMachineSig.resume_step; eauto. *) admit.
     - (* Kinit: HybridMachineSig.start_step *)
       iDestruct "Hsafei" as (? Hinit) "Hsafei".
+      Print add_block.
+      Check (HybridMachineSig.add_block Hcompat cnti _).
       set (m' := restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1).
       set (tp' := updThread cnti (Krun q_new) (HybridMachineSig.add_block Hcompat cnti m')).
       assert (HybridMachineSig.start_thread m cnti tp' m').
       { econstructor; done. }
       iApply step_fupd_intro; first done; iNext.
-      iSpecialize ("IH" $! _ _ tp' m' with "[%] [%] [%] [Hsafei Hsafe] [S]").
+      iSpecialize ("IH" $! _ _ tp' m' with "[%] [%] [%] [%] [%] [$] [S] [Hsafei Hsafe]").
       + intros j cntj.
         destruct (eq_dec j i).
         * subst; rewrite gssThreadCode //.
@@ -3046,17 +3062,152 @@ Section Safety.
           rewrite gsoThreadCode //; apply Htp_wf.
       + by eapply (CoreLanguageDry.initial_core_invariant(Sem := Sem)).
       + eapply InternalSteps.start_compatible; try done.
+      + admit.
+      + intros.
+        instantiate (1 := <[i := (g, getCurPerm m')]> perms).
+        split.
+        ++ intros.
+           destruct (eq_dec i0 i) as [-> | Hneq].
+           * rewrite lookup_insert /= in H1.
+             inv H1.
+             set (cnti0 :=
+                    OrdinalPool.cntUpdate (Sem := Sem)
+                      (Krun q_new)
+                      (HybridMachineSig.add_block Hcompat cnti m')
+                      cnti cnti
+                 ).
+             exists cnti0.
+             rewrite /tp' /m'.
+             rewrite OrdinalPool.gssThreadRes.
+             by simpl.
+           * rewrite lookup_insert_ne // in H1.
+             have [cntj Hcntj] :
+               ∃ cntj : OrdinalPool.containsThread tp i0,
+                 (OrdinalPool.getThreadR cntj).1 = r.
+             { exact (proj1 (Hperms i0 r) H1). }
+             set (cnti0 :=
+                    OrdinalPool.cntUpdate (Sem := Sem)
+                      (Krun q_new)
+                      (HybridMachineSig.add_block Hcompat cnti m')
+                      cnti cntj
+                 ).
+             exists cnti0.
+             by rewrite OrdinalPool.gsoThreadRes.
+        ++ intros.
+           destruct (eq_dec i0 i) as [-> | Hneq].
+           * rewrite lookup_insert /=.
+             f_equal.
+             rewrite /tp' in H1.
+             destruct H1 as (cntj & Hcntj).
+             rewrite <- Hcntj.
+             have Hres :
+               OrdinalPool.getThreadR cntj =
+                 HybridMachineSig.add_block Hcompat cnti m'.
+             { eapply OrdinalPool.gssThreadRes. }
+             by rewrite Hres.
+           * rewrite lookup_insert_ne //.
+             destruct H1 as [cntj Hcntj].
+             set (cnt0 :=
+                    OrdinalPool.cntUpdate' (Sem := Sem)
+                      (i := 0 + i) (j := i0) (tp := tp)
+                      (c := Krun q_new)
+                      (p := HybridMachineSig.add_block Hcompat cnti m')
+                      (cnti := cnti)
+                      cntj
+                 ).
+             have Hres :
+               OrdinalPool.getThreadR cntj = OrdinalPool.getThreadR cnt0.
+             { eapply OrdinalPool.gsoThreadRes. lia. }
+             have Hr0 : (OrdinalPool.getThreadR cnt0).1 = r.
+             { apply (f_equal fst) in Hres.
+               by rewrite <- Hres. }
+             apply (proj2 (Hperms i0 r)).
+             exists cnt0.
+             simpl. done.
+      + iDestruct "S" as "(S & ?)".
+        iFrame.
+        rewrite /m'.
+        change (0 + i) with i in *.
+        have Hsnd : snd <$> perms !! i = Some (getThreadR cnti).1.
+        { apply (Hperms i (getThreadR cnti).1).
+          by eexists. }
+        have Hlookup : perms !! i = Some (g, (getThreadR cnti).1).
+        {
+          destruct (perms !! i) as [[g' r']|] eqn:Hp; simpl in *; try discriminate.
+          f_equal.
+          have Hg' : g' = g.
+          { move: Hgi.
+            rewrite lookup_fmap.
+            rewrite Hp /=.
+            intros. by inv Hgi.
+          }
+          have Hr' : r' = (OrdinalPool.getThreadR cnti).1.
+          { exact (Some_inj _ _ Hsnd). }
+          subst. done.
+        }
+        iDestruct (conc_mem_auth_lookup1 with "[$S]") as "H"; eauto.
+        simpl.
+        iDestruct "H" as (Hp) "[Hth Hk]".
+        iApply ("Hk" $! (restrPermMap Hp)).
+        iFrame.
+        iPureIntro.
+        repeat split.
+        * apply semantics_lemmas.mem_step_refl.
+        * intros ???? Hj.
+          rewrite restr_Max_eq.
+          specialize (Hperms j); rewrite Hj /= in Hperms.
+          edestruct Hperms as [(cntj & <-) _]; first done.
+          admit.
+        * intros j g0 p _ Hj.
+          have Hj_snd : snd <$> perms !! j = Some p.
+          { by rewrite Hj /=. }
+          have [cntj Hrj] := (proj1 (Hperms j p) Hj_snd).
+          have Hj_lt : permMapLt (getThreadR cntj).1 (getMaxPerm m) :=
+                  (ssrfun.pair_of_and (Hcompat j cntj)).1.
+          by rewrite Hrj in Hj_lt.
+        * inv Hinvariant.
+          unfold permMapsDisjoint_at; intros.
+          rewrite Hlookup.
+          destruct (perms !! j) as [(?,?)|] eqn: Hj; last done.
+          specialize (Hperms j); rewrite Hj /= in Hperms.
+          edestruct Hperms as [(cntj & <-) _]; first done.
+          by apply no_race_thr0.
       + iApply "Hsafe".
         * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & Hsafe)".
-          iExists (cntUpdate _ _ cnti cnti0); rewrite gsoThreadCode // gsoThreadRes //.
-          subst m'; rewrite restr_Max_eq //.
-        * iExists (cntUpdate _ _ cnti cnti); rewrite gssThreadCode gssThreadRes.
-          rewrite restr_Max_eq /=.
+          iExists g0.
+          iDestruct "Hsafe" as "(% & Hthr)".
+          change (0 + k) with k in *.
+          iSplit; auto. iPureIntro.
+          rewrite lookup_fmap lookup_insert_ne //.
+          by rewrite lookup_fmap in H3.
+          iDestruct "Hthr" as (cntk) "Hthr".
+          set (cntk' :=
+                 OrdinalPool.cntUpdate (Sem:=Sem)
+                   (Krun q_new)
+                   (HybridMachineSig.add_block Hcompat cnti m')
+                   cnti cntk).
+          iExists cntk'.
+          rewrite ! gsoThreadCode //.
+          rewrite ! gsoThreadRes //.
+        * rewrite lookup_fmap lookup_insert /=.
+          iExists g.
+          iSplit; auto.
+          rewrite /thread_safe.
+          set (cnti' :=
+                 OrdinalPool.cntUpdate (Sem:=Sem)
+                   (Krun q_new)
+                   (HybridMachineSig.add_block Hcompat cnti m')
+                   cnti cnti).
+          iExists cnti'.
+          rewrite ! gssThreadCode //.
+          rewrite ! gssThreadRes //.
+          simpl.
+          rewrite /m'.
           iApply (jsafe_perm_equiv with "Hsafei").
-          symmetry; apply mem_equiv.getCur_restr.
-      + iDestruct "S" as (??) "S".
-        iExists _, (mem_equiv.useful_permMapLt_trans _ Hlt).
-        rewrite restrPermMap_idem. erewrite restrPermMap_irr; done.
+          simpl.
+          set Hlt:=proj1 (Hcompat i cnti).
+          eapply Equivalence_Symmetric.
+          eapply mem_equiv.getCur_restr.
       + iApply (step_fupdN_mono with "IH"); iPureIntro; intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.CoreSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
         change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
