@@ -2761,8 +2761,6 @@ Section Safety.
 
   Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
 
-  
-
   Theorem dry_safety `{!VSTGpreS unit Σ} `{!inG Σ (gmap_view.gmap_viewR address unitR)} sch n : exists b c_init,
     Genv.find_symbol (globalenv prog) (Ctypes.prog_main prog) = Some b /\
     cl_initial_core (globalenv prog) (Vptr b Ptrofs.zero) [] = Some c_init /\
@@ -3021,14 +3019,15 @@ Section Safety.
       + (* freelock *)
       + (* spawn *) *)
     - (* Kresume: HybridMachineSig.resume_step *)
-      (* pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
+      (* Print HybridMachineSig.resume_step.
+      pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
       destruct s; try done.
       destruct f; try done.
       assert (HybridMachineSig.resume_thread m cnti (updThreadC cnti (Krun (Returnstate Vundef c)))) as Hresume.
       { unfold cl_at_external in *; destruct (ef_inline e) eqn: Hinline; try done.
         eapply (HybridMachineSig.ResumeThread _ _ _ _ _ _ _ _ _ Hcompat); try done; simpl; by rewrite ?Hinline. }
       iApply step_fupd_intro; first done; iNext.
-      iSpecialize ("IH" $! _ _ (updThreadC cnti (Krun (Returnstate Vundef c))) with "[%] [%] [%] [Hsafei Hsafe] S").
+      iSpecialize ("IH" $! _ _ (updThreadC cnti (Krun (Returnstate Vundef c))) with "[%] [%] [%] [%] [%] [$] [S] [Hsafei Hsafe]").
       + intros j cntj.
         destruct (eq_dec j i).
         * subst; rewrite gssThreadCC //.
@@ -3036,7 +3035,15 @@ Section Safety.
           rewrite -gsoThreadCC //; apply Htp_wf.
       + by apply ThreadPoolWF.updThreadC_invariant.
       + by apply StepLemmas.updThreadC_compatible.
-      + iApply "Hsafe".
+      + admit.
+      + intros.
+        instantiate (1 := perms).
+        admit.
+      + done.
+      + 
+
+        
+        iApply "Hsafe".
         * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & Hsafe)".
           iExists (cntUpdateC _ _ _); rewrite -gsoThreadCC // gThreadCR //.
         * iExists (cntUpdateC _ _ _); rewrite gssThreadCC gThreadCR.
@@ -3157,7 +3164,7 @@ Section Safety.
           rewrite restr_Max_eq.
           specialize (Hperms j); rewrite Hj /= in Hperms.
           edestruct Hperms as [(cntj & <-) _]; first done.
-          admit.
+          by destruct (Hcompat j cntj).
         * intros j g0 p _ Hj.
           have Hj_snd : snd <$> perms !! j = Some p.
           { by rewrite Hj /=. }
@@ -3181,32 +3188,24 @@ Section Safety.
           rewrite lookup_fmap lookup_insert_ne //.
           by rewrite lookup_fmap in H3.
           iDestruct "Hthr" as (cntk) "Hthr".
-          set (cntk' :=
-                 OrdinalPool.cntUpdate (Sem:=Sem)
-                   (Krun q_new)
-                   (HybridMachineSig.add_block Hcompat cnti m')
-                   cnti cntk).
-          iExists cntk'.
-          rewrite ! gsoThreadCode //.
-          rewrite ! gsoThreadRes //.
+          iExists (OrdinalPool.cntUpdate (Sem:=Sem) (Krun q_new)
+                   (HybridMachineSig.add_block Hcompat cnti m') cnti cntk).
+          rewrite gsoThreadCode // gsoThreadRes //.
         * rewrite lookup_fmap lookup_insert /=.
           iExists g.
           iSplit; auto.
           rewrite /thread_safe.
-          set (cnti' :=
-                 OrdinalPool.cntUpdate (Sem:=Sem)
-                   (Krun q_new)
-                   (HybridMachineSig.add_block Hcompat cnti m')
-                   cnti cnti).
-          iExists cnti'.
-          rewrite ! gssThreadCode //.
-          rewrite ! gssThreadRes //.
-          simpl.
+          iExists (OrdinalPool.cntUpdate (Sem:=Sem) (Krun q_new)
+                     (HybridMachineSig.add_block Hcompat cnti m') cnti cnti).
+          rewrite gssThreadCode // gssThreadRes //.
           rewrite /m'.
           iApply (jsafe_perm_equiv with "Hsafei").
-          simpl.
           set Hlt:=proj1 (Hcompat i cnti).
-          eapply Equivalence_Symmetric.
+          eapply Equivalence_Symmetric; eauto.
+          
+          (* Unshelve
+             9 : { exact mem_equiv.access_map_equiv_Equivalence. *) 
+          
           eapply mem_equiv.getCur_restr.
       + iApply (step_fupdN_mono with "IH"); iPureIntro; intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.CoreSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
