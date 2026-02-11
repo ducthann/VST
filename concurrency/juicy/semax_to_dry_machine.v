@@ -2799,8 +2799,6 @@ Section Safety.
     iPoseProof (thread_conc_state_interp O with "S") as "S".
     set (perms := {[0 := (γ0, getCurPerm (`init_mem))]}).
     iAssert (threads_safe (*(getMaxPerm (`init_mem)) *) tp (fst <$> perms)) with "[Hsafe]" as "Hsafe".
-    Search isCanonical.
-    About isCanonical .
     { rewrite /threads_safe /=.
       iSplit; last done.
       iExists γ0; iSplit; first done.
@@ -2885,9 +2883,7 @@ Section Safety.
               rewrite -gsoThreadCC //; apply Htp_wf.
           + by apply ThreadPoolWF.updThreadC_invariant.
           + by apply StepLemmas.updThreadC_compatible.
-          + (* intros ?; rewrite gsoThreadCLPool; apply Hlocks.
-          + *)
-            iApply "Hsafe".
+          + iApply "Hsafe".
             * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & $ & % & Hsafe)".
               iExists (cntUpdateC _ _ _); rewrite -gsoThreadCC // gThreadCR //.
             * iFrame "%"; iExists (cntUpdateC _ _ _); rewrite gssThreadCC gThreadCR.
@@ -2967,10 +2963,6 @@ Section Safety.
              rewrite lookup_fmap lookup_insert_ne //; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti0).
              rewrite gsoThreadCode // gsoThreadRes //.
-          (*
-             destruct (getThreadC cnti0) eqn: E.
-             Search jsafe_perm.
-             admit. (* need to know that any changes to getMaxPerm don't invalidate other threads! *) *) 
           ** rewrite lookup_fmap lookup_insert /=; iExists _; iSplit; first done.
              iExists (cntUpdate _ _ cnti cnti).
              rewrite gssThreadCode gssThreadRes //.
@@ -3019,7 +3011,6 @@ Section Safety.
       + (* freelock *)
       + (* spawn *) *)
     - (* Kresume: HybridMachineSig.resume_step *)
-      Print HybridMachineSig.resume_step.
       pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
       destruct s; try done.
       destruct f; try done.
@@ -3041,73 +3032,32 @@ Section Safety.
         split.
         ++ intros.
            destruct (eq_dec i0 i) as [-> | Hneq].
-           * simpl.
-             set tp' := OrdinalPool.updThreadC cnti (Krun (Returnstate Vundef c)).
-             have cnti0 : OrdinalPool.containsThread tp' i.
-             { rewrite /tp'. by apply OrdinalPool.cntUpdateC. }
-             exists cnti0.
-             have Hex : ∃ cnt_old : OrdinalPool.containsThread tp i,
-                 (OrdinalPool.getThreadR cnt_old).1 = r.
-             by exact: (proj1 (Hperms i r) H1).
-             case: Hex => cnt_old Hr.
-             have Hid :
-               fintype.Ordinal (n:=pos.n (OrdinalPool.num_threads tp)) (m:=i) cnti0
-               =
-                 fintype.Ordinal (n:=pos.n (OrdinalPool.num_threads tp)) (m:=i) cnt_old.
-             { pose cnti0' := OrdinalPool.cntUpdateC (Sem:= Sem) (Krun (Returnstate Vundef c)) cnti cnt_old
-                   : OrdinalPool.containsThread tp' i.
-               have -> : cnti0 = cnti0' by apply proof_irrelevance.
-               rewrite /cnti0'.
-               f_equal.
-               apply proof_irrelevance.
-             }
-             rewrite /OrdinalPool.cntUpdateC.
-             rewrite Hid. done.
-           * simpl.
-             have Hex : ∃ cnt_old : OrdinalPool.containsThread tp i0,
-                 (OrdinalPool.getThreadR cnt_old).1 = r
-               := (proj1 (Hperms i0 r) H1).
-             case: Hex => cnt_old Hr.
-             exists (OrdinalPool.cntUpdateC (Sem := Sem) (Krun (Returnstate Vundef c)) cnti cnt_old).
-             have -> :
-               OrdinalPool.cntUpdateC (Sem := Sem) (Krun (Returnstate Vundef c)) cnti cnt_old =
-                 cnt_old
-               by apply proof_irrelevance.
-             by rewrite /OrdinalPool.perm_maps /= Hr.
-          ++ intros.
-             destruct (eq_dec i0 i) as [-> | Hneq].
-           * set tp' := OrdinalPool.updThreadC cnti (Krun (Returnstate Vundef c)).
-             apply (proj2 (Hperms i r)).
+           * apply (proj1 (Hperms i r) H1).
+           * apply (proj1 (Hperms i0 r) H1).
+       ++ intros.
+          set tp' := OrdinalPool.updThreadC cnti (Krun (Returnstate Vundef c)).
+          destruct (eq_dec i0 i) as [-> | Hneq].
+           * apply (proj2 (Hperms i r)).
              case: H1 => cnti0 Hr0.
              change (0 + i) with i in *.
              exists cnti.
              pose cnti0' := OrdinalPool.cntUpdateC (Sem := Sem)
                               (Krun (Returnstate Vundef c)) cnti cnti.
              simpl.
-             have -> : cnti = cnti0' by apply proof_irrelevance.
-             have -> : cnti0' = cnti0 by apply proof_irrelevance.
-             exact Hr0.
-           * set tp' := OrdinalPool.updThreadC cnti (Krun (Returnstate Vundef c)).
-             apply (proj2 (Hperms i0 r)).
+             by have -> : cnti = cnti0 by apply proof_irrelevance.
+           * apply (proj2 (Hperms i0 r)).
              case: H1 => cnti0 Hr0.
-             change (0 + i) with i in *.
              have cntj : OrdinalPool.containsThread tp i0 by auto.
              exists cntj.
              pose cnti0' := OrdinalPool.cntUpdateC (Sem := Sem)
                               (Krun (Returnstate Vundef c)) cnti cntj.
              have Hpi : cntj = cnti0' by apply proof_irrelevance.
              have Hr0' : (OrdinalPool.getThreadR cnti0').1 = r.
-             { have -> : cnti0' = cnti0 by apply proof_irrelevance.
-               exact Hr0. }
-             have Hres : OrdinalPool.getThreadR cnti0' = OrdinalPool.getThreadR cntj :=
-               OrdinalPool.gThreadCR (Sem := Sem)
-                 (cnti:=cnti)
-                 (c':=Krun (Returnstate Vundef c)) cntj
-                 cnti0'.
-             have Hres1 : (OrdinalPool.getThreadR cnti0').1 = (OrdinalPool.getThreadR cntj).1.
-             { rewrite Hres. done. }
-             simpl.
-             by rewrite - Hres1.
+             { by have -> : cnti0' = cnti0 by apply proof_irrelevance. }
+             have Hres : (OrdinalPool.getThreadR cnti0').1 = (OrdinalPool.getThreadR cntj).1.
+             { exact (f_equal fst (OrdinalPool.gThreadCR (Sem := Sem) (cnti:=cnti)
+                         (c':=Krun (Returnstate Vundef c)) cntj cnti0')). }
+             by rewrite -Hres.
       + done.
       + iApply "Hsafe".
         * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & Hsafe)".
@@ -3116,55 +3066,34 @@ Section Safety.
           iSplit; auto.
           iDestruct "Hsafe" as (cntk) "Hthr".
           set (tp' := updThreadC cnti (Krun (Returnstate Vundef c))).
-          pose (cntk' :=
-                  OrdinalPool.cntUpdate
-                    (Krun (Returnstate Vundef c))
-                    (getThreadR cnti)
-                    cnti
-                    cntk).
+          pose (cntk' := OrdinalPool.cntUpdate (Krun (Returnstate Vundef c))
+                    (getThreadR cnti) cnti cntk).
           iExists cntk'.
           assert (cntkC : containsThread tp' k).
-          {
-            rewrite /tp' /updThreadC /=. done. }
-          have Hcode : getThreadC cntk = getThreadC cntkC.
-          { eapply gsoThreadCC; eauto.  }
-          rewrite Hcode.
-          have Hres : getThreadR cntk = getThreadR cntkC.
-          { unfold getThreadR.
-            simpl.
-            have Hord :
-              fintype.Ordinal (n := pos.n (OrdinalPool.num_threads tp)) (m := k) cntk
-              =
-                fintype.Ordinal (n := pos.n (OrdinalPool.num_threads tp)) (m := k) cntkC.
-            { f_equal. apply proof_irrelevance. }
-            rewrite - Hord.
+          { by rewrite /tp' /updThreadC /=. }
+          have -> : getThreadC cntk = getThreadC cntkC.
+          { eapply gsoThreadCC; eauto. }
+          have -> : getThreadR cntk = getThreadR cntkC.
+          { rewrite /getThreadR /=.
+            have <- : fintype.Ordinal cntk = fintype.Ordinal cntkC.
+            { f_equal; apply proof_irrelevance. }
             reflexivity.
           }
-          rewrite Hres.
-          replace cntk' with cntkC.
-          2 : { apply proof_irrelevance. }
-          done.
+          replace cntk' with cntkC; try done.
+          apply proof_irrelevance.
         * iExists g.
           iSplit; auto.
-          assert (cnti' : containsThread (updThreadC cnti (Krun (Returnstate Vundef c))) (0 + i)).
-          { simpl. done. }
+          assert (cnti' : containsThread (updThreadC cnti (Krun (Returnstate Vundef c))) (0 + i)); try done.
           iExists cnti'.
-          have Hci : getThreadC cnti' = Krun (Returnstate Vundef c).
-          { Search getThreadC.
-            by rewrite gssThreadCC. }
-          rewrite Hci.
-          have Hres1 : (getThreadR cnti').1 = (getThreadR cnti).1.
-          { unfold getThreadR.
-            simpl.
-            have Hord :
-              fintype.Ordinal (n:=pos.n (OrdinalPool.num_threads tp)) (m:=0+i) cnti
-              =
-                fintype.Ordinal (n:=pos.n (OrdinalPool.num_threads tp)) (m:=0+i) cnti'.
-            { f_equal. apply proof_irrelevance. }
-            rewrite -Hord. simpl. done. }
-          rewrite Hres1.
-          iApply ("Hsafei" $! (Returnstate Vundef c)).
-          by iPureIntro.
+          have -> : getThreadC cnti' = Krun (Returnstate Vundef c).
+          { by rewrite gssThreadCC. }
+          have -> : (getThreadR cnti').1 = (getThreadR cnti).1.
+          { rewrite /getThreadR /=.
+            have <- : fintype.Ordinal cnti = fintype.Ordinal cnti'.
+            { f_equal; apply proof_irrelevance. }
+            reflexivity.
+          }
+          by iApply ("Hsafei" $! (Returnstate Vundef c)).
       + iApply (step_fupdN_mono with "IH"); iPureIntro; intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.CoreSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
         change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
