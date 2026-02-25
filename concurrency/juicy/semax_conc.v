@@ -6,9 +6,10 @@ Require Import VST.concurrency.common.lksize.
 Require Import VST.concurrency.juicy.semax_conc_pred.
 Require Import VST.floyd.client_lemmas.
 Require Import VST.floyd.field_at.
-(*Require Import VST.concurrency.conclib.*)
 Import Clightdefs.
+Import Ctypes.
 Import String.
+Import expr.
 
 Definition voidstar_funtype := Tfunction (Tcons (tptr tvoid) Tnil) (tptr tvoid) cc_default.
 (* Definition tlock := Tstruct _lock_t noattr. *)
@@ -19,7 +20,7 @@ Proof. reflexivity. Qed.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ}.
+Context `{!VSTGS OK_ty Σ} `{!cinvG Σ}.
 
 Definition selflock_fun Q sh p : mpred -> mpred :=
   fun R => (Q ∗ ▷lock_inv sh p R).
@@ -41,72 +42,9 @@ Proof.
   rewrite {1}/selflock fixpoint_unfold //.
 Qed.
 
-(*(* In fact we need locks to two resources:
-   1) the resource invariant, for passing the resources
-   2) the join resource invariant, for returning all resources, including itself
-   for this we need to define them in a mutually recursive fashion: *)
-
-Definition res_invariants_fun Q sh1 p1 sh2 p2 : (bool -> mpred) -> (bool -> mpred) :=
-  fun R b =>
-    if b then
-      (Q * lock_inv sh2 p2 (▷ R false))
-    else
-      (Q * lock_inv sh1 p1 (▷ R true) * lock_inv sh2 p2 (▷ R false)).
-
-Definition res_invariants Q sh1 p1 sh2 p2 : bool -> mpred := HORec (res_invariants_fun Q sh1 p1 sh2 p2).
-Definition res_invariant Q sh1 p1 sh2 p2 : mpred := res_invariants Q sh1 p1 sh2 p2 true.
-Definition join_res_invariant Q sh1 p1 sh2 p2 : mpred := res_invariants Q sh1 p1 sh2 p2 false.
-
-Lemma res_invariants_eq Q sh1 p1 sh2 p2 : res_invariants Q sh1 p1 sh2 p2 =
-  res_invariants_fun Q sh1 p1 sh2 p2 (res_invariants Q sh1 p1 sh2 p2).
-Proof.
-  apply HORec_fold_unfold, prove_HOcontractive.
-  intros P1 P2 b.
-  destruct b.
-    (* resource invariant *)
-    apply subp_sepcon; try apply subp_refl.
-    apply allp_left with false.
-    eapply derives_trans.
-      apply semax_conc.nonexpansive_entail, nonexpansive_lock_inv.
-      apply fash_derives, andp_left1, derives_refl.
-
-    (* join resource invariant *)
-    repeat apply subp_sepcon; try apply subp_refl.
-      apply allp_left with true.
-      eapply derives_trans.
-        apply semax_conc.nonexpansive_entail, nonexpansive_lock_inv.
-        apply fash_derives, andp_left1, derives_refl.
-
-      apply allp_left with false.
-      eapply derives_trans.
-        apply semax_conc.nonexpansive_entail, nonexpansive_lock_inv.
-        apply fash_derives, andp_left1, derives_refl.
-Qed.
-
-Lemma res_invariant_eq Q sh1 p1 sh2 p2 :
-  res_invariant Q sh1 p1 sh2 p2 =
-  (Q *
-  lock_inv sh2 p2 (▷ join_res_invariant Q sh1 p1 sh2 p2)).
-Proof.
-  unfold res_invariant at 1.
-  rewrite res_invariants_eq.
-  reflexivity.
-Qed.
-
-Lemma join_res_invariant_eq Q sh1 p1 sh2 p2 :
-  join_res_invariant Q sh1 p1 sh2 p2 =
-  (Q *
-  lock_inv sh1 p1 (▷ res_invariant Q sh1 p1 sh2 p2) *
-  lock_inv sh2 p2 (▷ join_res_invariant Q sh1 p1 sh2 p2)).
-Proof.
-  unfold join_res_invariant at 1.
-  rewrite res_invariants_eq.
-  reflexivity.
-Qed.*)
-
 (*+ Specification of each concurrent primitive *)
 
-Definition acquire_arg_type: TypeTree := ProdType (ConstType (val * share)) Mpred.
+Definition acquire_arg_type: TypeTree := ProdType (ConstType (lock_handle * share)) Mpred.
 
 (* up *)
 #[export] Instance monPred_at_ne : NonExpansive (@monPred_at environ_index mpred : _ -> _ -d> _).
@@ -115,11 +53,13 @@ Proof. solve_proper. Qed.
 #[export] Instance monPred_at_args_ne : NonExpansive (@monPred_at argsEnviron_index mpred : _ -> _ -d> _).
 Proof. solve_proper. Qed.
 
+Definition adr2val (l : address) := Vptr l.1 (Ptrofs.repr l.2).
+
 Program Definition acquire_spec :=
   TYPE acquire_arg_type WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
      PROP (readable_share sh)
-     PARAMS (v)
+     PARAMS (adr2val (lock_address v))
      SEP (lock_inv sh v R)
   POST [ tvoid ]
      PROP ()
@@ -136,13 +76,13 @@ Proof.
   rewrite HR //.
 Qed.
 
-Definition release_arg_type: TypeTree := ProdType (ConstType (val * share)) Mpred.
+Definition release_arg_type: TypeTree := ProdType (ConstType (lock_handle * share)) Mpred.
 
 Program Definition release_spec :=
   TYPE release_arg_type WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
      PROP (readable_share sh)
-     PARAMS (v)
+     PARAMS (adr2val (lock_address v))
      SEP (<affine> exclusive_mpred R; lock_inv sh v R; R)
   POST [ tvoid ]
      PROP ()
@@ -166,29 +106,30 @@ Program Definition makelock_spec (cs : compspecs) : funspec :=
     PARAMS (v)
     SEP (data_at_ sh tlock v)
   POST [ tvoid ]
-    PROP ()
+    ∃ h,
+    PROP (adr2val (lock_address h) = v)
     LOCAL ()
-    SEP (lock_inv sh v R).
+    SEP (lock_inv sh h R).
 Next Obligation.
 Proof.
   intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR); simpl in *; subst.
   reflexivity.
 Qed.
 Next Obligation.
-  intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR); simpl in *; subst.
-  rewrite HR //.
+  intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR).
+  solve_proper.
 Qed.
 
 Program Definition freelock_spec (cs : compspecs) : funspec :=
-  TYPE ProdType (ConstType (val * share)) Mpred WITH v : _, sh : _, R : _
+  TYPE ProdType (ConstType (lock_handle * share)) Mpred WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
     PROP (writable_share sh)
-    PARAMS (v)
+    PARAMS (adr2val (lock_address v))
     SEP (exclusive_mpred R; lock_inv sh v R; R)
   POST [ tvoid ]
     PROP ()
     LOCAL ()
-    SEP (data_at_ sh tlock v; R).
+    SEP (data_at_ sh tlock (adr2val (lock_address v)); R).
 Next Obligation.
 Proof.
   intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR); simpl in *; subst.
@@ -210,16 +151,16 @@ Proof.
 Qed.
 
 Program Definition freelock2_spec (cs : compspecs) : funspec :=
-  TYPE ProdType (ProdType (ConstType (val * share * share)) Mpred) Mpred
+  TYPE ProdType (ProdType (ConstType (lock_handle * share * share)) Mpred) Mpred
   WITH v : _, sh : _, sh' : _, Q : _, R : _
   PRE [ tptr tvoid ]
     PROP (writable_share sh)
-    PARAMS (v)
+    PARAMS (adr2val (lock_address v))
     SEP (exclusive_mpred R; rec_inv sh' v Q R; lock_inv sh v R)
   POST [ tvoid ]
     PROP ()
     LOCAL ()
-    SEP (data_at_ sh tlock v).
+    SEP (data_at_ sh tlock (adr2val (lock_address v))).
 Next Obligation.
 Proof.
   intros ?? ((((v, sh), sh'), Q), R) ((((?, ?), ?), ?), ?) (([=] & HQ) & HR); simpl in *; subst.
@@ -232,11 +173,11 @@ Proof.
 Qed.
 
 Program Definition release2_spec: funspec :=
-  TYPE ProdType (ProdType (ConstType (val * share)) Mpred) Mpred
+  TYPE ProdType (ProdType (ConstType (lock_handle * share)) Mpred) Mpred
   WITH v : _, sh : _, Q : _, R : _
   PRE [ tptr tvoid ]
     PROP (readable_share sh)
-    PARAMS (v)
+    PARAMS (adr2val (lock_address v))
     SEP (exclusive_mpred R; rec_inv sh v Q R; R)
   POST [ tvoid ]
     PROP ()
