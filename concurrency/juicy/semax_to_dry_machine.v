@@ -61,7 +61,7 @@ Require Import VST.concurrency.juicy.semax_preservation.
 Require Import VST.concurrency.juicy.semax_simlemmas.*)
 Require Import VST.concurrency.common.dry_machine_lemmas.
 Require Import VST.concurrency.common.dry_machine_step_lemmas.
-Require Import VST.concurrency.juicy.memLt. (* added memLt *)
+(* Require Import VST.concurrency.juicy.memLt. (* added memLt *) *)
 Require Import iris_ora.algebra.gmap.
 
 
@@ -1145,6 +1145,37 @@ Proof.
     rewrite IH. done.
 Qed.
 
+Lemma memPerm_order_permMapLt m1 m2:
+  permMapLt (getCurPerm m1) (getCurPerm m2) ->
+  ∀ (b : Values.block) (ofs : Z) (p : permission),
+    Mem.perm_order' ((Mem.mem_access m1) # b ofs Cur) p →
+    Mem.perm_order' ((Mem.mem_access m2) # b ofs Cur) p.
+Proof.
+  rewrite /Mem.perm_order' /getCurPerm.
+  intros HpermLt b???.
+  specialize (HpermLt b ofs).
+  rewrite ! Maps.PMap.gmap in HpermLt.
+  destruct ((Mem.mem_access m2) # b ofs Cur);
+    destruct ((Mem.mem_access m1) # b ofs Cur); try contradiction.
+  eapply perm_order_trans; eauto.
+Qed.
+
+Lemma memPerm_permMapLt m1 m2:
+  permMapLt (getCurPerm m1) (getCurPerm m2) ->
+  ∀ (b : Values.block) (ofs : Z) (p : permission),
+    Mem.perm m1 b ofs Cur p → Mem.perm m2 b ofs Cur p.
+Proof. eapply memPerm_order_permMapLt. Qed.
+
+Lemma perm_order_cur m1 m2 b ofs (H : permMapLt (getCurPerm m1) (getCurPerm m2)):
+  Mem.perm_order'' ((Mem.mem_access m2) # b ofs Cur) ((Mem.mem_access m1) # b ofs Cur).
+Proof.
+  rewrite /permMapLt /Mem.perm_order'' /getCurPerm in H |- *.
+  specialize (H b ofs).
+  by rewrite ! Maps.PMap.gmap in H.
+Qed.
+
+
+
 Lemma free_list_mono :
   forall l ms mb m',
     permMapLt (getCurPerm ms) (getCurPerm mb) ->
@@ -1167,7 +1198,6 @@ Proof.
       apply Hnot.
       unfold Mem.range_perm.
       intros.
-      apply Hrp in H.
       eapply memPerm_permMapLt; eauto.
     }
     destruct HexB as [mb1 HfreeB].
@@ -2466,6 +2496,7 @@ Section Safety.
     apply cur_lt_max.
   Qed.
 
+  (*
   Lemma restr_permMapLt: forall (m1 m2 : mem) (M: memLt m1 m2)
       (M1: getMaxPerm m2 = getMaxPerm m1) (Hlt : permMapLt (getCurPerm m1) (getMaxPerm m2)),
       restrPermMap Hlt = m1.
@@ -2502,7 +2533,8 @@ Section Safety.
         rewrite E2; auto.
     - auto.
    Qed.
-
+*)
+  
   Lemma permMapLt_cur_restr: forall (m : mem) (max : access_map) (Hlt : permMapLt max (getMaxPerm m))
                                (Hmax : permMapLt (getMaxPerm m) max),
       permMapLt (getCurPerm m) (getCurPerm (restrPermMap Hlt)).
@@ -2975,7 +3007,8 @@ Section Safety.
           eapply HybridMachineSig.thread_step; first done.
           by eapply step_dry.
     - admit. (* Kblocked: HybridMachineSig.sync_step *)
-     (* pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi.
+(*
+      pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi.
       rewrite jsafe_perm_unfold /jsafe_perm_pre.
       iDestruct "S" as (? Hmax) "S".
       assert (permMapLt (getThreadR cnti).1 (getMaxPerm (restrPermMap Hmax))) as Hlt0.
