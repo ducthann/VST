@@ -2850,7 +2850,8 @@ Section Safety.
   Definition locks_coherent (tp : dtp) (m : mem) (ls : gmap address unit) :=
     forall l, (l ∈ dom ls ->
           lockRes tp l <> None /\
-          (Mem_unchecked Mptr m l.1 l.2 = Some (Vptrofs Ptrofs.zero) <-> lockRes tp l = Some (empty_map, empty_map)) /\
+          (Mem_unchecked Mptr m l.1 l.2 = Some (Vptrofs Ptrofs.zero) <->
+             lockRes tp l = Some (empty_map, empty_map)) /\
           nonEmptyRangeCur m l).
 
   Lemma storebytes_contents_eq :
@@ -2866,7 +2867,6 @@ Section Safety.
     destruct (Mem.range_perm_dec m b ofs (ofs + length bytes) Cur Writable) as [RP|NRP];
       try discriminate.
     inversion H; subst m'; clear H.
-    (* Now it's just PMap.set behavior *)
     destruct (peq b0 b) as [->|Hbneq].
     - rewrite PMap.gss. reflexivity.
     - rewrite PMap.gso; auto.
@@ -2874,8 +2874,7 @@ Section Safety.
 
 Lemma no_overlap_to_sidecond_when_bytes_nonempty (n : nat) (l2 ofs : Z) (bytes : list memval):
   (n <> 0)%nat -> bytes <> nil ->
-  (forall i : Z, (0 <= i < Z.of_nat n)%Z ->
-      ~ (ofs <= l2 + i < ofs + Z.of_nat (length bytes))%Z) ->
+  (forall i , (0 <= i < Z.of_nat n)%Z -> ¬ (ofs <= l2 + i < ofs + Z.of_nat (length bytes))%Z) ->
   (l2 + Z.of_nat n <= ofs)%Z \/ (ofs + Z.of_nat (length bytes) <= l2)%Z.
 Proof.
   intros Hn0 Hbytes Hno.
@@ -2888,13 +2887,10 @@ Proof.
     + (* contradiction with i = 0 *)
       exfalso.
       specialize (Hno 0%Z).
-      assert (Hrange : (0 <= 0 < nZ)%Z) by lia.
-      specialize (Hno Hrange).
-      apply Hno.
-      split; [lia|]. lia.
+      apply Hno; try lia.
   - (* l2 < ofs *)
     destruct (Z.le_gt_cases (l2 + nZ) ofs) as [Hend_le_ofs | Hofs_lt_end].
-    + left. lia.
+    + by left.
     + (* contradiction with i = ofs - l2 *)
       exfalso.
       assert (Hn_pos : (0 < nZ)%Z). lia.
@@ -2905,13 +2901,10 @@ Proof.
       specialize (Hno Hi_range).
       apply Hno.
       subst i.
-      split.
-      * lia.
-      * (* works if length <> [] *)
-  Admitted.
-
-Check setPermBlock (Some Nonempty) _ _ _ _.
-Print setPermBlock.
+      split; try lia.
+      pose proof (nil_or_length_pos bytes).
+      destruct H; try done; try lia.
+Qed.
 
 Definition mem_access_Cur (m : Mem.mem) : access_map :=
   Maps.PMap.map (fun f => fun ofs => f ofs Cur) (Mem.mem_access m).
@@ -2945,27 +2938,23 @@ Proof.
   destruct (Mem.range_perm_dec m b lo hi Cur Freeable) as [Hrng|Hrng]; inv H.
   unfold Mem.unchecked_free; simpl.
   rewrite PMap.gsspec.
-  destruct (peq b0 b) as [Heq|Hneq].
-  - subst.
-    destruct H0; try contradiction.
-    destruct H.
-    + destruct (zle lo ofs && zlt ofs hi) eqn: E.
-      * apply andb_true_iff in E.
-        destruct E as [Hle Hlt].
-        assert (Hlo_le : (lo <= ofs)%Z).
-        { unfold zle in Hle; destruct (Z_le_gt_dec lo ofs); inversion Hle; lia. }
-        assert (Hofs_hi : (lo < hi)%Z).
-        { unfold zlt in Hlt; destruct (Z_lt_ge_dec ofs hi); inversion Hlt; lia. }
-        lia.
-      * done.
-    + destruct (zle lo ofs && zlt ofs hi) eqn: E.
-      * apply andb_true_iff in E.
-        destruct E as [Hle Hlt].
-        assert (Hofs_hi : (ofs < hi)%Z).
-        { unfold zlt in Hlt; destruct (Z_lt_dec ofs hi); inversion Hlt; lia. }
-        lia.
-      * done.
-  - done.
+  destruct (peq b0 b) as [Heq|Hneq]; subst; try done.
+  destruct H0; try contradiction.
+  destruct H.
+  - destruct (zle lo ofs && zlt ofs hi) eqn: E; try done.
+    apply andb_true_iff in E.
+    destruct E as [Hle Hlt].
+    assert (Hlo_le : (lo <= ofs)%Z).
+    { unfold zle in Hle; destruct (Z_le_gt_dec lo ofs); inversion Hle; lia. }
+    assert (Hofs_hi : (lo < hi)%Z).
+    { unfold zlt in Hlt; destruct (Z_lt_ge_dec ofs hi); inversion Hlt; lia. }
+    lia.
+  - destruct (zle lo ofs && zlt ofs hi) eqn: E; try done.
+    apply andb_true_iff in E.
+    destruct E as [Hle Hlt].
+    assert (Hofs_hi : (ofs < hi)%Z).
+    { unfold zlt in Hlt; destruct (Z_lt_dec ofs hi); inversion Hlt; lia. }
+    lia.
 Qed.
 
 Lemma free_list_preserves_cur_nonempty_outside :
@@ -2973,26 +2962,19 @@ Lemma free_list_preserves_cur_nonempty_outside :
     Mem.free_list m l = Some m' ->
     (Mem.mem_access m) # (l0.1) (l0.2 + i)%Z Cur = Some Nonempty ->
     (forall b lo hi,
-        In (b, lo, hi) l ->
-        l0.1 <> b \/ (l0.2 + i < lo \/ hi <= l0.2 + i)%Z) ->
+        (b, lo, hi) ∈ l -> l0.1 <> b \/ (l0.2 + i < lo \/ hi <= l0.2 + i)%Z) ->
     (Mem.mem_access m') # (l0.1) (l0.2 + i)%Z Cur = Some Nonempty.
 Proof.
   intros m l.
   revert m.
-  induction l as [| [(b & lo) hi] tl IH].
-  - intros. simpl in H. inversion H; subst; try done. 
-  - intros. simpl in H.
-    destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
-    eapply IH.
-    + done. 
-    + eapply free_preserves_cur_nonempty_outside.
-      * done.
-      * simpl in *.
-        eapply H1. left; auto.
-      * done.
-    + simpl in *.
-      intros.
-      apply H1. right. done.
+  induction l as [| [(b & lo) hi] tl IH]; intros; simpl in H.
+  - inv H; try done.
+  - destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
+    eapply IH; try done.
+    + eapply free_preserves_cur_nonempty_outside; try done.
+      eapply H1. left; auto.
+    + intros.
+      apply H1. right; auto.
 Qed.
 
 Lemma mem_step_preserves_nonempty_range :
@@ -3038,8 +3020,6 @@ Lemma mem_step_preserves_lock_bytes :
     forall m m' (l : address),
       mem_step m m' ->
       nonEmptyRangeCur m l ->
-     (* (Mem.mem_access m) # (l.1) l.2 Cur = Some Nonempty ->
-         step_not_touch_lock m m' l0 -> *)
       Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m)  # (l.1))
       = Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m') # (l.1)).
   Proof.
@@ -3049,16 +3029,11 @@ Lemma mem_step_preserves_lock_bytes :
     4 : {
       unfold nonEmptyRangeCur in *.
       specialize (IHHstep1 l HNone).
-      assert (HNone'' :
-               forall i : Z,
-                 (0 <= i < size_chunk_nat Mptr)%Z ->
+      assert (HNone'' : forall i : Z, (0 <= i < size_chunk_nat Mptr)%Z ->
                  (Mem.mem_access m'') # (l.1) (l.2 + i)%Z Cur = Some Nonempty).
-      {
-        eapply mem_step_preserves_nonempty_range; eauto.
-      }
+      { by eapply mem_step_preserves_nonempty_range. }
       specialize (IHHstep2 l HNone'').
-      rewrite IHHstep1.
-      exact IHHstep2.
+      by rewrite IHHstep1.
     }
     - set (n := size_chunk_nat Mptr).
       have Hcontents := storebytes_contents_eq _ _ _ _ _ _ H.
@@ -3070,23 +3045,16 @@ Lemma mem_step_preserves_lock_bytes :
         destruct (Mem.range_perm_dec m l.1 ofs (ofs + length bytes) Cur Writable)
           as [Hrp | Hrp]; try discriminate.
         destruct (eq_dec bytes []).
-        { subst; simpl.
-          done.
-        }
-        have Hno_overlap :
-          forall (i:Z),
-            (0 <= i < Z.of_nat n)%Z ->
-            ~ (ofs <= l.2 + i < ofs + Z.of_nat (length bytes))%Z.
-        {
-          intros i Hi Hover.
+        { subst; done. }
+        have Hno_overlap : forall i, (0 <= i < Z.of_nat n)%Z ->
+            ¬ (ofs <= l.2 + i < ofs + Z.of_nat (length bytes))%Z.
+        { intros i Hi Hover.
           have HpermW : Mem.perm m l.1 (l.2 + i) Cur Writable.
           { eapply Hrp; lia. }
           have Hacc : (Mem.mem_access m) # (l.1) (l.2 + i)%Z Cur = Some Nonempty.
-          { rewrite /nonEmptyRangeCur in HNone.
-            apply HNone. lia. }
+          { rewrite /nonEmptyRangeCur in HNone; apply HNone; lia. }
           unfold Mem.perm in HpermW.
           rewrite Hacc in HpermW.
-          simpl in HpermW.
           inv HpermW.
         }
         rewrite Mem.getN_setN_outside; try done.
@@ -3330,15 +3298,6 @@ Proof.
       eapply storebytes_contents_eq in H.
       instantiate (1 := l).
 *)
-  
-  Check lockSet.
-  Print Mem.load.
-  Compute size_chunk_nat Mint32.
-  Check Mptr.
-  Print Mem.free.
-  Print Mem.unchecked_free .
-  Check updThread .
-  Print mem_compatible.
   
 
  Definition other_threads_safe tp (* (gs : gmap nat gname) *) i :=
