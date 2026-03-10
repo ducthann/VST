@@ -1701,41 +1701,6 @@ Proof.
   unfold restrPermMap; simpl.
 *)
 
-Lemma free_preserves_cur_nonempty :
-  forall m m1 b lo hi (l: address),
-    Mem.free m b lo hi = Some m1 ->
-    (Mem.mem_access m) # (l.1) l.2 Cur = Some Nonempty ->
-    (Mem.mem_access m1) # (l.1) l.2 Cur = Some Nonempty.
-Proof.
-  intros m m1 b lo hi l Hfree Hacc.
-  destruct (peq (l.1) b) as [Hb|Hb].
-  - subst.
-    assert (Houtside : (l.2 < lo)%Z \/ (hi <= l.2)%Z).
-    { destruct (zlt l.2 lo) as [Hlt|Hge]; [left; exact Hlt|].
-      destruct (zle hi l.2) as [Hle|Hlt]; [right; exact Hle|].
-      exfalso.
-      pose proof (Mem.free_range_perm _ _ _ _ _ Hfree) as Hrp.
-      specialize (Hrp l.2).
-      assert (Hlohi : (lo <= l.2 < hi)%Z) by lia.
-      apply Hrp in Hlohi.
-      unfold Mem.perm in Hlohi.
-      rewrite Hacc in Hlohi. inv Hlohi.
-    }
-    Search Mem.mem_access .
-    rewrite (Mem.free_result _ _ _ _ _ Hfree).
-    unfold Mem.unchecked_free; simpl.
-    rewrite PMap.gss.
-    destruct Houtside as [Hlt | Hge].
-    + destruct (zle lo l.2) eqn:Hzle; simpl; auto.
-      exfalso. lia.
-    + destruct (zle lo l.2) eqn:Hzle; simpl; auto.
-      destruct (zlt l.2 hi) eqn:Hzlt; simpl; auto.
-      lia.
-  - Search Mem.free Mem.mem_access .
-    rewrite (Mem.free_result _ _ _ _ _ Hfree).
-    unfold Mem.unchecked_free; simpl.
-    rewrite PMap.gso; auto.
-Qed.
 
 
 Print Mem.range_perm.
@@ -2926,6 +2891,61 @@ Proof.
       apply IH. lia.
 Qed.
 
+(* Mem.free only changes permissions inside the freed interval of the freed block.
+So to prove a permission at (b0, ofs) is preserved,
+must show that (b0, ofs) is outside the region that free overwrites.
+b0 = b -> ¬(lo <= ofs < hi)
+
+Mem.mem_access m' =
+Mem.mem_access :=
+      PMap.set b
+        (λ (ofs : Z) (k : perm_kind),
+           if zle lo ofs && zlt ofs hi then None else (Mem.mem_access m) # b ofs k) 
+        (Mem.mem_access m);
+
+ *)
+
+Search Mem.free.
+Print Mem.unchecked_free.
+Search Mem.range_perm_dec.
+
+Lemma free_preserves_cur_nonempty :
+  forall m m1 b lo hi (l: address),
+    Mem.free m b lo hi = Some m1 ->
+    (Mem.mem_access m) # (l.1) l.2 Cur = Some Nonempty ->
+    (Mem.mem_access m1) # (l.1) l.2 Cur = Some Nonempty.
+Proof.
+  intros m m1 b lo hi l Hfree Hacc.
+  destruct (peq (l.1) b) as [Hb|Hb].
+  - subst.
+    assert (Houtside : (l.2 < lo)%Z \/ (hi <= l.2)%Z).
+    { destruct (zlt l.2 lo) as [Hlt|Hge]; [left; exact Hlt|].
+      destruct (zle hi l.2) as [Hle|Hlt]; [right; exact Hle|].
+      exfalso.
+      pose proof (Mem.free_range_perm _ _ _ _ _ Hfree) as Hrp.
+      specialize (Hrp l.2).
+      assert (Hlohi : (lo <= l.2 < hi)%Z) by lia.
+      apply Hrp in Hlohi.
+      unfold Mem.perm in Hlohi.
+      rewrite Hacc in Hlohi. inv Hlohi.
+    }
+    Search Mem.mem_access .
+    rewrite (Mem.free_result _ _ _ _ _ Hfree).
+    unfold Mem.unchecked_free; simpl.
+    rewrite PMap.gss.
+    destruct Houtside as [Hlt | Hge].
+    + destruct (zle lo l.2) eqn:Hzle; simpl; auto.
+      exfalso. lia.
+    + destruct (zle lo l.2) eqn:Hzle; simpl; auto.
+      destruct (zlt l.2 hi) eqn:Hzlt; simpl; auto.
+      lia.
+  - Search Mem.free Mem.mem_access .
+    rewrite (Mem.free_result _ _ _ _ _ Hfree).
+    unfold Mem.unchecked_free; simpl.
+    rewrite PMap.gso; auto.
+Qed.
+
+
 Lemma free_preserves_cur_nonempty_outside :
   forall m m1 b lo hi b0 ofs,
     Mem.free m b lo hi = Some m1 ->
@@ -2935,8 +2955,8 @@ Lemma free_preserves_cur_nonempty_outside :
 Proof.
   intros.
   unfold Mem.free in H.
-  destruct (Mem.range_perm_dec m b lo hi Cur Freeable) as [Hrng|Hrng]; inv H.
-  unfold Mem.unchecked_free; simpl.
+  destruct (Mem.range_perm_dec m b lo hi Cur Freeable); inv H.
+  simpl.
   rewrite PMap.gsspec.
   destruct (peq b0 b) as [Heq|Hneq]; subst; try done.
   destruct H0; try contradiction.
@@ -2957,12 +2977,14 @@ Proof.
     lia.
 Qed.
 
+Print Mem.free_list.
+(* only care about the frees that actually happen *)
 Lemma free_list_preserves_cur_nonempty_outside :
   forall m l m' l0 i,
     Mem.free_list m l = Some m' ->
     (Mem.mem_access m) # (l0.1) (l0.2 + i)%Z Cur = Some Nonempty ->
-    (forall b lo hi,
-        (b, lo, hi) ∈ l -> l0.1 <> b \/ (l0.2 + i < lo \/ hi <= l0.2 + i)%Z) ->
+    (* (forall b lo hi,
+        (b, lo, hi) ∈ l -> l0.1 <> b \/ (l0.2 + i < lo \/ hi <= l0.2 + i)%Z) -> *)
     (Mem.mem_access m') # (l0.1) (l0.2 + i)%Z Cur = Some Nonempty.
 Proof.
   intros m l.
@@ -2971,11 +2993,24 @@ Proof.
   - inv H; try done.
   - destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
     eapply IH; try done.
-    + eapply free_preserves_cur_nonempty_outside; try done.
-      eapply H1. left; auto.
-    + intros.
-      apply H1. right; auto.
+    eapply (free_preserves_cur_nonempty m m1 b lo hi (l0.1, (l0.2 + i)%Z)); try done.
 Qed.
+
+Definition range_untouched (m m' : mem) (l : address) : Prop :=
+  forall i : Z,
+    (0 <= i < size_chunk_nat Mptr)%Z ->
+    (Mem.mem_access m') # (l.1) (l.2 + i)%Z Cur =
+      (Mem.mem_access m)  # (l.1) (l.2 + i)%Z Cur.
+
+(*
+forall l : list (block * Z * Z),
+          Mem.free_list m l = Some m' ->
+          forall i : Z,
+            (0 <= i < size_chunk_nat Mptr)%Z ->
+            forall b lo hi,
+              In (b, lo, hi) l ->
+              l0.1 <> b \/ (l0.2 + i < lo \/ hi <= l0.2 + i)%Z)
+ *)
 
 Lemma mem_step_preserves_nonempty_range :
   forall m m',
@@ -3013,8 +3048,13 @@ Proof.
     inversion H; subst; simpl.
     rewrite PMap.gso; auto.
   - eapply free_list_preserves_cur_nonempty_outside; eauto.
-    admit.
-Admitted.
+Qed.
+
+(*
+Definition nonEmptyRangeCur (m : Mem.mem) (l: Values.block * Z) : Prop :=
+    forall (i : Z), (0 <= i < Z.of_nat (size_chunk_nat Mptr))%Z ->
+                    (Mem.mem_access m) # (l.1) (l.2 + i)%Z Cur = Some Nonempty.
+ *)
 
 Lemma mem_step_preserves_lock_bytes :
     forall m m' (l : address),
@@ -3090,7 +3130,7 @@ Lemma mem_step_preserves_lock_bytes :
       pose proof H as Hfl.
       apply free_list_contents in Hfl.
       by rewrite Hfl.
-Admitted.
+Qed.
 
 Lemma setPermBlock_eq_implies_mem_access_range_Cur
   (m : Mem.mem) (l: Values.block * Z) (pmap0 : access_map) (n : nat) :
@@ -3559,13 +3599,30 @@ Proof.
           ** apply Hlocks; auto.
              rewrite /Mem_unchecked in H1.
              rewrite <- H1.
-             do 2 f_equal. 
+             do 2 f_equal.
              rewrite /Mem_unchecked.
-             Print mem_step.
-             Print setPermBlock.
+             eapply mem_step_preserves_lock_bytes; eauto.
+             apply CLC_corestep_mem in Hstep.
+             Search corestep mem_step.
              admit.
-          ** admit.
-          ** rewrite /access_at.
+             apply Hlocks; eauto.
+          ** apply Hlocks in Hlock.
+             rewrite /Mem_unchecked.
+             destruct Hlock as (? & ? & ?).
+             apply H3 in H1.
+             rewrite <- H1.
+             do 2 f_equal.
+             symmetry.
+             eapply mem_step_preserves_lock_bytes. admit.
+             apply Hlocks; try done. admit.
+          ** rewrite /nonEmptyRangeCur.
+             intros.
+             apply Hlocks in Hlock.
+             pose proof H1 as H1'.
+             destruct Hlock as (? & ? & ?).
+             rewrite /nonEmptyRangeCur in H4.
+             apply H4 in H1.
+             eapply mem_step_preserves_nonempty_range; eauto.
              admit.
 
           (*eapply Hlocks. need to know that coresteps don't mess with locks *)
