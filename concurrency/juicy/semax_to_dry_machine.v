@@ -3431,6 +3431,7 @@ Qed.
           eapply HybridMachineSig.thread_step; first done.
           by eapply step_dry.
     - (* Kblocked: HybridMachineSig.sync_step *)
+      (*
       pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi.
       edestruct Hperms as [_ Hpermi].
       spec Hpermi; first by exists cnti.
@@ -3540,11 +3541,21 @@ Qed.
           rewrite -gsoThreadCC //; apply Htp_wf.
       + by apply ThreadPoolWF.updThreadC_invariant.
       + by apply StepLemmas.updThreadC_compatible.
-      + (* looks like locks_coherent works *)
-        rewrite /locks_coherent in Hlocks |- *.
+      + rewrite /locks_coherent in Hlocks |- *.
         intros. 
         rewrite gsoThreadCLPool.
-        split; try apply Hlocks; try done.
+        destruct (eq_nat_dec i i0) as [<- | Hneq].
+        * assert (HsameR : (getThreadR cnti).1 = (getThreadR cnti0).1).
+          { erewrite <- gThreadCR; eauto. }
+          pose proof Hp as Hp'.
+          rewrite <- HsameR in Hp'.
+          specialize (Hlocks l1 i cnti Hp' H1).
+          destruct Hlocks as (? & ? & ?).
+          replace (restrPermMap Hp) with (restrPermMap Hp').
+          2 : { eapply restr_proof_irr'; done. }
+          split; try done.
+        * (* Up *)
+          by apply Hlocks.
       + intros.
         instantiate (1 := perms).
         split.
@@ -3604,20 +3615,63 @@ Qed.
           rewrite gsoThreadCode //; apply Htp_wf.
       + by eapply (CoreLanguageDry.initial_core_invariant(Sem := Sem)).
       + eapply InternalSteps.start_compatible; try done.
-      + rewrite /locks_coherent in Hlocks |- *.
+      + (* Up: locks_coherent *)
+        rewrite /locks_coherent in Hlocks |- *.
         intros.
-        rewrite /tp'.
-        rewrite gsoThreadLPool.
-        split.
-        * by apply Hlocks.
-        * split.
-          ** intros.
-             apply Hlocks; try done.
-             rewrite /m' in H2.
-             admit.
-          ** intros.
-             apply Hlocks in H2; auto.
-             admit.
+        assert (Hlockeq : lockRes tp' l0 = lockRes tp l0).
+        { by rewrite /tp' gsoThreadLPool. }
+        assert (Hm : Mem_unchecked Mptr m' l0.1 l0.2 = Mem_unchecked Mptr m l0.1 l0.2) by done.
+        destruct (eq_nat_dec i i0) as [<- | Hneq].
+        * specialize (Hlocks l0 i cnti (ssrfun.pair_of_and (Hcompat i cnti)).1 H1).
+          destruct Hlocks as (Hn & Hmem & Hnone).
+          split; try by rewrite Hlockeq.
+          split.
+          ** split.
+             intros.
+             apply Hmem. by rewrite <- Hm.
+             intros.
+             apply Hmem. by rewrite Hlockeq in H2.
+          ** rewrite /nonEmptyRangeCur in Hnone |- *.
+             intros.
+             specialize (Hnone i0 H2).
+             rewrite restrPermMap_Cur_eq.
+             rewrite restrPermMap_Cur_eq in Hnone.
+             assert (Hget :
+                      getThreadR cnti0 = HybridMachineSig.add_block Hcompat cnti m').
+             { eapply gssThreadRes. }
+             rewrite Hget.
+             unfold HybridMachineSig.add_block.
+             simpl.
+             rewrite /m'.
+             simpl.
+             pose proof (mem_equiv.getCur_restr ((getThreadR cnti).1) m
+                           (ssrfun.pair_of_and (Hcompat i cnti)).1) as Hcur.
+             unfold mem_equiv.access_map_equiv in Hcur.
+             by rewrite (Hcur (l0.1)).
+        * assert (cnti0_old : containsThread tp i0).
+          { subst tp'; eapply cntUpdate'; eauto. }
+          assert (Hr_eq : (getThreadR cnti0).1 = (getThreadR cnti0_old).1).
+          { subst tp'; rewrite gsoThreadRes; auto. }
+          assert (Hp0 : permMapLt (getThreadR cnti0_old).1 (getMaxPerm m)).
+          { replace ((getThreadR cnti0_old).1) with ((getThreadR cnti0).1). 
+            subst m'.
+            by rewrite restr_Max_eq in Hp.
+          }
+          specialize (Hlocks l0 i0 cnti0_old Hp0 H1).
+          destruct Hlocks as (Hn & Hmem & Hnone).
+          split; try by rewrite Hlockeq.
+          split.
+          ** split; rewrite Hlockeq.
+             intros.
+             apply Hmem. by rewrite <- Hm.
+             intros.
+             by apply Hmem.
+          ** rewrite /nonEmptyRangeCur in Hnone |- *.
+             intros.
+             specialize (Hnone i1 H2).
+             rewrite restrPermMap_Cur_eq in Hnone.
+             rewrite restrPermMap_Cur_eq.
+             by rewrite Hr_eq.
       + intros.
         instantiate (1 := <[i := (g, getCurPerm m')]> perms).
         split.
