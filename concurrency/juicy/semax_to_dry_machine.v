@@ -1702,9 +1702,72 @@ Proof.
 *)
 
 
+Lemma conc_mem_auth_lookup2 `{!conc_VSTGS OK_ty Σ} i g p m perms :
+  perms !! i = Some (g, p) →
+  conc_mem_auth m perms ⊢ ∃ Hp : permMapLt p (getMaxPerm m),
+      thread_mem_auth g (restrPermMap Hp) ∗
+        conc_mem_auth m (delete i perms).
+Proof.
+  rewrite /conc_mem_auth; intros.
+  iIntros "(% & H)".
+  iDestruct (big_sepM2_delete_l _ _ _ i (g, p) with "H") as "(% & % & (%Hlt & H2) & H3)"; auto.
+  destruct Hlt as (Hlt & Hchr).
+  iExists Hlt.
+  by iFrame.
+Qed.
 
-Print Mem.range_perm.
-      
+Lemma conc_mem_auth_lookup2_rev `{!conc_VSTGS OK_ty Σ} i g p m perms
+  (Hp : permMapLt p (getMaxPerm m)) :
+  perms !! i = Some (g, p) →
+  thread_mem_auth g (restrPermMap Hp) ∗
+    conc_mem_auth m (delete i perms) ⊢
+    conc_mem_auth m perms.
+Proof.
+  iIntros (Hlookup) "[Hthread (% & Hrest)]".
+  rewrite <- (insert_delete perms i _ Hlookup).
+  rewrite /conc_mem_auth.
+  iDestruct "Hthread" as (σ) "[%Hcoh Hauth]".
+  iDestruct (big_sepM2_dom with "Hrest") as %Hdom.
+  rewrite delete_insert_delete delete_idemp in Hdom.
+  assert (Hσs_none : σs !! i = None).
+  {
+    apply not_elem_of_dom.
+    rewrite <- Hdom.
+    apply not_elem_of_dom.
+    by rewrite lookup_delete.
+  }
+  iExists (<[i := σ]> σs).
+  rewrite big_sepM2_insert; auto.
+  2 : { by rewrite lookup_delete. }
+  rewrite delete_insert_delete delete_idemp.
+  iSplitR "Hrest".
+  - iFrame.
+    iPureIntro.
+    split; auto.
+    eexists; eauto.
+  - iFrame.
+Qed.
+
+Lemma conc_state_interp_lookup2_rev `{!conc_VSTGS OK_ty Σ} i g p m perms z
+  (Hp : permMapLt p (getMaxPerm m)):
+  perms !! i = Some (g, p) →
+  thread_state_interp g (restrPermMap Hp) z ∗
+    conc_mem_auth m (delete i perms) ⊢
+    conc_state_interp m perms z.
+Proof.
+  iIntros (Hlookup) "((H & Hext) & Hconc)".
+  iDestruct (conc_mem_auth_lookup2_rev i g p m perms Hp with "[$H $Hconc]") as "?"; auto.
+  iFrame.
+Qed.
+
+Lemma conc_state_interp_lookup2 `{!conc_VSTGS OK_ty Σ} i g p m perms z :
+  perms !! i = Some (g, p) →
+  conc_state_interp m perms z ⊢ ∃ Hp : permMapLt p (getMaxPerm m),
+      thread_state_interp g (restrPermMap Hp) z ∗ conc_mem_auth m (delete i perms).
+Proof.
+  iIntros (?) "(H & $)".
+  iDestruct (conc_mem_auth_lookup2 with "[$H]") as (?) "($ & H)"; eauto.
+Qed.
 
 Lemma conc_mem_auth_lookup1 `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
@@ -3437,7 +3500,7 @@ Qed.
       spec Hpermi; first by exists cnti.
       rewrite !lookup_fmap in Hgi Hpermi.
       destruct (perms !! (0 + i)) as [(?, p)|] eqn: Hpi; inv Hgi; inv Hpermi.
-      iDestruct (conc_state_interp_lookup1 with "S") as "(% & S & H)"; first done.
+      iDestruct (conc_state_interp_lookup2 with "S") as "(% & S & H)"; first done.
       rewrite jsafe_perm_unfold /jsafe_perm_pre.
       iMod ("Hsafei" with "[%] S") as "[Hhalt | [Hstep | Hext]]".
       { apply mem_equiv.getCur_restr. }
@@ -3452,28 +3515,75 @@ Qed.
                 ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
                  locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
                   threads_safe (* (getMaxPerm m') *)
-                    tp' (fst <$> (<[i:=(g, getCurPerm m')]>) perms) ∗
-                 (∃ p (Hlt : permMapLt p (getMaxPerm m')),
-                     state_interp (restrPermMap Hlt) tt) (* ∗ lock_set ls*) )
+                    tp' (fst <$> (delete i perms)) ∗
+                    (conc_mem_auth m (delete i perms) -∗ conc_mem_auth m' (delete i perms)) ∗
+
+                 ((*∃ p (Hlt : permMapLt p (getMaxPerm m')), *)
+                     thread_state_interp g m' (* z'  state_interp (restrPermMap Hlt) *) tt) (* ∗ lock_set ls*) )
         with "[Hpost Hsafe]" as "Hsafe".
       2 : {
         iMod "Hsafe".
         iIntros "!> !>".
-        iMod "Hsafe" as (??? (? & ? & ? & ? & ?)) "(Hsafe & S)".
+        iMod "Hsafe" as (??? (? & ? & ? & ? & ?)) "(Hsafe & SC & S)".
         iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
         { rewrite step_fupdN_plain_forall //.
           iIntros.
+          iSpecialize ("SC" with "H"). 
           replace (0 + i) with i.
-          iApply ("IH" with "[%] [%] [%] [%] [%] locks"); try done.
-          instantiate (1:= (<[i:=(g, getCurPerm m')]>) perms).
-          { intros; rewrite /tp /= /OrdinalPool.containsThread /=.
-            destruct (decide (i0 = i)); subst.
-            * rewrite lookup_insert.
+          Check conc_state_interp_lookup2.
+          assert (snd <$> perms !! i = Some (OrdinalPool.getThreadR cnti).1).
+          { by rewrite Hpi. }
+          
+          
+          iDestruct "S" as "(Hm & Hext)".
+          iApply ("IH" with "[%] [%] [%] [%] [%] locks [$SC] [$Hsafe]"); try done.
+          { intros; simpl.
+            destruct (decide (i0 = i)) as [Heq | Hneq]; subst.
+            * rewrite lookup_delete.
               split; intros. inv H5.
-              2 : {
-                destruct H5 as [cnti' Hr].
-                rewrite <- Hr.
-                simpl.
+              destruct H5 as [cnti' Hr].
+              
+              apply Hperms in H5.
+              destruct H5 as [cnti1 Hr1].
+              simpl in Hpi.
+              admit.
+            * rewrite lookup_delete_ne; auto.
+              split; intros.
+              ** assert (Hex_tp : ∃ cntj : containsThread tp i0, (getThreadR cntj).1 = r).
+                 { by apply (proj1 (Hperms i0 r)). }
+                 destruct Hex_tp as [cntj Hrj].
+                 eapply syncstep_equal_run in H4.
+                 admit.
+              ** admit.
+           }
+           admit.
+          done.
+        }
+        iApply (step_fupdN_mono with "H"); iPureIntro.
+        intros Hsafe.
+        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
+        simpl.        done.
+                 Search syncStep.
+                   exact H5.
+                 }
+                 destruct Hex_tp as [cntj Hrj].
+              2 : { auto.
+          inv H5.
+              
+              simpl.
+              assert (Hsome : snd <$> perms !! (S i) = Some r).
+              {
+                apply Hperms.
+                exists cnti'.
+              }
+              exfalso.
+              Search is_true.
+              rewrite /is_true in cnti'.
+              
+              
+              rewrite <- Hr in Hperms.
+              simpl.
+              
                 f_equal.
                 
           admit.
