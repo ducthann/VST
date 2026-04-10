@@ -3224,42 +3224,73 @@ Proof.
   intros m p Hlt [b ofs].
   by unfold Mem_unchecked.
 Qed.
- 
 
+Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
+  ∀ (Ψ : nat → nat → iPropI Σ),
+    □ (∀ (k y : nat), ⌜seq 0 (pos.n (OrdinalPool.num_threads tp)) !! k = Some y⌝ →
+                    ⌜k ≠ i⌝ →
+                    (∃ g0 : gname, ⌜(fst <$> perms) !! y = Some g0⌝ ∧ thread_safe tp y g0)
+                    -∗ Ψ k y) -∗
+           Ψ i i -∗ [∗ list] k↦y ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), Ψ k y.
+ 
+(*
  Definition other_threads_safe tp (* (gs : gmap nat gname) *) i :=
     ∀ Ψ, □ (∀ k j g, ⌜seq 0 (pos.n (OrdinalPool.num_threads tp)) !! k = Some j⌝ → ⌜k ≠ i⌝ →
         thread_safe tp j g -∗ Ψ k j) -∗
       Ψ i i -∗ [∗ list] k↦y ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), Ψ k y.
+*)
+  
+  Definition post_safe `{!VSTGS unit Σ} g sig x c args k : mpred :=
+    ∀ (ret : option val) (m' : mem) z',
+      ⌜Val.has_type_list args (sig_args (ef_sig LOCK)) ∧
+        Builtins0.val_opt_has_rettype ret (sig_res sig)⌝ →
+      ⌜ext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res sig) ret z' m'⌝ →
+      |={⊤}=> ∃ c' : CC_core,
+    ⌜after_external (cl_core_sem ge) ret (Callstate c args k) m' = Some c'⌝ ∧
+      thread_state_interp g m' z' ∗ jsafe_perm g ⊤ z' c' (getCurPerm m').
 
+(*    
   Definition post_safe `{!VSTGS unit Σ} g sig x c args k : mpred :=
     ∀ (ret : option val) (m' : mem) z',
       ⌜Val.has_type_list args (sig_args sig) ∧ Builtins0.val_opt_has_rettype ret (sig_res sig)⌝ →
       ⌜ext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res sig) ret z' m'⌝ →
       |={⊤}=> ∃ c' : CC_core, ⌜after_external (cl_core_sem ge) ret (Callstate c args k) m' = Some c'⌝ ∧
         state_interp m' z' ∗ jsafe_perm g ⊤ z' c' (getCurPerm m').
-
+*)
 
   Check other_threads_safe.
   Check jsafe_perm.
   Check @post_safe.
   Check syncStep true.
   Check threads_safe.
-(*
+
  (* these lemmas could be split off again into semax_acquire_safety, etc. *)
-  Lemma acquire_safe `{!VSTGS unit Σ} g tp m ls i 
-    (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp) (Hcompat : (*HybridMachineSig.*)mem_compatible tp m)
+  Lemma acquire_safe `{!VSTGS unit Σ} g tp m ls perms i 
+    (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
+    (Hcompat : (*HybridMachineSig.*)mem_compatible tp m)
+    (Hlocks : locks_coherent tp m ls) (Hperms : ∀ (i : nat) (r : access_map),
+        snd <$> perms !! i = Some r ↔ ∃ cnti : containsThread tp i, (getThreadR cnti).1 = r)
     (cnti : containsThread tp i) argsty retty cc k args
     (Hi : getThreadC cnti = Kblocked (Callstate (Ctypes.External LOCK argsty retty cc) args k))
-    p (Hmax : permMapLt p (getMaxPerm m)) (Hlt0 : permMapLt (getThreadR cnti).1 (getMaxPerm (restrPermMap Hmax)))
-    x (Hpre : ext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args () (restrPermMap Hlt0)) :
-    ⊢ (* other_threads_safe (* (getMaxPerm m) *) tp i -∗ *)
+    (Hpi : perms !! (0 + i) = Some (g, (OrdinalPool.getThreadR cnti).1))
+    (* (Hmax : permMapLt p (getMaxPerm m)) *)
+    (Hp : permMapLt (OrdinalPool.getThreadR cnti).1 (getMaxPerm m))
+    x (Hpre : ext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args () (restrPermMap Hp)) :
+    ⊢ other_threads_safe (* (getMaxPerm m) *) tp perms i -∗
       ▷ post_safe g (ef_sig LOCK) x (Ctypes.External LOCK argsty retty cc) args k -∗
       (* lock_set ls -∗ *)
-      |={⊤}[∅]▷=> ∃ (tp' : t) (m' : mem) (ev : Events.sync_event),
-        ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧ locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
-        threads_safe (*(getMaxPerm m') *) tp' g  ∗ (∃ (p0 : access_map) (Hlt : permMapLt p0 (getMaxPerm m')), state_interp (restrPermMap Hlt) ()) (* ∗ lock_set ls *).
+      |={⊤}[∅]▷=> ∃ (tp' : t) (m' : mem) (ev : Events.sync_event) (perms' : gmap nat (gname * access_map)),
+        ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧ locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev /\
+          (∀ (i0 : nat) (r : access_map),
+              snd <$> <[i:=(g, getCurPerm m')]> perms' !! i0 = Some r
+                                                                 ↔ ∃ cnti0 : OrdinalPool.containsThread tp' i0,
+                                                                   (OrdinalPool.getThreadR cnti0).1 = r)⌝ ∧
+          threads_safe tp' (fst <$> <[i:=(g, getCurPerm m')]> perms')  ∗
+            (conc_mem_auth m (delete i perms) -∗ conc_mem_auth m' (delete i perms')) ∗
+            thread_state_interp g m' ().
   Proof.
     iIntros "Hsafe Hpost".
+    rewrite /locks_coherent in Hlocks.
     apply CEspec_acquire_pre in Hpre as (x' & Heqx & Hpre).
     destruct x' as ((n, phi), ((l, sh), R)); simpl in Hpre.
     destruct Hpre as (Hvphi & Hty & Hpre).
@@ -3270,6 +3301,24 @@ Qed.
     assert (readable_share sh /\ val_lemmas.isptr arg) as (Hsh & Hisptr).
     { revert Hpre; rewrite /PROPx /PARAMSx /GLOBALSx /LOCALx /SEPx; monPred.unseal; ouPred.unseal.
       intros (? & ? & ? & _ & (? & _) & [=] & _ & ? & ? & ? & Hlock & _).
+      admit.
+    }
+    destruct arg as [| | | | | b ofs]; try done.
+    clear Hty Hisptr.
+    rewrite /post_safe /other_threads_safe.
+    setoid_rewrite CEspec_acquire_post.
+    Admitted.
+
+
+ (*
+    iMod ("Hpost").
+
+    
+    assert (ext_step cnti Hcompat (updLockSet (updThread cnti (Kresume c Vundef) newThreadPerm) (b, Ptrofs.intval ofs) (empty_map, empty_map)) m' (Events.acquire (b, Ptrofs.intval ofs) (Some (build_delta_content virtueThread.1 m')))) as Hstep.
+    
+
+
+    
       pose proof (lockinv_isptr sh l R) as [Heq].
       apply Heq in Hlock.
       revert Hlock; ouPred.unseal; intros (? & _); subst; done.
@@ -3617,6 +3666,7 @@ Qed.
       destruct (ef_inline ext); inv Hat_ext.
       destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
       + (* acquire *)
+        Search LOCK.
         iApply (acquire_safe with "Hsafe Hpost locks").
       + (* release *)
       + (* makelock *)
