@@ -1769,6 +1769,70 @@ Proof.
   iDestruct (conc_mem_auth_lookup2 with "[$H]") as (?) "($ & H)"; eauto.
 Qed.
 
+Lemma thread_state_interp_conc_state_interp_delete_insert
+  `{!conc_VSTGS OK_ty Σ} i g m perms z :
+  thread_state_interp g m z ∗
+    conc_mem_auth m (delete i perms) ⊢
+    conc_state_interp m (<[i := (g, getCurPerm m)]> perms) z.
+Proof.
+  rewrite <- insert_delete_insert.
+  iIntros "(S & SC)".
+  iDestruct (thread_conc_state_interp i with "[$S]") as "Si".
+  rewrite /conc_state_interp.
+  iDestruct "Si" as "[Hz Hi]".
+  iFrame.
+  iDestruct "SC" as (σs) "HSC".
+  iDestruct "Hz" as (σi) "Hz".
+  iDestruct (big_sepM2_dom with "HSC") as %Hdom.
+  assert (Hσs_none : σs !! i = None).
+  {
+    apply not_elem_of_dom.
+    rewrite <- Hdom.
+    apply not_elem_of_dom.
+    by rewrite lookup_delete.
+  }
+  rewrite /conc_mem_auth.
+  iDestruct (big_sepM2_dom with "Hz") as %Hdomi.
+  assert (Hi_in_dom : i ∈ dom σi).
+  {
+    rewrite <- Hdomi.
+    apply elem_of_dom.
+    eexists.
+    rewrite lookup_singleton.
+    done.
+  }
+  pose proof Hi_in_dom as Hi.
+  apply elem_of_dom in Hi_in_dom.
+  destruct Hi_in_dom as [σ Hlookupσ].
+
+  assert (σi = {[ i := σ]}).
+  {
+    apply elem_of_dom in Hi as [ri Hri].
+    apply map_eq => j.
+    destruct (decide (j = i)) as [->|Hj].
+    - rewrite lookup_insert; auto.
+    - rewrite Hlookupσ in Hri.
+      injection Hri as <-.
+      rewrite lookup_insert_ne; auto.
+      apply not_elem_of_dom.
+      intro Hjdom.
+      rewrite <- Hdomi in Hjdom.
+      apply elem_of_dom in Hjdom as [x Hx].
+      rewrite lookup_insert_ne in Hx; auto.
+      rewrite lookup_empty in Hx.
+      discriminate.
+  }
+  iExists (<[ i := σ ]> σs).
+  rewrite big_sepM2_insert; auto; last first.
+  by rewrite lookup_delete.
+  iFrame.
+  iDestruct (big_sepM2_delete _ _  _ i (g, getCurPerm m) σ with "Hz") as "[Hzi H]"; auto.
+  by rewrite lookup_insert.
+  iFrame.
+  rewrite H.
+  by rewrite !delete_singleton big_sepM2_empty.
+Qed.
+    
 Lemma conc_mem_auth_lookup1 `{!conc_VSTGS OK_ty Σ} i g p m perms :
   perms !! i = Some (g, p) →
   conc_mem_auth m perms ⊢ ∃ Hp : permMapLt p (getMaxPerm m),
@@ -2827,7 +2891,7 @@ Section Safety.
       jsafe_perm g ⊤ tt q_new ((getThreadR cnti).1, max)
     end%I.
 
-  Definition threads_safe max (tp : dtp) (gs : gmap nat gname) :=
+  Definition thread_safe max (tp : dtp) i g :=threads_safe max (tp : dtp) (gs : gmap nat gname) :=
     [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe max tp i g.
   *)
 
@@ -3160,7 +3224,7 @@ Proof.
   intros m p Hlt [b ofs].
   by unfold Mem_unchecked.
 Qed.
-  
+ 
 
  Definition other_threads_safe tp (* (gs : gmap nat gname) *) i :=
     ∀ Ψ, □ (∀ k j g, ⌜seq 0 (pos.n (OrdinalPool.num_threads tp)) !! k = Some j⌝ → ⌜k ≠ i⌝ →
@@ -3511,12 +3575,16 @@ Qed.
       (* cl_at_external s = Some (e, args) *)
       iDestruct "Hext" as (??? (Hat_ext & Hpre)) "Hpost".
       simpl in Hat_ext.
-      iAssert (|={⊤}[∅]▷=> ∃ (tp' : t(ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev,
+      iAssert (|={⊤}[∅]▷=> ∃ (tp' : t(ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev perms',
                 ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-                 locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
+                 locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev /\
+                  (∀ (i0 : nat) (r : access_map),
+                      snd <$> <[i:=(g, getCurPerm m')]> perms' !! i0 = Some r
+                                                                         ↔ ∃ cnti0 : OrdinalPool.containsThread tp' i0, (OrdinalPool.getThreadR cnti0).1 = r
+)⌝ ∧
                   threads_safe (* (getMaxPerm m') *)
-                    tp' (fst <$> (delete i perms)) ∗
-                    (conc_mem_auth m (delete i perms) -∗ conc_mem_auth m' (delete i perms)) ∗
+                    tp' (fst <$> <[i:=(g, getCurPerm m')]> perms') ∗
+                    (conc_mem_auth m (delete i perms) -∗ conc_mem_auth m' (delete i perms')) ∗
 
                  ((*∃ p (Hlt : permMapLt p (getMaxPerm m')), *)
                      thread_state_interp g m' (* z'  state_interp (restrPermMap Hlt) *) tt) (* ∗ lock_set ls*) )
@@ -3524,121 +3592,24 @@ Qed.
       2 : {
         iMod "Hsafe".
         iIntros "!> !>".
-        iMod "Hsafe" as (??? (? & ? & ? & ? & ?)) "(Hsafe & SC & S)".
+        iMod "Hsafe" as (???? (? & ? & ? & ? & ? & ?)) "(Hsafe & SC & S)".
         iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
         { rewrite step_fupdN_plain_forall //.
           iIntros.
           iSpecialize ("SC" with "H"). 
-          replace (0 + i) with i.
-          Check conc_state_interp_lookup2.
+          replace (0 + i) with i; auto.
           assert (snd <$> perms !! i = Some (OrdinalPool.getThreadR cnti).1).
           { by rewrite Hpi. }
-          
-          
-          iDestruct "S" as "(Hm & Hext)".
-          iApply ("IH" with "[%] [%] [%] [%] [%] locks [$SC] [$Hsafe]"); try done.
-          { intros; simpl.
-            destruct (decide (i0 = i)) as [Heq | Hneq]; subst.
-            * rewrite lookup_delete.
-              split; intros. inv H5.
-              destruct H5 as [cnti' Hr].
-              
-              apply Hperms in H5.
-              destruct H5 as [cnti1 Hr1].
-              simpl in Hpi.
-              admit.
-            * rewrite lookup_delete_ne; auto.
-              split; intros.
-              ** assert (Hex_tp : ∃ cntj : containsThread tp i0, (getThreadR cntj).1 = r).
-                 { by apply (proj1 (Hperms i0 r)). }
-                 destruct Hex_tp as [cntj Hrj].
-                 eapply syncstep_equal_run in H4.
-                 admit.
-              ** admit.
-           }
-           admit.
-          done.
-        }
-        iApply (step_fupdN_mono with "H"); iPureIntro.
-        intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
-        simpl.        done.
-                 Search syncStep.
-                   exact H5.
-                 }
-                 destruct Hex_tp as [cntj Hrj].
-              2 : { auto.
-          inv H5.
-              
-              simpl.
-              assert (Hsome : snd <$> perms !! (S i) = Some r).
-              {
-                apply Hperms.
-                exists cnti'.
-              }
-              exfalso.
-              Search is_true.
-              rewrite /is_true in cnti'.
-              
-              
-              rewrite <- Hr in Hperms.
-              simpl.
-              
-                f_equal.
-                
-          admit.
-          
-          Check  threads_safe.
-          admit. admit. admit. admit.
+          iDestruct (thread_state_interp_conc_state_interp_delete_insert
+                      with "[$S $SC]") as "SC".
+          iApply ("IH" with "[%] [%] [%] [%] [%] locks [$SC]"); try done.
         }
         iApply (step_fupdN_mono with "H"); iPureIntro.
         intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
         eapply HybridMachineSig.sync_step; eauto.
       }
-      (* consider each of the concurrency functions *)
-      clear Hwfi.
-      destruct s as [|f ? k|]; try done; simpl in Hat_ext.
-      destruct f as [|ext argsty retty cc]; try done.
-      destruct (ef_inline ext); inv Hat_ext.
-      destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
-      +
-
       
-
-        iDestruct "Hext" as (??? (Hext & ?)) "?". simpl in Hext; congruence. }
-      (* HStep *)
-      
-
-
-      
-      rewrite jsafe_perm_unfold /jsafe_perm_pre.
-      Check ((getThreadR cnti).1).
-      iMod ("Hsafei" $!  _ _ with "[] S") as "[Hhalt | [Hstep | Hext]]".
-      Search thread_state_interp.
-      rewrite /conc_state_interp /conc_mem_auth.
-      iDestruct "S" as "(S & ?)".
-      iDestruct "S" as (?) "S".
-      (* assert (permMapLt (getThreadR cnti).1 (getMaxPerm (restrPermMap Hmax))) as Hlt0.
-      { rewrite restr_Max_eq. by apply compat_th. } *)
-      iMod ("Hsafei" $! _ _ with "[%] S") as "[Hhalt | [Hstep | Hext]]".
-      { rewrite restr_Max_eq //. }
-      { iDestruct "Hhalt" as %(? & Hhalt' & ?).
-        destruct s; done. }
-      { iMod "Hstep" as (?? Hstep) "?".
-        apply cl_corestep_not_at_external in Hstep; done. }
-      iDestruct "Hext" as (??? (Hat_ext & Hpre)) "Hpost".
-      iAssert (|={⊤}[∅]▷=> ∃ (tp' : t(ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev, ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-        locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
-        threads_safe (getMaxPerm m') tp' ∗ (∃ p (Hlt : permMapLt p (getMaxPerm m')), state_interp (restrPermMap Hlt) tt) ∗ lock_set ls) with "[-]" as "Hsafe".
-      2: { iMod "Hsafe"; iIntros "!> !>"; iMod "Hsafe" as (??? (? & ? & ? & ? & ?)) "(Hsafe & S & locks)".
-           iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
-           { rewrite step_fupdN_plain_forall //.
-             iIntros; iApply ("IH" with "[%] [%] [%] [%] Hsafe locks S"); done. }
-           iApply (step_fupdN_mono with "H"); iPureIntro.
-           intros Hsafe.
-           eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
-           eapply HybridMachineSig.sync_step; eauto. }
       (* consider each of the concurrency functions *)
       clear Hwfi.
       destruct s as [|f ? k|]; try done; simpl in Hat_ext.
