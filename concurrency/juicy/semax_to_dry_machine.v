@@ -2941,7 +2941,17 @@ Section Safety.
 
   Check containsThread.
 
-  
+  Definition locks_coherent (tp : dtp) (m : mem) (ls : gmap address unit) :=
+    forall l,
+      (l ∈ dom ls ->
+       lockRes tp l <> None /\
+         ((Mem_unchecked Mptr m l.1 l.2 = Some (Vptrofs Ptrofs.zero) /\
+            lockRes tp l = Some (empty_map, empty_map)) \/
+            (Mem_unchecked Mptr m l.1 l.2 = Some (Vptrofs Ptrofs.one))) /\
+         (forall i  (cnti : containsThread tp i)
+            (Hp : permMapLt (getThreadR cnti).1 (getMaxPerm m)), nonEmptyRangeCur (restrPermMap Hp) l)).
+
+  (*
   Definition locks_coherent (tp : dtp) (m : mem) (ls : gmap address unit) :=
     forall l i (cnti : containsThread tp i)
       (Hp : permMapLt (getThreadR cnti).1 (getMaxPerm m)),
@@ -2950,6 +2960,7 @@ Section Safety.
                  (Mem_unchecked Mptr m l.1 l.2 = Some (Vptrofs Ptrofs.zero) <->
                     lockRes tp l = Some (empty_map, empty_map)) /\
                  nonEmptyRangeCur (restrPermMap Hp) l).
+  *)
   
   Lemma storebytes_contents_eq :
     forall m m' b ofs bytes b0,
@@ -3307,8 +3318,55 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
     clear Hty Hisptr.
     rewrite /post_safe /other_threads_safe.
     setoid_rewrite CEspec_acquire_post.
-    Admitted.
-
+    assert (Hdom: lock_address l ∈ dom ls). admit.
+    specialize (Hlocks (lock_address l) Hdom ).
+    destruct Hlocks as (HlockRes & ? & ?).
+    destruct (lockRes tp (lock_address l)) eqn: E; last done.
+    assert ((b, Ptrofs.intval ofs) = (lock_address l)).
+    admit.
+    (* If we have lock_inv sh l R, then lock_address l ∈ dom ls  *)
+    (* We need to define lock_set to make that (lock_address l ∈ dom ls) true
+     if we have lock_inv *)
+    rewrite <- H1 in E.
+    assert (exists tp' m' ev, syncStep true cnti Hcompat tp' m' ev) as Hsync.
+    {
+      destruct H as [Hz | Ho].
+      - repeat eexists.        
+        destruct Hz as (Hm & HSome).
+        eapply step_acqfail; try done.
+        + admit.
+        + rewrite /Mem_unchecked in Hm.
+          inv H1.
+          unfold Mem.load.
+          simpl.
+          destruct (Mem.valid_access_dec _ _ _ ) as [Hva | Hnva].
+          * rewrite <- H2 in Hm.
+            by rewrite Hm.
+          * exfalso.
+            apply Hnva.
+            simpl.
+            admit.
+      - repeat eexists.
+        eapply step_acquire; try done.
+        + admit.
+        + admit.
+        + rewrite /Mem_unchecked in Ho.
+          inv Ho.
+          rewrite /Mem.load /=.
+          destruct (Mem.valid_access_dec _ _ _ ) as [Hva | Hnva].
+          * by rewrite <- H1.
+          * exfalso.
+            apply Hnva.
+            admit.
+        + simpl.
+          rewrite /nonEmptyRangeCur in H0.
+          admit.
+        + simpl.
+          admit.
+        + simpl.
+          admit.
+        + admit.
+     }
 
  (*
     iMod ("Hpost").
