@@ -4024,6 +4024,36 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
      Unshelve. done. done.     
   Qed.
 
+  Lemma threads_wellformed_acquire_lock :
+  forall (tp : dtp) i (cnti : containsThread tp i) q addr l0 maxp,
+    threads_wellformed tp ->
+    getThreadC cnti = Kblocked q ->
+    lockRes tp addr = Some l0 ->
+    threads_wellformed
+      (updLockSet
+         (updThread cnti (Kresume q Vundef)
+            (computeMap (getThreadR cnti).1
+               (acquire_delta l0.1 (getThreadR cnti).1 maxp),
+             computeMap (getThreadR cnti).2
+               (acquire_delta l0.2 (getThreadR cnti).2 maxp)))
+         addr (empty_map, empty_map)).
+ Proof.
+   intros tp i cnti c addr l0 lmaxp Hwf Hcode Hlock.
+   unfold threads_wellformed in *.
+   intros.
+   rewrite gLockSetCode.
+   destruct (Nat.eq_dec i0 i) as [Heq | Hneq].
+   - (* updated thread: its new code is Kresume q Vundef *)
+     subst i0.
+     rewrite gssThreadCode.
+     split; auto.
+     specialize (Hwf i cnti).
+     rewrite Hcode in Hwf; auto.
+   - (* other threads: code is unchanged *)
+     rewrite gsoThreadCode; auto.
+     apply Hwf.
+ Qed.
+
  (* these lemmas could be split off again into semax_acquire_safety, etc. *)
   Lemma acquire_safe `{!VSTGS unit Σ} g tp m ls perms i 
     (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
@@ -4081,7 +4111,8 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
     (* --------------- *)
 
     assert (exists tp' m' ev,
-        syncStep true cnti Hcompat tp' m' ev /\ invariant tp' /\ mem_compatible tp' m') as Hstep.
+               syncStep true cnti Hcompat tp' m' ev /\ threads_wellformed tp' /\
+                 invariant tp' /\ mem_compatible tp' m') as Hstep.
     {
       eexists _, _, _.
       destruct H as [[Ho Hl0_empty] | Ho].
@@ -4183,6 +4214,9 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
           * by apply permMapsDisjoint_comm.
        + admit.
        + split.
+         (* threads_wellformed *)
+         eapply threads_wellformed_acquire_lock; auto.
+         split.
          (* invariant *)
          * eapply invariant_acquire_lock; eauto.
          * (* mem_compatible *)
