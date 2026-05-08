@@ -3269,6 +3269,18 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
         state_interp m' z' ∗ jsafe_perm g ⊤ z' c' (getCurPerm m').
 *)
 
+
+  (* join_perm as a canonical deterministic choice
+     join_perm chooses the stronger of the two permissions
+
+     Because for acquire_delta, we need to construct one concrete new permission map.
+     permjoin says: p and q can be joined into some r (it may allow several r)
+     (permjoin allows: Readable, Writable, Freeable given p = Some Readable, q = Some Readable)
+     But after acquiring a lock, computeMap needs one exact value to put in the map.
+     So join_perm chooses one canonical result (Readable + Readable = Readable)
+   *)
+
+  
   Definition join_perm (p q : option permission) : option permission :=
     match p, q with
     | None, _ => q
@@ -3297,12 +3309,30 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
       try solve [destruct H as [r Hr]; inversion Hr].
   Qed.
 
+  (* acquiring a lock changes the thread permission map.
+- Before acquire: q = current thread permission; p = lock permission
+  (old thread permission q + lock permission p = new thread permission)
+- After acquire, the thread should own: join p q at each valid memory location.
+But computeMap does NOT take a full permission map directly (needs a delta_map)
+- Some r = update this address to r
+- None   = leave it unchanged
+
+So acquire_delta p q maxp builds the update information needed by computeMap.
+acquire_delta = describes what permission updates happen during acquire
+computeMap    = applies those updates
+
+
+If maxp allows this location:
+    update permission to p + q
+If maxp has None there:
+    do not update
+   *)
   Definition acquire_delta (p q maxp : access_map) : delta_map :=
     PTree.map
       (fun b f ofs =>
          match f ofs with
          | Some _ => Some (join_perm (p # b ofs) (q # b ofs))
-         | None => None
+         | None => None (* NOT create permissions outside the memory’s maximum permissions.*)
          end
       ) maxp.2.
 
@@ -3315,6 +3345,9 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
       destruct p, q; try done; inv H; constructor.
   Qed.
 
+  Print permMapsDisjoint.
+  Print permMapJoin.
+
   Lemma acquire_delta_permMapJoin_new :
     forall p q maxp,
       (forall b ofs, (maxp.2 !! b)%maps = None -> p # b ofs = None) ->
@@ -3325,143 +3358,71 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
     intros p q maxp Houtside Hlt Hdisj.
     unfold permMapJoin.
     intros b ofs.
-    rewrite /acquire_delta /computeMap.
+
+    unfold acquire_delta, computeMap.
     rewrite /PMap.get /=.
     rewrite PTree.gcombine; auto.
     rewrite PTree.gmap.
     destruct ((maxp.2 !! b)%maps) as [fmax |] eqn:Hmaxb.
-    - destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl;
-        destruct (fmax ofs) as [mx |] eqn:Hmaxofs; simpl.
-      + rewrite Hmaxb /=.
-        rewrite Hmaxofs.
-        set (pp := match (p.2 !! b)%maps with
-                   | Some x => x
-                   | None => p.1
-                   end ofs).
-        set (qq := fq ofs).
-        specialize (Hdisj b ofs).
-        unfold PMap.get in Hdisj.
-        destruct Hdisj as [pu Hpu].
-        change (permjoin_def.permjoin pp qq (join_perm pp qq)).
-        eapply perm_union_permjoin.
-        subst pp qq.
-        rewrite Hqb in Hpu.
-        destruct (match (p.2 !! b)%maps with
-                  | Some x => x
-                  | None => p.1
-                  end ofs) as [pperm|] eqn:Hpp;
-          destruct (fq ofs) as [qperm|] eqn:Hqq; simpl; try discriminate; try done.
-        destruct pperm, qperm; try discriminate; reflexivity.
-        destruct pperm; reflexivity.
-      + rewrite Hmaxb /=.
-        rewrite Hmaxofs /=.
-        set (pp := match (p.2 !! b)%maps with
-                   | Some x => x
-                   | None => p.1
-                   end ofs).
-        set (qq := fq ofs).
-        assert (Hpp_none : pp = None).
-        {
-          subst pp.
-          specialize (Hlt b ofs).
+    - destruct (fmax ofs) as [mx |] eqn:Hmaxofs.
+      + (* maxp has permission here, so acquire_delta updates to join_perm *)
+        rewrite Hmaxb /=.
+        destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl.
+        * rewrite Hmaxofs /=.
+          (* Hqb : (q.2 !! b)%maps = Some fq
+             q permission comes from block-specific function fq *)
+          apply join_perm_correct.
+          rewrite /permMapsDisjoint in Hdisj.
+          specialize (Hdisj b ofs).
+          destruct Hdisj as (pu & Hdisj).
+          exists pu.
+          rewrite /PMap.get in Hdisj.
+          rewrite Hqb in Hdisj.
+          by apply perm_union_permjoin.
+        * rewrite Hmaxofs.
+          (* None case: q permission comes from default function q.1. *)
+          apply join_perm_correct.
+          specialize (Hdisj b ofs).
+          destruct Hdisj as (pu & Hdisj).
+          exists pu.
+          rewrite /PMap.get in Hdisj.
+          rewrite Hqb in Hdisj.
+          by apply perm_union_permjoin.
+      + (* maxp has no permission at this offset, so no update *)
+        rewrite Hmaxb /=.
+        assert (Hpnone : p # b ofs = None).
+        { specialize (Hlt b ofs).
           unfold PMap.get in Hlt.
-          rewrite Hmaxb in Hlt.
-          rewrite Hmaxofs in Hlt.
-          destruct (match (p.2 !! b)%maps with
-                    | Some x => x
-                    | None => p.1
-                    end ofs) as [pperm|] eqn:Hpp; simpl in Hlt; try done.
+          rewrite Hmaxb Hmaxofs in Hlt.
+          destruct (p # b ofs) eqn: E; auto.
+          rewrite /PMap.get in E.
+          rewrite E in Hlt.
+          easy.
         }
-        subst pp.
-        eapply perm_union_permjoin.
-        subst qq.
-        destruct (fq ofs); simpl.
-        by rewrite Hpp_none /=.
-        by rewrite Hpp_none.
-      + rewrite Hmaxb /=.
-        rewrite Hmaxofs /=.
-
-        set (pp := match (p.2 !! b)%maps with
-                   | Some x => x
-                   | None => p.1
-                   end ofs).
-
-        set (qq := q.1 ofs).
-        specialize (Hdisj b ofs).
-        unfold PMap.get in Hdisj.
-        rewrite Hqb in Hdisj.
-        destruct Hdisj as [pu Hpu].
-        eapply perm_union_permjoin.
-        subst pp qq.
-        destruct (match (p.2 !! b)%maps with
-                  | Some x => x
-                  | None => p.1
-                  end ofs) as [pperm|] eqn:Hpp;
-          destruct (q.1 ofs) as [qperm|] eqn:Hqq;
-          simpl in Hpu |- *;
-          try discriminate;
-          try reflexivity.
-        destruct pperm, qperm;
-          try discriminate;
-          reflexivity.
-        destruct pperm; reflexivity.
-      + rewrite Hmaxb /=.
-        rewrite Hmaxofs /=.
-        set (pp := match (p.2 !! b)%maps with
-                   | Some x => x
-                   | None => p.1
-                   end ofs).
-        set (qq := q.1 ofs).
-        assert (Hpp_none : pp = None).
-        {
-          subst pp.
-          specialize (Hlt b ofs).
-          unfold PMap.get in Hlt.
-          rewrite Hmaxb in Hlt.
-          rewrite Hmaxofs in Hlt.
-
-          destruct (match (p.2 !! b)%maps with
-                    | Some x => x
-                    | None => p.1
-                    end ofs) as [pperm|] eqn:Hpp;
-            simpl in Hlt; try reflexivity.
-
-          destruct pperm; inversion Hlt.
-        }
-        rewrite Hpp_none.
-        eapply perm_union_permjoin.
-        destruct qq; reflexivity.
-    - rewrite Hmaxb /=.
-      set (pp := match (p.2 !! b)%maps with
-                 | Some x => x
-                 | None => p.1
-                 end ofs).
-      set (qq := match (q.2 !! b)%maps with
-                 | Some x => x
-                 | None => q.1
-                 end ofs).
-      assert (Hpp_none : pp = None).
-      {
-        subst pp.
-        specialize (Houtside b ofs Hmaxb).
-        unfold PMap.get in Houtside.
-        exact Houtside.
-      }
-      rewrite Hpp_none.
-      eapply perm_union_permjoin.
-      destruct qq; reflexivity.
- Qed.
+        destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl.
+        * rewrite Hmaxofs.
+          rewrite /PMap.get in Hpnone.
+          rewrite Hpnone.
+          constructor.
+        * rewrite Hmaxofs.
+          rewrite /PMap.get in Hpnone.
+          rewrite Hpnone. constructor.
+    - (* maxp has no block b, so no update *)
+      rewrite Hmaxb /=.
+      assert (Hpnone : p # b ofs = None).
+      { by apply Houtside. }
+      rewrite /PMap.get in Hpnone.
+      rewrite Hpnone.
+      constructor.
+  Qed.
 
   Lemma computeMap_acquire_delta_permMapLt :
     forall p q maxp, permMapLt p maxp -> permMapLt q maxp ->
       (forall b ofs, Mem.perm_order'' (maxp # b ofs) (join_perm (p # b ofs) (q # b ofs))) ->
       permMapLt (computeMap q (acquire_delta p q maxp)) maxp.
   Proof.
-    intros p q maxp Hp Hq Hjoin.
-    unfold permMapLt.
-    intros b ofs.
-    unfold computeMap, acquire_delta.
-    rewrite /PMap.get /=.
+    intros p q maxp Hp Hq Hjoin b ofs.
+    rewrite /computeMap /acquire_delta /PMap.get /=.
     rewrite PTree.gcombine; auto.
     rewrite PTree.gmap.
     destruct ((maxp.2 !! b)%maps) as [fmax |] eqn:Hmaxb.
@@ -3469,28 +3430,16 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
         destruct (fmax ofs) as [mx |] eqn:Hmaxofs; simpl.
       + (* max has permission; delta uses join_perm *)
         specialize (Hjoin b ofs).
-        unfold PMap.get in Hjoin.
-        rewrite Hmaxb /= Hmaxofs in Hjoin.
-        by rewrite Hqb /= in Hjoin.
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb /= in Hjoin.
       + specialize (Hq b ofs).
         unfold PMap.get in Hq.
-        rewrite Hmaxb /= Hmaxofs in Hq.
-        rewrite Hqb in Hq.
-        by rewrite /Mem.perm_order'' in Hq.
+        by rewrite Hmaxb /= Hmaxofs Hqb in Hq.
       + specialize (Hjoin b ofs).
-        unfold PMap.get in Hjoin.
-        rewrite Hmaxb /= Hmaxofs in Hjoin.
-        rewrite Hqb in Hjoin.
-        by rewrite /Mem.perm_order'' in Hq.
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb /Mem.perm_order'' /= in Hjoin.
       + specialize (Hq b ofs).
-        unfold PMap.get in Hq.
-        rewrite Hmaxb /= Hmaxofs in Hq.
-        rewrite Hqb in Hq.
-        by rewrite /Mem.perm_order'' in Hq.
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb in Hq.
     - specialize (Hq b ofs).
-      unfold PMap.get in Hq.
-      rewrite Hmaxb in Hq.
-      simpl. done.
+      by rewrite /PMap.get Hmaxb /= in Hq.
   Qed.
 
   Lemma join_perm_below_max :
@@ -3555,36 +3504,38 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
   Qed.
 
   Lemma acquire_delta_preserves_disjoint3 :
-    forall l p maxp x, permMapsDisjoint l p ->
-                  permMapsDisjoint l x ->
-                  permMapsDisjoint p x ->
-                  permMapsDisjoint (computeMap p (acquire_delta l p maxp)) x.
+    forall l p maxp x,
+      permMapsDisjoint l p ->
+      permMapsDisjoint l x ->
+      permMapsDisjoint p x ->
+      permMapsDisjoint (computeMap p (acquire_delta l p maxp)) x.
   Proof.
-    intros l p maxp x Hlp Hlx Hpx.
-    unfold permMapsDisjoint in *.
-    intros b ofs.
+    intros l p maxp x Hlp Hlx Hpx b ofs.
+    rewrite /acquire_delta /computeMap /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
     specialize (Hlp b ofs) as [pu_lp Hlp].
     specialize (Hlx b ofs) as [pu_lx Hlx].
     specialize (Hpx b ofs) as [pu_px Hpx].
-    unfold computeMap, acquire_delta.
-    rewrite /PMap.get /=.
-    rewrite PTree.gcombine; auto.
-    rewrite PTree.gmap.
-    destruct ((maxp.2 !! b)%maps) as [fmax|] eqn:Hmax;
-      destruct ((p.2 !! b)%maps) as [fp|] eqn:Hp;
-      destruct ((l.2 !! b)%maps) as [fl|] eqn:Hl;
-      simpl in *;
-      unfold PMap.get in Hlp, Hlx, Hpx;
-      rewrite Hp in Hlp, Hpx;
-      rewrite Hl in Hlp, Hlx;
-      simpl in Hlp, Hlx, Hpx.
-    all: try destruct (fmax ofs) as [mx|] eqn:Hmax_ofs; simpl.
-    all:
-      try (eapply join_perm_disjoint3;
-           [ exists pu_lp; exact Hlp
-             | exists pu_lx; exact Hlx
-             | exists pu_px; exact Hpx ]);
-      try (exists pu_px; exact Hpx).
+    rewrite /PMap.get in Hlp, Hlx, Hpx.
+    destruct ((maxp.2 !! b)%maps) as [fmax|] eqn:Hmax.
+    - destruct ((p.2 !! b)%maps) as [fp|] eqn:Hp; simpl.
+      + destruct ((l.2 !! b)%maps) as [fl|] eqn:Hl; simpl.
+        * (* updated case: new permission = join_perm l p *)
+          destruct (fmax ofs) as [mx|] eqn:Hmax_ofs; simpl.
+          ++ apply join_perm_disjoint3; eexists; done.
+          ++ eexists; done.
+        * (* lock permission l comes from its default function l.1 *)
+          destruct (fmax ofs) as [mx |] eqn:Hmax_ofs; simpl.
+          ++ apply join_perm_disjoint3; eexists; done.
+          ++ eexists; done.
+      + (* default permission function p.1 because Hp : (p.2 !! b)%maps = None *)
+        destruct (fmax ofs) as [mx |] eqn:Hmax_ofs; simpl.
+        * apply join_perm_disjoint3; eexists; eauto.
+        * eexists; done.
+    - (* no update because Hmax : (maxp.2 !! b)%maps = None *)
+      simpl.
+      eexists; done.
   Qed.
 
   Lemma join_perm_coh_right :
@@ -3600,10 +3551,7 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
   Qed.
 
   Lemma join_perm_coh_left :
-    forall l p x,
-      perm_coh l x ->
-      perm_coh p x ->
-      perm_coh (join_perm l p) x.
+    forall l p x, perm_coh l x -> perm_coh p x -> perm_coh (join_perm l p) x.
   Proof.
     intros l p x H1 H2.
     destruct l as [l|], p as [p|], x as [x|];
@@ -4222,7 +4170,8 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
          * (* mem_compatible *)
            admit.
       }
-       
+
+ Admitted.
  (*
     iMod ("Hpost").
 
