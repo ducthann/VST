@@ -1174,8 +1174,6 @@ Proof.
   by rewrite ! Maps.PMap.gmap in H.
 Qed.
 
-
-
 Lemma free_list_mono :
   forall l ms mb m',
     permMapLt (getCurPerm ms) (getCurPerm mb) ->
@@ -1641,10 +1639,6 @@ Proof.
   - by rewrite restr_Max_eq.
 Qed.
 *)
-
-Check  restrPermMap _.
-Search Mem.perm restrPermMap.
-Check storebytes_contents_or_canstore_cur.
 
 Lemma load_restr_inv
   (chunk: memory_chunk) (m: Mem.mem) (p: access_map) (Hlt : permMapLt p (getMaxPerm m)) (b: Values.block) (ofs: Z) (v: val) :
@@ -3327,6 +3321,7 @@ If maxp allows this location:
 If maxp has None there:
     do not update
    *)
+  
   Definition acquire_delta (p q maxp : access_map) : delta_map :=
     PTree.map
       (fun b f ofs =>
@@ -3636,8 +3631,7 @@ If maxp has None there:
   Qed.
 
   Lemma updLockSet_lr_valid_existing
-    (tp : OrdinalPool.t)
-    (addr : address)
+    (tp : OrdinalPool.t) addr
     (old new : lock_info) :
     OrdinalPool.lr_valid (OrdinalPool.lockRes tp) ->
     OrdinalPool.lockRes tp addr = Some old ->
@@ -3689,22 +3683,14 @@ If maxp has None there:
     destruct Hinvariant.
     constructor.
     - intros.
-      destruct (Nat.eq_dec i0 i) as [Hi0 | Hi0];
-        destruct (Nat.eq_dec j i) as [Hj | Hj].
+      destruct (Nat.eq_dec i0 i) as [Hi0 | Hi0]; destruct (Nat.eq_dec j i) as [Hj | Hj].
       + subst. easy.
       + subst i0.
         assert (cntj_old : containsThread tp j).
         { eapply cntUpdateL'; eauto. }
-        pose proof
-          (cntUpdateL' (tp := updThread cnti c (r1, r2)) (j := i) addr
-             ((empty_map, empty_map) : lock_info)
-             cnti0) as cnti0_upd.
-        pose proof
-          (cntUpdateL' (tp := updThread cnti c (r1, r2)) (j := j) addr
-             ((empty_map, empty_map) : lock_info)
-             cntj) as cntj_upd.
-        rewrite gLockSetRes.
-        rewrite gLockSetRes.
+        pose proof (cntUpdateL' _ _ cnti0) as cnti0_upd.
+        pose proof (cntUpdateL' _ _ cntj) as cntj_upd.
+        do 2 rewrite gLockSetRes.
         rewrite (gssThreadRes cnti c (r1, r2) cnti0_upd).
         rewrite gsoThreadRes; auto.
         split.
@@ -3968,15 +3954,13 @@ If maxp has None there:
              rewrite gsoThreadLPool in H.
              destruct (locks_data_lock_coh0 laddr rmap Hres) as [_ Hlocks].
              apply (Hlocks laddr' rmap' H).
-   - apply (updLockSet_lr_valid_existing tp addr l0 (empty_map, empty_map)); auto.
-     Unshelve. done. done.     
+   - eapply updLockSet_lr_valid_existing; try done.
+     Unshelve. done. done.
   Qed.
 
   Lemma threads_wellformed_acquire_lock :
   forall (tp : dtp) i (cnti : containsThread tp i) q addr l0 maxp,
-    threads_wellformed tp ->
-    getThreadC cnti = Kblocked q ->
-    lockRes tp addr = Some l0 ->
+    threads_wellformed tp -> getThreadC cnti = Kblocked q -> lockRes tp addr = Some l0 ->
     threads_wellformed
       (updLockSet
          (updThread cnti (Kresume q Vundef)
@@ -4137,30 +4121,42 @@ If maxp has None there:
           pose proof (no_race _ Hinvariant i (b, Ptrofs.intval ofs) cnti l0 E) as Hnr.
           unfold permMapsDisjoint2 in Hnr.
           destruct Hnr as [Hdisj1 Hdisj2].
-          eapply acquire_delta_permMapJoin_new.
-          * intros b0 ofs0 Hmax_none.
-            unfold permMapLt in Hl0_1_lt.
-            specialize (Hl0_1_lt b0 ofs0).
-            unfold PMap.get in Hl0_1_lt.
-            rewrite Hmax_none in Hl0_1_lt.
+          assert (forall (b0 : positive) (ofs0 : Z),
+                     ((getMaxPerm m).2 !! b0)%maps = None → (l0.1) # b0 ofs0 = None).
+          { intros b0 ofs0 Hmax_none.
             pose proof (Max_isCanonical m) as Hmax_canon.
-            unfold isCanonical in Hmax_canon.
-            unfold getMaxPerm in Hmax_canon.
-            simpl in Hmax_canon.
-            unfold PMap.get.
-            pose proof (f_equal (fun f => f ofs0) Hmax_canon) as Hmax_ofs.
-            simpl in Hmax_ofs.
-            change ((getMaxPerm m).1 ofs0)
-              with ((Mem.mem_access m).1 ofs0 Max) in Hl0_1_lt.
-            rewrite Hmax_ofs in Hl0_1_lt.
-            destruct (match (l0.1.2 !! b0)%maps with
-                      | Some x => x
-                      | None => l0.1.1
-                      end ofs0) eqn:Hperm; auto.
-            inv Hl0_1_lt.
-          * done.
-          * by apply permMapsDisjoint_comm.
-       + admit.
+            rewrite /isCanonical in Hmax_canon.
+            specialize (Hl0_1_lt b0 ofs0).
+            rewrite /PMap.get Hmax_canon Hmax_none in Hl0_1_lt.
+            rewrite /PMap.get.
+            destruct ((l0.1.2 !! b0)%maps) eqn: Hperm.
+            - pose proof (perm_order''_None (o ofs0)) as Hperm1.
+              by specialize (perm_order_antisym None (o ofs0) Hl0_1_lt Hperm1).
+            - pose proof (perm_order''_None (l0.1.1 ofs0)) as Hperm1.
+              by specialize (perm_order_antisym None (l0.1.1 ofs0) Hl0_1_lt Hperm1).
+          }
+          eapply acquire_delta_permMapJoin_new; try apply permMapsDisjoint_comm; auto.
+        + simpl.
+          pose proof (compat_lp _ _ Hcompat _ _ E) as [Hl0_1_lt Hl0_2_lt].
+          pose proof (compat_th _ _ Hcompat cnti) as [Hth_1_lt Hth_2_lt].
+          pose proof (no_race _ Hinvariant i (b, Ptrofs.intval ofs) cnti l0 E) as Hnr.
+          unfold permMapsDisjoint2 in Hnr.
+          destruct Hnr as [Hdisj1 Hdisj2].
+          assert (forall (b0 : positive) (ofs0 : Z),
+                     ((getMaxPerm m).2 !! b0)%maps = None → (l0.2) # b0 ofs0 = None).
+          { intros b0 ofs0 Hmax_none.
+            pose proof (Max_isCanonical m) as Hmax_canon.
+            rewrite /isCanonical in Hmax_canon.
+            specialize (Hl0_2_lt b0 ofs0).
+            rewrite /PMap.get Hmax_canon Hmax_none in Hl0_2_lt.
+            rewrite /PMap.get.
+            destruct ((l0.2.2 !! b0)%maps) eqn: Hperm.
+            - pose proof (perm_order''_None (o ofs0)) as Hperm1.
+              by specialize (perm_order_antisym None (o ofs0) Hl0_2_lt Hperm1).
+            - pose proof (perm_order''_None (l0.2.1 ofs0)) as Hperm1.
+              by specialize (perm_order_antisym None (l0.2.1 ofs0) Hl0_2_lt Hperm1).
+          }
+          eapply acquire_delta_permMapJoin_new; try apply permMapsDisjoint_comm; auto.
        + split.
          (* threads_wellformed *)
          eapply threads_wellformed_acquire_lock; auto.
@@ -4170,7 +4166,6 @@ If maxp has None there:
          * (* mem_compatible *)
            admit.
       }
-
  Admitted.
  (*
     iMod ("Hpost").
