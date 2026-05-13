@@ -20,7 +20,7 @@ Proof. reflexivity. Qed.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} `{!cinvG Σ}.
+Context `{!VSTGS OK_ty Σ} `{!lockGS Σ}.
 
 Definition selflock_fun Q sh p : mpred -> mpred :=
   fun R => (Q ∗ ▷lock_inv sh p R).
@@ -44,7 +44,7 @@ Qed.
 
 (*+ Specification of each concurrent primitive *)
 
-Definition acquire_arg_type: TypeTree := ProdType (ConstType (lock_handle * share)) Mpred.
+Definition acquire_arg_type: TypeTree := ProdType (ConstType (val * share)) Mpred.
 
 (* up *)
 #[export] Instance monPred_at_ne : NonExpansive (@monPred_at environ_index mpred : _ -> _ -d> _).
@@ -53,13 +53,11 @@ Proof. solve_proper. Qed.
 #[export] Instance monPred_at_args_ne : NonExpansive (@monPred_at argsEnviron_index mpred : _ -> _ -d> _).
 Proof. solve_proper. Qed.
 
-Definition adr2val (l : address) := Vptr l.1 (Ptrofs.repr l.2).
-
 Program Definition acquire_spec :=
   TYPE acquire_arg_type WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
      PROP (readable_share sh)
-     PARAMS (adr2val (lock_address v))
+     PARAMS (v)
      SEP (lock_inv sh v R)
   POST [ tvoid ]
      PROP ()
@@ -76,14 +74,14 @@ Proof.
   rewrite HR //.
 Qed.
 
-Definition release_arg_type: TypeTree := ProdType (ConstType (lock_handle * share)) Mpred.
+Definition release_arg_type: TypeTree := ProdType (ConstType (val * share)) Mpred.
 
 Program Definition release_spec :=
   TYPE release_arg_type WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
      PROP (readable_share sh)
-     PARAMS (adr2val (lock_address v))
-     SEP (<affine> exclusive_mpred R; lock_inv sh v R; R)
+     PARAMS (v)
+     SEP (exclusive_mpred R; lock_inv sh v R; R)
   POST [ tvoid ]
      PROP ()
      LOCAL ()
@@ -106,10 +104,9 @@ Program Definition makelock_spec (cs : compspecs) : funspec :=
     PARAMS (v)
     SEP (data_at_ sh tlock v)
   POST [ tvoid ]
-    ∃ h,
-    PROP (adr2val (lock_address h) = v)
+    PROP ()
     LOCAL ()
-    SEP (lock_inv sh h R).
+    SEP (lock_inv sh v R).
 Next Obligation.
 Proof.
   intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR); simpl in *; subst.
@@ -121,15 +118,15 @@ Next Obligation.
 Qed.
 
 Program Definition freelock_spec (cs : compspecs) : funspec :=
-  TYPE ProdType (ConstType (lock_handle * share)) Mpred WITH v : _, sh : _, R : _
+  TYPE ProdType (ConstType (val * share)) Mpred WITH v : _, sh : _, R : _
   PRE [ tptr tvoid ]
     PROP (writable_share sh)
-    PARAMS (adr2val (lock_address v))
+    PARAMS (v)
     SEP (exclusive_mpred R; lock_inv sh v R; R)
   POST [ tvoid ]
     PROP ()
     LOCAL ()
-    SEP (data_at_ sh tlock (adr2val (lock_address v)); R).
+    SEP (data_at_ sh tlock v; R).
 Next Obligation.
 Proof.
   intros ?? ((v, sh), R) ((?, ?), ?) ([=] & HR); simpl in *; subst.
@@ -151,16 +148,16 @@ Proof.
 Qed.
 
 Program Definition freelock2_spec (cs : compspecs) : funspec :=
-  TYPE ProdType (ProdType (ConstType (lock_handle * share * share)) Mpred) Mpred
+  TYPE ProdType (ProdType (ConstType (val * share * share)) Mpred) Mpred
   WITH v : _, sh : _, sh' : _, Q : _, R : _
   PRE [ tptr tvoid ]
     PROP (writable_share sh)
-    PARAMS (adr2val (lock_address v))
+    PARAMS (v)
     SEP (exclusive_mpred R; rec_inv sh' v Q R; lock_inv sh v R)
   POST [ tvoid ]
     PROP ()
     LOCAL ()
-    SEP (data_at_ sh tlock (adr2val (lock_address v))).
+    SEP (data_at_ sh tlock v).
 Next Obligation.
 Proof.
   intros ?? ((((v, sh), sh'), Q), R) ((((?, ?), ?), ?), ?) (([=] & HQ) & HR); simpl in *; subst.
@@ -173,11 +170,11 @@ Proof.
 Qed.
 
 Program Definition release2_spec: funspec :=
-  TYPE ProdType (ProdType (ConstType (lock_handle * share)) Mpred) Mpred
+  TYPE ProdType (ProdType (ConstType (val * share)) Mpred) Mpred
   WITH v : _, sh : _, Q : _, R : _
   PRE [ tptr tvoid ]
     PROP (readable_share sh)
-    PARAMS (adr2val (lock_address v))
+    PARAMS (v)
     SEP (exclusive_mpred R; rec_inv sh v Q R; R)
   POST [ tvoid ]
     PROP ()
