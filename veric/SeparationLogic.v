@@ -216,13 +216,13 @@ End mpred.
 
 Module Type CLIGHT_SEPARATION_HOARE_LOGIC_DEF.
 
-Parameter semax: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {C : compspecs},
+Parameter semax: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {C : compspecs},
   coPset → tycontext → assert → statement → ret_assert → Prop.
 
-Parameter semax_func: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} (V : varspecs) (G : funspecs(Σ := Σ)) {C : compspecs},
+Parameter semax_func: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (V : varspecs) (G : funspecs(Σ := Σ)) {C : compspecs},
   Genv.t fundef type → list (ident * fundef) → funspecs(Σ := Σ) → Prop.
 
-Parameter semax_external: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty}, external_function →
+Parameter semax_external: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ}, external_function →
   ∀ A : TypeTree, (@dtfr Σ (MaskTT A)) → (@dtfr Σ (ArgsTT A)) → (@dtfr Σ (AssertTT A)) → mpred.
 
 End CLIGHT_SEPARATION_HOARE_LOGIC_DEF.
@@ -241,7 +241,7 @@ forall OK_spec (x:dtfr A),
       (frame_ret_assert (function_body_ret_assert (fn_return f) (assert_of (Q x))) (stackframe_of f))
 end.
 
-Definition semax_prog `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {C: compspecs}
+Definition semax_prog `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {C: compspecs}
        (prog: program) (ora: OK_ty) (V: varspecs) (G: funspecs) : Prop :=
 compute_list_norepet (prog_defs_names prog) = true  /\
 all_initializers_aligned prog /\
@@ -269,7 +269,7 @@ Import CSHL_Defs.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Axiom semax_mask_mono:
   forall E E' Delta P c R, E ⊆ E' -> semax E Delta P c R -> semax E' Delta P c R.
@@ -617,7 +617,7 @@ Import CSHL_MinimumLogic.CSHL_Defs.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Axiom semax_set :
 forall E (Delta: tycontext) (P: assert) id e,

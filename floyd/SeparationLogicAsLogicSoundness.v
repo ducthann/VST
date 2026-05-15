@@ -135,7 +135,7 @@ Section mpred.
 
 Context `{!VSTGS OK_ty Σ}.
 
-Lemma semax_FF: forall {OK_spec: ext_spec OK_ty} {CS : compspecs} E Delta c Q, Def.semax E Delta False c Q.
+Lemma semax_FF: forall {OK_spec: Jext_spec Σ} {CS : compspecs} E Delta c Q, Def.semax E Delta False c Q.
 Proof.
   intros.
   apply ConseqFacts.semax_pre_simple with (False ∧ False).
@@ -143,7 +143,7 @@ Proof.
   apply semax_extract_prop; contradiction.
 Qed.
 
-Theorem semax_sound: forall {OK_spec: ext_spec OK_ty} {CS : compspecs} E Delta P c Q,
+Theorem semax_sound: forall {OK_spec: Jext_spec Σ} {CS : compspecs} E Delta P c Q,
   DeepEmbedded.DeepEmbeddedDef.semax E Delta P c Q ->
   Def.semax E Delta P c Q.
 Proof.
@@ -184,7 +184,7 @@ Proof.
   apply H.
 Qed.
 
-Theorem semax_func_sound: forall {OK_spec: ext_spec OK_ty} {CS : compspecs} Vspec Gspec ge ids fs,
+Theorem semax_func_sound: forall {OK_spec: Jext_spec Σ} {CS : compspecs} Vspec Gspec ge ids fs,
   DeepEmbedded.DeepEmbeddedDef.semax_func _ _ _ _ Vspec Gspec CS ge ids fs ->
   Def.semax_func(C := CS) Vspec Gspec ge ids fs.
 Proof.
@@ -202,7 +202,7 @@ Proof.
   + eapply MinimumLogic.semax_func_skipn; eauto.
 Qed.
 
-Theorem semax_prog_sound': forall {OK_spec: ext_spec OK_ty} {CS : compspecs} prog z Vspec Gspec,
+Theorem semax_prog_sound': forall {OK_spec: Jext_spec Σ} {CS : compspecs} prog z Vspec Gspec,
   DeepEmbedded.DeepEmbeddedDefs.semax_prog prog z Vspec Gspec ->
   MinimumLogic.CSHL_Defs.semax_prog prog z Vspec Gspec.
 Proof.
@@ -212,7 +212,7 @@ Proof.
   tauto.
 Qed.
 
-Theorem semax_prog_sound: forall {OK_spec: ext_spec OK_ty} {CS : compspecs} prog z Vspec Gspec,
+Theorem semax_prog_sound: forall {OK_spec: Jext_spec Σ} {CS : compspecs} prog z Vspec Gspec,
   DeepEmbedded.DeepEmbeddedDefs.semax_prog prog z Vspec Gspec ->
   semax_prog.semax_prog OK_spec prog z Vspec Gspec.
 Proof.
@@ -221,7 +221,7 @@ Proof.
 Qed.
 
 Theorem semax_prog_rule :
-  forall {OK_spec: ext_spec OK_ty} {CS : compspecs} V G prog m h z,
+  forall {OK_spec: Jext_spec Σ} {CS : compspecs} V G prog m h z,
      postcondition_allows_exit OK_spec tint ->
      DeepEmbedded.DeepEmbeddedDefs.semax_prog prog z V G ->
      Genv.init_mem prog = Some m ->

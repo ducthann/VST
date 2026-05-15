@@ -54,18 +54,28 @@ Proof.
   induction n; apply _.
 Qed.
 
-Lemma adequacy: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} ge z q m n,
+Definition ext_spec_entails `{!VSTGS OK_ty Σ} (es1 : Jext_spec Σ) (es2 : external_specification mem external_function OK_ty) :=
+  (forall e x1 p tys args z m, state_interp m z ∗ Jext_spec_pre es1 e x1 p tys args ⊢
+     ∃ x2, ⌜ext_spec_pre es2 e x2 p tys args z m⌝ ∧
+       ∀ ty ret z' m', ⌜ext_spec_post es2 e x2 p ty ret z' m'⌝ →
+       |==> state_interp m' z' ∗ Jext_spec_post es1 e x1 p ty ret) /\
+  (forall v z m, state_interp m z ∗ Jext_spec_exit es1 v ⊢ ⌜ext_spec_exit es2 v z m⌝).
+
+Lemma adequacy: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (dry_ext_spec : ext_spec OK_ty) ge z q m n,
+  ext_spec_entails OK_spec dry_ext_spec →
   state_interp m z ∗ jsafeN OK_spec ge ⊤ z q ⊢
-  |={⊤}[∅]▷=>^n ⌜dry_safeN(genv_symb := genv_symb_injective) (cl_core_sem ge) OK_spec ge n z q m⌝.
+  |={⊤}[∅]▷=>^n ⌜dry_safeN(genv_symb := genv_symb_injective) (cl_core_sem ge) dry_ext_spec ge n z q m⌝.
 Proof.
   intros.
+  destruct H as (Hext & Hexit).
   iIntros "(S & Hsafe)".
   iLöb as "IH" forall (m z q n).
   destruct n as [|n]; simpl.
   { iPureIntro. constructor. }
   rewrite [in (environments.Esnoc _ "Hsafe" _)]/jsafeN jsafe_unfold /jsafe_pre.
   iMod ("Hsafe" with "S") as "[Hsafe_halt | [Hsafe_core | Hsafe_ext]]".
-  - iDestruct "Hsafe_halt" as %(ret & Hhalt & Hexit).
+  - iDestruct "Hsafe_halt" as (ret Hhalt) "Hexit".
+    iDestruct (Hexit with "Hexit") as %?.
     iApply step_fupd_intro; first done; iApply step_fupdN_intro; first done.
     iPureIntro; eapply safeN_halted; eauto.
   - iDestruct "Hsafe_core" as ">(%c' & %m' & % & s_interp & ▷jsafe)".
@@ -74,61 +84,34 @@ Proof.
     iSpecialize ("IH" with "[$] [$]").
     iModIntro; iApply (step_fupdN_mono with "IH").
     iPureIntro. eapply safeN_step; eauto.
-  - iDestruct "Hsafe_ext" as (ef args w (at_external & Hpre)) "Hpost".
+  - iDestruct "Hsafe_ext" as (ef args w at_external) "(s_interp & Hpre & Hpost)".
+    iDestruct (Hext with "[$s_interp $Hpre]") as (w' ?) "Hpost'".
     iAssert (|={⊤}[∅]▷=>^(S n) ⌜(∀ (ret : option val) m' z' n',
       Val.has_type_list args (sig_args (ef_sig ef))
       → Builtins0.val_opt_has_rettype ret (sig_res (ef_sig ef))
         → n' ≤ n
-            → ext_spec_post OK_spec ef w
+            → ext_spec_post dry_ext_spec ef w'
                 (genv_symb_injective ge) (sig_res (ef_sig ef)) ret z' m'
               → ∃ q',
                   (after_external (cl_core_sem ge) ret q m' = Some q'
-                   ∧ dry_safeN(genv_symb := genv_symb_injective) (cl_core_sem ge) OK_spec ge n' z' q' m'))⌝) with "[-]" as "Hdry".
+                   ∧ dry_safeN(genv_symb := genv_symb_injective) (cl_core_sem ge) dry_ext_spec ge n' z' q' m'))⌝) with "[-]" as "Hdry".
       2: { iApply (step_fupdN_mono with "Hdry"); iPureIntro; intros; eapply safeN_external; eauto. }
       iApply step_fupdN_mono; first by do 8 setoid_rewrite bi.pure_forall.
       repeat (setoid_rewrite step_fupdN_plain_forall; last done; [|apply _..]).
       iIntros (ret m' z' n' ????).
+      iMod ("Hpost'" with "[//]") as "(S & H)".
       iApply fupd_mask_intro; first done.
       iIntros "Hclose !>"; iMod "Hclose" as "_".
-      iMod ("Hpost" with "[%] [%]") as (??) "(S & Hsafe)"; [done..|].
+      iMod ("Hpost" with "[//]") as "Hpost"; iDestruct ("Hpost" with "S H") as (??) "(S & Hsafe)"; [done..|].
       iSpecialize ("IH" with "[$] [$]").
       iModIntro; iApply step_fupdN_le; [done..|].
       iApply (step_fupdN_mono with "IH"); eauto.
 Qed.
 
-Definition ext_spec_entails {M E Z} (es1 es2 : external_specification M E Z) :=
-  (forall e x1 p tys args z m, ext_spec_pre es1 e x1 p tys args z m ->
-     exists x2, ext_spec_pre es2 e x2 p tys args z m /\
-       forall ty ret z' m', ext_spec_post es2 e x2 p ty ret z' m' ->
-                            ext_spec_post es1 e x1 p ty ret z' m') /\
-  (forall v z m, ext_spec_exit es1 v z m -> ext_spec_exit es2 v z m).
-
-Lemma ext_spec_entails_refl : forall {M E Z} (es : external_specification M E Z), ext_spec_entails es es.
-Proof.
-  intros; split; eauto.
-Qed.
-
-Theorem ext_spec_entails_safe : forall {G C M Z} {genv_symb} Hcore es1 es2 ge n z c m
-  (Hes : ext_spec_entails es1 es2),
-  @step_lemmas.dry_safeN G C M Z genv_symb Hcore es1 ge n z c m -> @step_lemmas.dry_safeN G C M Z genv_symb Hcore es2 ge n z c m.
-Proof.
-  induction n as [n IHn] using lt_wf_ind; intros.
-  inv H.
-  - constructor.
-  - eapply step_lemmas.safeN_step; eauto.
-    eapply IHn; eauto.
-  - destruct Hes as (Hes & ?).
-    apply Hes in H1 as (x2 & ? & ?).
-    eapply step_lemmas.safeN_external; eauto; intros.
-    edestruct H2 as (c' & ? & ?); eauto.
-    exists c'; split; auto.
-    eapply IHn; eauto; [lia | by split].
-  - destruct Hes.
-    eapply step_lemmas.safeN_halted; eauto.
-Qed.
-
 Definition sig_of_funspec `{!heapGS Σ} (f : funspec) := typesig2signature (typesig_of_funspec f) (callingconvention_of_funspec f).
 
+(* The juicy spec shouldn't be limited to making assertions on mems! We should
+   use actual separation logic specs at the separation logic level.
 Lemma juicy_dry_spec : forall `{!VSTGS OK_ty Σ} ext_link fs es
   (Hspecs : forall s f, In (ext_link s, f) fs -> match f with mk_funspec ts cc E A P Q =>
      let e := EF_external s (typesig2signature ts cc) in
@@ -157,10 +140,10 @@ Proof.
     intros ???? Hpost'; eapply Hpost; auto.
   - apply IHfs; auto.
     intros; apply Hspecs; auto.
-Qed.
+Qed.*)
 
 Lemma whole_program_sequential_safety_ext:
-   forall Σ `{!VSTGpreS OK_ty Σ} {Espec : forall `{VSTGS OK_ty Σ}, ext_spec OK_ty} {dryspec : ext_spec OK_ty} (initial_oracle: OK_ty)
+   forall Σ `{!VSTGpreS OK_ty Σ} {Espec : forall `{VSTGS OK_ty Σ}, Jext_spec Σ} {dryspec : ext_spec OK_ty} (initial_oracle: OK_ty)
      (EXIT: forall `{!VSTGS OK_ty Σ}, semax_prog.postcondition_allows_exit Espec tint)
      (Hdry : forall `{!VSTGS OK_ty Σ}, ext_spec_entails Espec dryspec)
      prog V (G : forall `{VSTGS OK_ty Σ}, funspecs) m,
@@ -201,10 +184,9 @@ Proof.
   eapply (semax_prog_rule _ _ _ _ n) in H as (b & q & (? & ? & Hinit & ->) & Hsafe); [|done..].
   iMod (Hsafe with "H") as "Hsafe".
   rewrite bi.and_elim_l.
-  iPoseProof (adequacy with "Hsafe") as "Hsafe".
+  iPoseProof (adequacy with "Hsafe") as "Hsafe"; first done.
   iApply step_fupd_intro; first done; iNext.
-  iApply (step_fupdN_mono with "Hsafe"); apply bi.pure_mono; intros.
-  eapply ext_spec_entails_safe in H; eauto 6.
+  iApply (step_fupdN_mono with "Hsafe"); apply bi.pure_mono; intros; eauto 6.
 Qed.
 
 Definition fun_id (ext_link: Strings.String.string -> ident) (ef: external_function) : option ident :=

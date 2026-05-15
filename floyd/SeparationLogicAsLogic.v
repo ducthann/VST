@@ -135,12 +135,12 @@ Module AuxDefs.
 
 Section AuxDefs.
 
-Variable semax_external: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} (ef: external_function) (A : TypeTree)
+Variable semax_external: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (ef: external_function) (A : TypeTree)
        (E: @dtfr Σ (MaskTT A))
        (P: @dtfr Σ (ArgsTT A))
        (Q: @dtfr Σ (AssertTT A)), mpred.
 
-Inductive semax `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs} (E: coPset) (Delta: tycontext): assert -> statement -> ret_assert -> Prop :=
+Inductive semax `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs} (E: coPset) (Delta: tycontext): assert -> statement -> ret_assert -> Prop :=
 | semax_ifthenelse :
    forall (P: assert) (b: expr) c d R,
      semax E Delta (P ∧ local (`(typed_true (typeof b)) (eval_expr b))) c R ->
@@ -284,7 +284,7 @@ forall OK_spec x,
       (frame_ret_assert (function_body_ret_assert (fn_return f) (assert_of (Q x))) (stackframe_of f))
 end.
 
-Inductive semax_func `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} : forall (V: varspecs) (G: funspecs(Σ := Σ)) {C: compspecs} (ge: Genv.t Clight.fundef type) (fdecs: list (ident * Clight.fundef)) (G1: funspecs), Prop :=
+Inductive semax_func `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} : forall (V: varspecs) (G: funspecs(Σ := Σ)) {C: compspecs} (ge: Genv.t Clight.fundef type) (fdecs: list (ident * Clight.fundef)) (G1: funspecs), Prop :=
 | semax_func_nil:
     forall C V G ge, semax_func(C := C) V G ge nil nil
 | semax_func_cons:
@@ -401,7 +401,7 @@ Arguments semax _ _ _ _ _ _ _ (_)%_I.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Lemma semax_skip_inv: forall E Delta P R,
     semax E Delta P Sskip R ->
@@ -1052,7 +1052,7 @@ Module CSHL_Def := CSHL_Def.
 Import CSHL_Def.
 
 Lemma semax_extract_exists:
-  forall `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} {CS: compspecs},
+  forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs},
   forall (A : Type) (P : A -> assert) c E (Delta: tycontext) (R: ret_assert),
   (forall x, semax E Delta (P x) c R) ->
    semax E Delta (∃ x:A, P x) c R.
@@ -1242,7 +1242,7 @@ Module CSHL_Def := DeepEmbeddedDef.
 
 Module CSHL_Defs := DeepEmbeddedDefs.
 
-Lemma semax_mask_mono : forall `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} {CS : compspecs} E E' Delta P c R,
+Lemma semax_mask_mono : forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS : compspecs} E E' Delta P c R,
   E ⊆ E' -> semax _ _ _ _ _ E Delta P c R -> semax _ _ _ _ _ E' Delta P c R.
 Proof.
   intros; eapply AuxDefs.semax_mask_mono; eauto.
@@ -1258,7 +1258,7 @@ Definition semax_func_cons_ext := @AuxDefs.semax_func_cons_ext (@Def.semax_exter
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Theorem semax_ifthenelse :
    forall E Delta P (b: expr) c d R,
@@ -1503,7 +1503,7 @@ Qed.
 
 Local Arguments typecheck_expr : simpl never.
 
-Theorem semax_Delta_subsumption {OK_spec: ext_spec OK_ty} {CS: compspecs}:
+Theorem semax_Delta_subsumption {OK_spec : Jext_spec Σ} {CS: compspecs}:
   forall E Delta Delta' P c R,
        tycontext_sub Delta Delta' ->
      semax E Delta P c R -> semax E Delta' P c R.
@@ -1794,7 +1794,7 @@ Definition CALLpre (CS: compspecs) E Delta ret a bl R :=
                    (oboxopt Delta ret (maybe_retval (assert_of (Q x)) retsig ret -∗ R))).
 
 (*A variant where (CSUB: cspecs_sub  CS CS') is replaced by (CSUB: cenv_sub (@cenv_cs CS) (@cenv_cs CS')) may be provable once tc_expr lemmas (and maybe eval_expr lemmas, sem_binop etc) have been modified to only take a composite_env rather than a compspecs*) 
-Lemma semax_cssub {OK_spec: ext_spec OK_ty} {CS: compspecs} {CS'} (CSUB: cspecs_sub  CS CS') E Delta P c R:
+Lemma semax_cssub {OK_spec : Jext_spec Σ} {CS: compspecs} {CS'} (CSUB: cspecs_sub  CS CS') E Delta P c R:
       semax (C := CS) E Delta P c R -> semax (C := CS') E Delta P c R.
 Proof.
   intros.
@@ -1973,13 +1973,13 @@ Proof.
 Qed. 
 
 Lemma semax_extract_exists':
-  forall  {OK_spec: ext_spec OK_ty} {CS: compspecs} (A : Type) (P : A -> assert) c E (Delta: tycontext) (R: ret_assert),
+  forall  {OK_spec : Jext_spec Σ} {CS: compspecs} (A : Type) (P : A -> assert) c E (Delta: tycontext) (R: ret_assert),
   (forall x, semax E Delta (P x) c R) ->
    semax E Delta (∃ x:A, P x) c R.
 Proof. intros. apply semax_extract_exists in H. apply H. Qed.
 
 Lemma semax_extract_prop':
-  forall {OK_spec: ext_spec OK_ty} {CS: compspecs} E Delta (PP: Prop) P c Q,
+  forall {OK_spec : Jext_spec Σ} {CS: compspecs} E Delta (PP: Prop) P c Q,
            (PP -> semax E Delta P c Q) ->
            semax E Delta (⌜PP⌝ ∧ P) c Q.
 Proof. intros. apply semax_extract_prop in H. apply H. Qed.
@@ -2013,7 +2013,7 @@ Proof.
 Qed.
 
 Lemma semax_frame:
-  forall {OK_spec: ext_spec OK_ty} {CS: compspecs} E Delta P s R F,
+  forall {OK_spec : Jext_spec Σ} {CS: compspecs} E Delta P s R F,
    closed_wrt_modvars s F ->
   semax E Delta P s R ->
     semax E Delta (P ∗ F) s (frame_ret_assert R F).
@@ -2165,7 +2165,7 @@ Proof.
   + eapply AuxDefs.semax_mask_mono; intuition eauto.
 Qed.
 
-Lemma semax_adapt_frame {OK_spec: ext_spec OK_ty} {CS: compspecs} E Delta c (P P': assert) (Q Q' : ret_assert)
+Lemma semax_adapt_frame {OK_spec : Jext_spec Σ} {CS: compspecs} E Delta c (P P': assert) (Q Q' : ret_assert)
    (H: (local (typecheck_environ Delta) ∧ (<affine> allp_fun_id Delta ∗ P)) ⊢
                    (∃ F: assert, (⌜closed_wrt_modvars c F⌝ ∧ (|={E}=> (P' ∗ F) ∧
                          ⌜local (tc_environ Delta) ∧ <affine> allp_fun_id Delta ∗ RA_normal (frame_ret_assert Q' F) ⊢ |={E}=> RA_normal Q⌝ ∧
@@ -2199,7 +2199,7 @@ Proof.
     by iIntros "(? & >($ & % & % & % & %))".
 Qed.
 
-Lemma semax_adapt: forall {OK_spec: ext_spec OK_ty} {CS: compspecs} E Delta c (P P': assert) (Q Q' : ret_assert)
+Lemma semax_adapt: forall {OK_spec : Jext_spec Σ} {CS: compspecs} E Delta c (P P': assert) (Q Q' : ret_assert)
    (H: (local (typecheck_environ Delta) ∧ (<affine> allp_fun_id Delta ∗ P)) ⊢
       ((|={E}=> P' ∧
                         ⌜RA_normal Q' ⊢ |={E}=> (RA_normal Q)⌝ ∧
@@ -2353,7 +2353,7 @@ Arguments semax {_} {_} {_} {_} {_}.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Lemma semax_loop_nocontinue:
  forall E Delta P body incr R,

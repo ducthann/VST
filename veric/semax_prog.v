@@ -183,7 +183,7 @@ setoid_rewrite Maps.PTree.gso; auto.
 Qed.
 
 Section semax_prog.
-Context (OK_spec : ext_spec OK_ty).
+Context (OK_spec : Jext_spec Σ).
 
 Definition prog_contains (ge: genv) (fdecs : list (ident * Clight.fundef)) : Prop :=
      forall id f, In (id,f) fdecs ->
@@ -292,9 +292,9 @@ end
 end.
 
 Definition postcondition_allows_exit retty :=
-   forall v ora m,
+   forall v,
       tc_option_val retty v ->
-      ext_spec_exit OK_spec v ora m.
+      True ⊢ Jext_spec_exit OK_spec v.
 
 Definition semax_prog {C: compspecs}
        (prog: program) (ora: OK_ty) (V: varspecs) (G: funspecs) : Prop :=
@@ -991,7 +991,7 @@ Proof.
   rewrite /jsafeN jsafe_unfold /jsafe_pre.
   iIntros "!> % ?"; iLeft.
   iExists Int.zero; iSplit; first by iPureIntro.
-  iPureIntro; by apply H.
+  by iFrame; iApply H.
 Qed.
 
 Lemma semax_prog_entry_point {CS: compspecs} V G prog b id_fun params args A

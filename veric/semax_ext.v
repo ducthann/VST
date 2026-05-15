@@ -40,7 +40,7 @@ Context (Z : Type) `{!VSTGS Z Σ}.
 
 Section funspecs2jspec.
 
-Variable Espec : ext_spec Z.
+Variable Espec : Jext_spec Σ.
 
 Definition symb2genv_upper_bound (s: Maps.PTree.t block) : block :=
   Pos.succ (fold_right Pos.max  1%positive (map snd (Maps.PTree.elements s))).
@@ -94,44 +94,43 @@ Proof.
   intros; repeat (apply eq_dec || decide equality).
 Qed.
 
-Definition funspec2pre' (A : TypeTree) (P: dtfr (ArgsTT A)) (x : (nat * iResUR Σ * ofe_car (dtfr A))%type) (ge_s: injective_PTree block) sig args z m :=
-  let '(n, phi, x') := x in ✓{n} phi /\ Val.has_type_list args sig /\
-    ouPred_holds (state_interp m z ∗ P x' (filter_genv (symb2genv ge_s), args)) n phi.
+Definition funspec2pre' (A : TypeTree) (P: @dtfr Σ (ArgsTT A)) (x : ofe_car (dtfr A)%type) (ge_s: injective_PTree block) sig args : iProp Σ :=
+  ⌜Val.has_type_list args sig⌝ ∧ P x (filter_genv (symb2genv ge_s), args).
 
 Definition funspec2pre (ext_link: Strings.String.string -> ident) (A : TypeTree)
   (P: dtfr (ArgsTT A))
   (id: ident) (sig : signature) (ef: external_function) x (ge_s: injective_PTree block)
-           (tys : list typ) args (z : Z) m : Prop :=
+           (tys : list typ) args : iProp Σ :=
   match oi_eq_dec (Some (id, sig)) (ef_id_sig ext_link ef) as s
-  return ((if s then (nat * iResUR Σ * ofe_car (dtfr A))%type else ext_spec_type Espec ef) -> Prop)
+  return ((if s then (ofe_car (dtfr A))%type else Jext_spec_type Espec ef) -> iProp Σ)
   with
-    | left _ => fun x => funspec2pre' A P x ge_s (sig_args (ef_sig ef)) args z m
-    | right n => fun x' => ext_spec_pre Espec ef x' ge_s tys args z m
+    | left _ => fun x => funspec2pre' A P x ge_s (sig_args (ef_sig ef)) args
+    | right n => fun x' => Jext_spec_pre Espec ef x' ge_s tys args
   end x.
 
-Definition funspec2post' (A : TypeTree) (Q: dtfr (AssertTT A)) (x : (nat * iResUR Σ * ofe_car (dtfr A))%type) (ge_s: injective_PTree block) tret ret z m :=
-  let '(n, phi, x') := x in ouPred_holds (|==> state_interp m z ∗ Q x' (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret)) n phi.
+Definition funspec2post' (A : TypeTree) (Q: dtfr (AssertTT A)) (x : ofe_car (dtfr A)%type) (ge_s: injective_PTree block) tret ret : iProp Σ :=
+  Q x (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret).
 
 Definition funspec2post (ext_link: Strings.String.string -> ident) (A : TypeTree)
   (Q: dtfr (AssertTT A))
-  id sig ef x ge_s (tret : rettype) ret (z : Z) m : Prop :=
+  id sig ef x ge_s (tret : rettype) ret : iProp Σ :=
   match oi_eq_dec (Some (id, sig)) (ef_id_sig ext_link ef) as s
-  return ((if s then (nat * iResUR Σ * ofe_car (dtfr A))%type else ext_spec_type Espec ef) -> Prop)
+  return ((if s then (ofe_car (dtfr A))%type else Jext_spec_type Espec ef) -> iProp Σ)
   with
-    | left _ => fun x => funspec2post' A Q x ge_s tret ret z m
-    | right n => fun x' => ext_spec_post Espec ef x' ge_s tret ret z m
+    | left _ => fun x => funspec2post' A Q x ge_s tret ret
+    | right n => fun x' => Jext_spec_post Espec ef x' ge_s tret ret
   end x.
 
 Definition funspec2extspec (ext_link: Strings.String.string -> ident) (f : (ident*funspec))
-  : external_specification mem external_function Z :=
+  : Jext_spec Σ :=
   match f with
     | (id, mk_funspec ((params, sigret) as fsig) cc A E P Q) =>
       let sig := typesig2signature fsig cc in
-      Build_external_specification mem external_function Z
-        (fun ef => if oi_eq_dec (Some (id, sig)) (ef_id_sig ext_link ef) then (nat * iResUR Σ * dtfr A)%type else ext_spec_type Espec ef)
+      Build_Jext_spec Σ
+        (fun ef => if oi_eq_dec (Some (id, sig)) (ef_id_sig ext_link ef) then (dtfr A)%type else Jext_spec_type Espec ef)
         (funspec2pre ext_link A P id sig)
         (funspec2post ext_link A Q id sig)
-        (fun rv z m => True%type)
+        (fun rv => True)
   end.
 
 Definition wf_funspec (f : funspec) :=
@@ -160,38 +159,27 @@ Qed.
 
 #[local] Obligation Tactic := idtac.
 
-Definition funspec2jspec (ext_link: Strings.String.string -> ident) f : ext_spec Z :=
+Definition funspec2jspec (ext_link: Strings.String.string -> ident) f : Jext_spec Σ :=
   funspec2extspec ext_link f.
 
 End funspecs2jspec.
 
 Definition funspecs_norepeat (fs : funspecs(Σ := Σ)) := list_norepet (map fst fs).
 
-Fixpoint add_funspecs_rec (ext_link: Strings.String.string -> ident) (Espec : ext_spec Z) (fs : funspecs) :=
+Fixpoint add_funspecs_rec (ext_link: Strings.String.string -> ident) (Espec : Jext_spec Σ) (fs : funspecs) :=
   match fs with
     | nil => Espec
     | cons (i,f) fs' => funspec2jspec (add_funspecs_rec ext_link Espec fs') ext_link (i,f)
   end.
 
-(*Program Definition has_witness {A B} (x : A) (x' : B) : mpred := {| ouPred_holds := λ n phi, exists n' phi',
-  n ≤ n' /\ phi' ≼ₒ{n} phi /\ JMeq (n', phi', x) x' |}.
-Next Obligation.
-Proof.
-  intros ???????? (n' & phi' & ? & ? & ?) ??; simpl.
-  exists n', phi'; split3; last done.
-  - by etrans.
-  - eapply ora_orderN_le; last done.
-    by etrans.
-Qed.*)
-
 Lemma add_funspecs_pre (ext_link: Strings.String.string -> ident)
               {fs id sig cc A E P Q}
-              Espec tys ge_s {x} {args} m z :
+              Espec tys ge_s {x} {args} :
   let ef := EF_external id (typesig2signature sig cc) in
   funspecs_norepeat fs ->
-  In (ext_link id, (mk_funspec sig cc A E P Q)) fs -> ∃ H : ext_spec_type (add_funspecs_rec ext_link Espec fs) ef = (nat * iResUR Σ * dtfr A)%type,
-  ext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x ge_s tys args z m =
-  funspec2pre' A P (eq_rect _ Datatypes.id x _ H) ge_s (sig_args (ef_sig ef)) args z m.
+  In (ext_link id, (mk_funspec sig cc A E P Q)) fs -> ∃ H : Jext_spec_type (add_funspecs_rec ext_link Espec fs) ef = (dtfr A)%type,
+  Jext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x ge_s tys args =
+  funspec2pre' A P (eq_rect _ Datatypes.id x _ H) ge_s (sig_args (ef_sig ef)) args.
 Proof.
   induction fs; [intros; exfalso; auto|]; intros ?? [-> | H1]; simpl in *.
   - clear IHfs H; unfold funspec2jspec; simpl.
@@ -209,12 +197,12 @@ Qed.
 
 Lemma add_funspecs_post (ext_link: Strings.String.string -> ident)
               {fs id sig cc A E P Q}
-              Espec ty ge_s {x} {v} m z :
+              Espec ty ge_s {x} {v} :
   let ef := EF_external id (typesig2signature sig cc) in
   funspecs_norepeat fs ->
-  In (ext_link id, (mk_funspec sig cc A E P Q)) fs -> ∃ H : ext_spec_type (add_funspecs_rec ext_link Espec fs) ef = (nat * iResUR Σ * dtfr A)%type,
-  ext_spec_post (add_funspecs_rec ext_link Espec fs) ef x ge_s ty v z m =
-  funspec2post' A Q (eq_rect _ Datatypes.id x _ H) ge_s ty v z m.
+  In (ext_link id, (mk_funspec sig cc A E P Q)) fs -> ∃ H : Jext_spec_type (add_funspecs_rec ext_link Espec fs) ef = (dtfr A)%type,
+  Jext_spec_post (add_funspecs_rec ext_link Espec fs) ef x ge_s ty v =
+  funspec2post' A Q (eq_rect _ Datatypes.id x _ H) ge_s ty v.
 Proof.
   induction fs; [intros; exfalso; auto|]; intros ?? [-> | H1]; simpl in *.
   - clear IHfs H; unfold funspec2jspec; simpl.
@@ -236,15 +224,15 @@ Lemma add_funspecs_prepost (ext_link: Strings.String.string -> ident)
   let ef := EF_external id (typesig2signature sig cc) in
   funspecs_norepeat fs ->
   In (ext_link id, (mk_funspec sig cc A E P Q)) fs ->
-  forall md z, ⌜Val.has_type_list args (sig_args (ef_sig ef))⌝ ∧
-        state_interp md z ∗ P x (filter_genv (symb2genv ge_s), args) ⊢
-  ∃ x' : ext_spec_type (add_funspecs_rec ext_link Espec fs) ef,
-    ⌜ext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x' ge_s tys args z md⌝ ∧
-    (∀ (tret : rettype) (ret : option val) (m' : Memory.mem) z',
-       ⌜ext_spec_post (add_funspecs_rec ext_link Espec fs) ef x' ge_s tret ret z' m'⌝
-       → |==> state_interp m' z' ∗ ofe_mor_car _ _ Q x (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret)).
+  ⌜Val.has_type_list args (sig_args (ef_sig ef))⌝ ∧
+    P x (filter_genv (symb2genv ge_s), args) ⊢
+  ∃ x' : Jext_spec_type (add_funspecs_rec ext_link Espec fs) ef,
+    Jext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x' ge_s tys args ∗
+    (∀ (tret : rettype) (ret : option val),
+       |==> Jext_spec_post (add_funspecs_rec ext_link Espec fs) ef x' ge_s tret ret -∗
+       ofe_mor_car _ _ Q x (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret)).
 Proof.
-induction fs; [intros; exfalso; auto|]; intros ef H H1 md z.
+induction fs; [intros; exfalso; auto|]; intros ef H H1.
 destruct H1 as [H1|H1].
 
 {
@@ -252,13 +240,10 @@ subst a; simpl in *.
 clear IHfs H; unfold funspec2jspec; simpl.
 destruct sig; unfold funspec2pre, funspec2post; simpl.
 if_tac; simpl; last done.
-unfold funspec2pre', funspec2post'; ouPred.unseal.
-split => n phi ??.
-exists (n, phi, x); split; first done.
-intros ????????? Hpost.
-rewrite {1}/ouPred_holds /= in Hpost.
-eapply ouPred_mono in Hpost; [|done..].
-eapply ouPred_mono; eauto.
+unfold funspec2pre', funspec2post'.
+iIntros "(% & $)".
+iSplit; first done.
+iIntros (??) "!> $".
 }
 
 {
@@ -266,16 +251,12 @@ assert (Hin: In (ext_link id) (map fst fs)).
 { eapply (in_map fst) in H1; apply H1. }
 inversion H as [|? ? Ha Hb]; subst.
 rewrite IHfs //.
-ouPred.unseal.
-split => ???.
-intros (x' & Hpre).
-clear -Ha Hin H1 Hpre; revert Ha Hin H1 Hpre.
-unfold funspec2jspec; simpl.
-destruct a; simpl; destruct f as [(?, ?)]; simpl; unfold funspec2pre, funspec2post; simpl.
+iIntros "(% & Hpre & H)".
+simpl; destruct a; simpl; destruct f as [(?, ?)]; simpl; unfold funspec2pre, funspec2post; simpl.
 if_tac [e|e].
 * injection e as ?; subst i; destruct fs; [solve [simpl; intros; exfalso; auto]|].
   done.
-* intros; eexists; eauto.
+* iFrame.
 }
 Qed.
 
@@ -286,13 +267,13 @@ Lemma add_funspecs_prepost_void  (ext_link: Strings.String.string -> ident)
   let ef := EF_external id (mksignature (map typ_of_type sig) Tvoid cc) in
   funspecs_norepeat fs ->
   In (ext_link id, (mk_funspec (sig, tvoid) cc A E P Q)) fs ->
-  forall md z, ⌜Val.has_type_list args (sig_args (ef_sig ef))⌝ ∧
-        state_interp md z ∗ P x (filter_genv (symb2genv ge_s), args) ⊢
-  ∃ x' : ext_spec_type (add_funspecs_rec ext_link Espec fs) ef,
-    ⌜ext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x' ge_s tys args z md⌝ ∧
-    (∀ (tret : rettype) (ret : option val) (m' : Memory.mem) z',
-       ⌜ext_spec_post (add_funspecs_rec ext_link Espec fs) ef x' ge_s tret ret z' m'⌝
-       → |==> state_interp m' z' ∗ ofe_mor_car _ _ Q x (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret)).
+  ⌜Val.has_type_list args (sig_args (ef_sig ef))⌝ ∧
+    P x (filter_genv (symb2genv ge_s), args) ⊢
+  ∃ x' : Jext_spec_type (add_funspecs_rec ext_link Espec fs) ef,
+    Jext_spec_pre (add_funspecs_rec ext_link Espec fs) ef x' ge_s tys args ∗
+    (∀ (tret : rettype) (ret : option val),
+       |==> Jext_spec_post (add_funspecs_rec ext_link Espec fs) ef x' ge_s tret ret -∗
+       ofe_mor_car _ _ Q x (make_ext_rval (filter_genv (symb2genv ge_s)) tret ret)).
 Proof.
   apply add_funspecs_prepost.
 Qed.
@@ -308,7 +289,7 @@ Definition add_funspecs (Espec : OracleKind) (ext_link: Strings.String.string ->
 
 Section semax_ext.
 
-Context {Z : Type} `{!VSTGS Z Σ} {ext_spec0 : ext_spec Z}.
+Context {Z : Type} `{!VSTGS Z Σ} {ext_spec0 : Jext_spec Σ}.
 
 Lemma semax_ext' (ext_link: Strings.String.string -> ident) id sig cc A E P Q (fs : funspecs) :
   let f := mk_funspec sig cc A E P Q in
@@ -320,10 +301,10 @@ Proof.
 intros f Hin Hnorepeat.
 unfold semax_external.
 iIntros (ge ????) "!> !> (%Hargsty & Hp & Hf)".
-iIntros "!>" (??) "Hs".
-iDestruct (add_funspecs_prepost _ _ _ _ (genv_symb_injective ge) with "[$Hp $Hs]") as (x' ?) "Hpost"; [done..|].
-iExists x'; iFrame; iSplit; first done.
-iIntros (?????); iMod ("Hpost" with "[%]") as "$"; done.
+iIntros "!>" (??) "$".
+iDestruct (add_funspecs_prepost _ _ _ _ (genv_symb_injective ge) with "[$Hp]") as (x') "($ & Hpost)"; [done..|].
+iIntros (????); iMod ("Hpost" $! _ _) as "Hpost".
+iIntros "!> $ H"; iSpecialize ("Hpost" with "H"); iFrame.
 Qed.
 
 Lemma semax_ext (ext_link: Strings.String.string -> ident) id sig sig' cc A E P Q (fs : funspecs) :

@@ -37,7 +37,7 @@ Qed.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ}.
 
 Lemma _guard_mono: forall ge E Delta f (P Q: assert) k,
   (P ⊢ Q) ->

@@ -38,12 +38,12 @@ Import CSHL_Def.
 Import CSHL_Defs.
 
 Axiom semax_prog_sound :
-  forall `{H : !VSTGS OK_ty Σ}{OK_spec: ext_spec OK_ty}{CS: compspecs} prog z Vspec Gspec,
+  forall `{H : !VSTGS OK_ty Σ}{OK_spec : Jext_spec Σ}{CS: compspecs} prog z Vspec Gspec,
   semax_prog prog z Vspec Gspec ->
   semax_prog.semax_prog OK_spec prog z Vspec Gspec.
 
 Axiom semax_prog_rule :
-  forall `{H : !VSTGS OK_ty Σ}{OK_spec: ext_spec OK_ty}{CS: compspecs},
+  forall `{H : !VSTGS OK_ty Σ}{OK_spec : Jext_spec Σ}{CS: compspecs},
   forall V G prog m h z,
      postcondition_allows_exit OK_spec tint ->
      semax_prog prog z V G ->
@@ -85,7 +85,7 @@ Module VericMinimumSeparationLogic: MINIMUM_CLIGHT_SEPARATION_HOARE_LOGIC with M
 Module CSHL_Def := VericDef.
 Module CSHL_Defs := DerivedDefs (VericDef).
 
-Lemma semax_mask_mono : forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS : compspecs} E E' Delta P c R,
+Lemma semax_mask_mono : forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS : compspecs} E E' Delta P c R,
   E ⊆ E' -> semax OK_spec E Delta P c R -> semax OK_spec E' Delta P c R.
 Proof.
   intros; rewrite /semax -semax_mask_mono //.
@@ -100,7 +100,7 @@ Definition semax_func_cons := @semax_func_cons.
 Definition make_ext_rval := veric.semax.make_ext_rval.
 Definition tc_option_val := veric.semax.tc_option_val.
 
-Lemma semax_func_cons_ext: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} (V: varspecs) (G: funspecs)
+Lemma semax_func_cons_ext: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (V: varspecs) (G: funspecs)
      {C: compspecs} ge fs id ef argsig retsig A E P (Q: dtfr (AssertTT A)) argsig'
       (G': funspecs) cc b,
   argsig' = typelist2list argsig ->
@@ -123,7 +123,7 @@ Definition semax_Delta_subsumption := @semax_lemmas.semax_Delta_subsumption.
 
 Definition semax_external_binaryintersection := @semax_external_binaryintersection.
 
-Lemma semax_external_funspec_sub: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty}
+Lemma semax_external_funspec_sub: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ}
   {argtypes rtype cc ef A1 E1 P1 Q1 A E P Q}
   (Hsub: funspec_sub (mk_funspec (argtypes, rtype) cc A1 E1 P1 Q1)
                    (mk_funspec (argtypes, rtype) cc A E P Q))
@@ -182,7 +182,7 @@ Definition semax_ifthenelse := @semax_ifthenelse.
 Definition semax_return := @semax_return.
 
 (* Why are the implicits so inconsistent here? *)
-Lemma semax_call `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS : compspecs}:
+Lemma semax_call `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS : compspecs}:
   forall E Delta A
   (Ef : dtfr (MaskTT A))
   (P : dtfr (ArgsTT A))
@@ -205,7 +205,7 @@ Proof.
   intros; rewrite bi.and_elim_r; apply bi.and_mono; [apply bi.later_intro | done].
 Qed.
 
-Lemma semax_store: forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS : compspecs}
+Lemma semax_store: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS : compspecs}
          E (Delta : tycontext) (e1 e2 : expr) (sh : share)
          (P : assert),
        writable_share sh ->
@@ -237,7 +237,7 @@ Module CSHL_Def := VericDef.
 Module CSHL_Defs := DerivedDefs (VericDef).
 
 Lemma semax_prog_sound :
-  forall `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS : compspecs} prog z Vspec Gspec,
+  forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS : compspecs} prog z Vspec Gspec,
   CSHL_Defs.semax_prog prog z Vspec Gspec ->
   semax_prog.semax_prog OK_spec prog z Vspec Gspec.
 Proof.

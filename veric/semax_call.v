@@ -29,7 +29,7 @@ Proof. induction l; simpl; trivial. f_equal; trivial . Qed.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Lemma typecheck_expr_sound' :
   forall {CS'} Delta rho e,
@@ -606,18 +606,20 @@ iMod ("He" $! psi x1 (F0 rho ∗ F1 rho) (typlist_of_typelist tys) args with "[F
 iMod "Hmask" as "_".
 clear TC8. simpl fst in *. simpl snd in *.
 rewrite /jsafeN jsafe_unfold /jsafe_pre.
-iIntros "!> !>" (?) "s"; iDestruct ("He1" with "s") as (x') "(%pre & post)".
+iIntros "!> !>" (?) "s"; iDestruct ("He1" with "s") as (x') "(? & pre & post)".
 destruct Hinline as [Hinline | ?]; last done.
 iRight; iRight; iExists e, _, _; iSplit.
 { iPureIntro; simpl.
-  rewrite Hinline Eef TTL3 //. }
-rewrite Eef.
+  rewrite Hinline //. }
+rewrite Eef TTL3; iFrame.
 iDestruct "rguard" as "#rguard".
 iNext.
-iIntros (??? [??]) "?".
+iIntros (??? [??]).
 iMod (fupd_mask_subseteq (nE x1)) as "Hmask"; first done.
-iMod ("post" with "[$]") as "(? & Q & F0 & F)".
-iMod "Hmask" as "_".
+iMod ("post" $! _ _ _ _) as "post".
+iMod "Hmask" as "_"; iIntros "!> S H".
+iExists _; iSplit; first done.
+iDestruct ("post" with "S H") as "($ & Q & F0 & F)".
 iDestruct ("Htc" with "[Q]") as %Htc; first by iFrame.
 pose (tx' := match ret,ret0 with
                    | Some id, Some v => Maps.PTree.set id v tx
@@ -653,7 +655,6 @@ iPoseProof ("HR" $! rho' with "[Q F]") as "R".
     iExists v; iSplit; first by iPureIntro; apply tc_val_tc_val'; destruct t0.
     rewrite /make_ext_rval /env_set /=.
     destruct t0; try destruct i, s; try destruct f; try (specialize (TC5 eq_refl)); iFrame; first done; destruct v; contradiction. }
-iIntros "!>"; iExists _; iSplit; first done; iFrame.
 assert (tx' = set_opttemp ret (force_val ret0) tx) as Htx'.
 { subst tx'.
   clear - Htc TCret TC5. hnf in Htc, TCret.

@@ -804,7 +804,7 @@ Fixpoint force_list {A} (al: list (option A)) : option (list A) :=
  end.
 
 Lemma make_func_ptr:
- forall `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} id (CS: compspecs) E Delta P Q R fs gv p c Post,
+ forall `{!VSTGS OK_ty Σ} {OK_spec: Jext_spec Σ} id (CS: compspecs) E Delta P Q R fs gv p c Post,
    (var_types Delta) !! id = None ->
    (glob_specs Delta) !! id = Some fs ->
    (glob_types Delta) !! id = Some (type_of_funspec fs) ->

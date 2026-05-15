@@ -2304,7 +2304,7 @@ Ltac absurd_ext_link_naming :=
   end.
 
 Ltac funspec_destruct s :=
-  simpl (extspec.ext_spec_pre _); simpl (extspec.ext_spec_type _); simpl (extspec.ext_spec_post _);
+  simpl (Jext_spec_pre); simpl (Jext_spec_type); simpl (Jext_spec_post);
   unfold funspec2pre, funspec2post;
   let Heq_name := fresh "Heq_name" in
   destruct (oi_eq_dec (Some (_ s, _)) (ef_id_sig _ (EF_external _ _)))
@@ -2360,7 +2360,7 @@ Section Safety.
     Concurrent_Espec unit CS ext_link. *)
 
   Lemma CEspec_cases : forall `{!VSTGS unit Σ, lockGS Σ} e
-    (x : ext_spec_type (concurrent_ext_spec CS ext_link) e),
+    (x : Jext_spec_type (concurrent_ext_spec CS ext_link) e),
     e = LOCK \/ e = UNLOCK \/ e = MKLOCK \/ e = FREE_LOCK \/ e = CREATE.
   Proof.
     intros.
@@ -2384,71 +2384,71 @@ Section Safety.
     inversion Heq as [Heq0 Heq']; apply inj_pair2 in Heq'; subst; auto.
 
   Lemma CEspec_acquire_pre : forall `{!VSTGS unit Σ, lockGS Σ} x args z m,
-    ext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args z m <->
-    match acquire_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' _ A P x'' (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args z m end.
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args z m <->
+    match acquire_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_acquire_post : forall `{!VSTGS unit Σ, lockGS Σ} x ret z m,
-    ext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret z m <->
-    match acquire_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' _ A Q x'' (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret z m end.
+    Jext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret z m <->
+    match acquire_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_release_pre : forall `{!VSTGS unit Σ, lockGS Σ} x args z m,
-    ext_spec_pre (concurrent_ext_spec CS ext_link) UNLOCK x (genv_symb_injective ge) (sig_args (ef_sig UNLOCK)) args z m <->
-    match release_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' _ A P x'' (genv_symb_injective ge) (sig_args (ef_sig UNLOCK)) args z m end.
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) UNLOCK x (genv_symb_injective ge) (sig_args (ef_sig UNLOCK)) args z m <->
+    match release_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig UNLOCK)) args z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_release_post : forall `{!VSTGS unit Σ, lockGS Σ} x ret z m,
-    ext_spec_post (concurrent_ext_spec CS ext_link) UNLOCK x (genv_symb_injective ge) (sig_res (ef_sig UNLOCK)) ret z m <->
-    match release_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' _ A Q x'' (genv_symb_injective ge) (sig_res (ef_sig UNLOCK)) ret z m end.
+    Jext_spec_post (concurrent_ext_spec CS ext_link) UNLOCK x (genv_symb_injective ge) (sig_res (ef_sig UNLOCK)) ret z m <->
+    match release_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig UNLOCK)) ret z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_makelock_pre : forall `{!VSTGS unit Σ, lockGS Σ} x args z m,
-    ext_spec_pre (concurrent_ext_spec CS ext_link) MKLOCK x (genv_symb_injective ge) (sig_args (ef_sig MKLOCK)) args z m <->
-    match makelock_spec CS with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' _ A P x'' (genv_symb_injective ge) (sig_args (ef_sig MKLOCK)) args z m end.
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) MKLOCK x (genv_symb_injective ge) (sig_args (ef_sig MKLOCK)) args z m <->
+    match makelock_spec CS with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig MKLOCK)) args z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_makelock_post : forall `{!VSTGS unit Σ, lockGS Σ} x ret z m,
-    ext_spec_post (concurrent_ext_spec CS ext_link) MKLOCK x (genv_symb_injective ge) (sig_res (ef_sig MKLOCK)) ret z m <->
-    match makelock_spec CS with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' _ A Q x'' (genv_symb_injective ge) (sig_res (ef_sig MKLOCK)) ret z m end.
+    Jext_spec_post (concurrent_ext_spec CS ext_link) MKLOCK x (genv_symb_injective ge) (sig_res (ef_sig MKLOCK)) ret z m <->
+    match makelock_spec CS with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig MKLOCK)) ret z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_freelock_pre : forall `{!VSTGS unit Σ, lockGS Σ} x args z m,
-    ext_spec_pre (concurrent_ext_spec CS ext_link) FREE_LOCK x (genv_symb_injective ge) (sig_args (ef_sig FREE_LOCK)) args z m <->
-    match freelock_spec CS with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' _ A P x'' (genv_symb_injective ge) (sig_args (ef_sig FREE_LOCK)) args z m end.
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) FREE_LOCK x (genv_symb_injective ge) (sig_args (ef_sig FREE_LOCK)) args z m <->
+    match freelock_spec CS with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig FREE_LOCK)) args z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_freelock_post : forall `{!VSTGS unit Σ, lockGS Σ} x ret z m,
-    ext_spec_post (concurrent_ext_spec CS ext_link) FREE_LOCK x (genv_symb_injective ge) (sig_res (ef_sig FREE_LOCK)) ret z m <->
-    match freelock_spec CS with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' _ A Q x'' (genv_symb_injective ge) (sig_res (ef_sig FREE_LOCK)) ret z m end.
+    Jext_spec_post (concurrent_ext_spec CS ext_link) FREE_LOCK x (genv_symb_injective ge) (sig_res (ef_sig FREE_LOCK)) ret z m <->
+    match freelock_spec CS with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig FREE_LOCK)) ret z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_spawn_pre : forall `{!VSTGS unit Σ, lockGS Σ} x args z m,
-    ext_spec_pre (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge) (sig_args (ef_sig CREATE)) args z m <->
-    match spawn_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' _ A P x'' (genv_symb_injective ge) (sig_args (ef_sig CREATE)) args z m end.
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge) (sig_args (ef_sig CREATE)) args z m <->
+    match spawn_spec with mk_funspec _ _ A _ P _ => exists x'', JMeq.JMeq x x'' /\ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig CREATE)) args z m end.
   Proof.
     solve_spec x.
   Qed.
 
   Lemma CEspec_spawn_post : forall `{!VSTGS unit Σ, lockGS Σ} x ret z m,
-    ext_spec_post (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge) (sig_res (ef_sig CREATE)) ret z m <->
-    match spawn_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' _ A Q x'' (genv_symb_injective ge) (sig_res (ef_sig CREATE)) ret z m end.
+    Jext_spec_post (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge) (sig_res (ef_sig CREATE)) ret z m <->
+    match spawn_spec with mk_funspec _ _ A _ _ Q => exists x'', JMeq.JMeq x x'' /\ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig CREATE)) ret z m end.
   Proof.
     solve_spec x.
   Qed.
@@ -2457,7 +2457,7 @@ Section Safety.
     semax_prog_rule (concurrent_ext_spec CS ext_link) V G prog
       (proj1_sig init_mem) 0 tt _ (all_safe HH HL) (proj2_sig init_mem).
   Next Obligation.
-  Proof. intros ??????; apply I. Qed.
+  Proof. intros; iIntros (??); done. Qed.
 
   Instance Sem : Semantics := ClightSemanticsForMachines.ClightSem (Clight.globalenv CPROOF.(CSL_prog)).
 
@@ -2492,11 +2492,11 @@ Section Safety.
     (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
     coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
       |={E}=> ∀ m, ⌜mem_equiv.access_map_equiv (getCurPerm m) p ⌝ → thread_state_interp(*'*) g m z -∗
-        (∃ i, ⌜halted (cl_core_sem ge) c i ∧ ext_spec_exit (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) (Some (Vint i)) z m⌝) ∨
+        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ thread_state_interp g m z ∗ Jext_spec_exit (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) (Some (Vint i))) ∨
         (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ thread_state_interp(*'*) g m' z (* ?? *) ∗ ▷ jsafe E z c' (getCurPerm m')) ∨
-        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args) ∧ ext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args z m⌝ ∧
+        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ thread_state_interp g m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
-            ⌜ext_spec_post (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret z' m'⌝ → |={E}=>
+            |={E}=> thread_state_interp g m' z' -∗ Jext_spec_post (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
                 ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ thread_state_interp(*'*) g m' z' ∗ jsafe E z' c' (getCurPerm m'))).
 
   Local Instance jsafe_perm_pre_contractive g : Contractive (jsafe_perm_pre g).
@@ -2504,7 +2504,7 @@ Section Safety.
     rewrite /jsafe_perm_pre => n jsafe jsafe' Hsafe E z c [??].
     do 14 f_equiv.
     - try f_contractive; repeat f_equiv. apply Hsafe.
-    - try f_contractive; repeat f_equiv. apply Hsafe.
+    - do 2 f_equiv. try f_contractive; repeat f_equiv. apply Hsafe.
   Qed.
 
   Local Definition jsafe_perm_def g : coPset -> unit -> CC_core -> _ -> iProp Σ := fixpoint (jsafe_perm_pre g).
@@ -2753,10 +2753,11 @@ Section Safety.
       iFrame.
       by iApply "IH".
     - iRight; iRight.
-      iDestruct "H" as (??? (? & ?)) "H".
-      iExists _, _, _; iSplit; first done.
-      iIntros "!>" (?????).
-      iMod ("H" with "[%] [%]") as (?) "($ & $ & Hsafe)"; [done..|].
+      iDestruct "H" as (????) "($ & $ & H)".
+      iSplit; first done.
+      iIntros "!>" (????).
+      iMod ("H" with "[//]") as "H".
+      iIntros "!> S Hpost"; iDestruct ("H" with "S Hpost") as (?) "($ & $ & Hsafe)".
       by iApply "IH".
   Qed.
 
@@ -3236,8 +3237,8 @@ Definition other_threads_safe tp (perms : gmap nat (gname * access_map)) i:=
     ∀ (ret : option val) (m' : mem) z',
       ⌜Val.has_type_list args (sig_args (ef_sig LOCK)) ∧
         Builtins0.val_opt_has_rettype ret (sig_res sig)⌝ →
-      ⌜ext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res sig) ret z' m'⌝ →
-      |={⊤}=> ∃ c' : CC_core,
+      thread_state_interp g m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_res sig) ret -∗
+      ∃ c' : CC_core,
     ⌜after_external (cl_core_sem ge) ret (Callstate c args k) m' = Some c'⌝ ∧
       thread_state_interp g m' z' ∗ jsafe_perm g ⊤ z' c' (getCurPerm m').
 
@@ -3984,7 +3985,7 @@ If maxp has None there:
     (Hpi : perms !! (0 + i) = Some (g, (OrdinalPool.getThreadR cnti).1))
     (* (Hmax : permMapLt p (getMaxPerm m)) *)
     (Hp : permMapLt (OrdinalPool.getThreadR cnti).1 (getMaxPerm m))
-    x (Hpre : ext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args () (restrPermMap Hp)) :
+    x (*(Hpre : ext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args () (restrPermMap Hp))*) :
     ⊢ other_threads_safe (* (getMaxPerm m) *) tp perms i -∗
       ▷ post_safe g (ef_sig LOCK) x (Ctypes.External LOCK argsty retty cc) args k -∗
       (* lock_set ls -∗ *)

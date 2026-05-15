@@ -72,7 +72,7 @@ Qed.
 
 Section SemaxContext.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ}.
 
 Lemma guard_environ_put_te':
  forall ge te ve Delta id v k,

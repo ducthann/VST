@@ -1260,7 +1260,7 @@ Global Open Scope funspec_scope.
 Notation "'DECLARE' x s" := (x: ident, s: funspec)
    (at level 160, x at level 0, s at level 150, only parsing).
 
-Definition NDsemax_external `{!VSTGS OK_ty Σ} {OK_spec: ext_spec OK_ty} (ef: external_function)
+Definition NDsemax_external `{!VSTGS OK_ty Σ} {OK_spec: Jext_spec Σ} (ef: external_function)
   (A: Type) E (P:A -> argsassert) (Q: A -> assert): Prop :=
   ⊢ semax_external ef (ConstType A) E (λne (x : leibnizO A), P x : _ -d> mpred) (λne (x : leibnizO A), Q x : _ -d> mpred).
 

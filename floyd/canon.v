@@ -457,7 +457,7 @@ End mpred.
 
 Section VST.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec: Jext_spec Σ} {CS: compspecs}.
 
 Lemma extract_exists_pre_later:
   forall  (A : Type) (Q: assert) (P : A -> assert) c E Delta (R: ret_assert),

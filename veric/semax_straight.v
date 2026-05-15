@@ -29,7 +29,7 @@ Import LiftNotation.
 Transparent intsize_eq.
 
 Section extensions.
-  Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+  Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Lemma semax_straight_simple:
  forall E Delta (B P: assert) c (Q: assert)

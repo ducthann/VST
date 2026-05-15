@@ -20,7 +20,7 @@ Require Import VST.veric.Clight_lemmas.
 
 Section mpred.
 
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ}.
 
 Lemma closed_wrt_modvars_switch:
   forall a sl n F,

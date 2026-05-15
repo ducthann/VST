@@ -22,7 +22,7 @@ Require Import VST.veric.Clight_lemmas.
 Local Open Scope nat_scope.
 
 Section extensions.
-Context `{!VSTGS OK_ty Σ} {OK_spec : ext_spec OK_ty} {CS: compspecs}.
+Context `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} {CS: compspecs}.
 
 Local Arguments typecheck_expr : simpl never.
 

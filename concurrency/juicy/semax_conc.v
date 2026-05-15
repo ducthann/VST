@@ -425,10 +425,10 @@ Definition concurrent_simple_specs (cs : compspecs) (ext_link : string -> ident)
   (ext_link "release"%string, release_spec) ::
   nil.
 
-#[local] Instance concurrent_simple_ext_spec (cs : compspecs) (ext_link : string -> ident) : ext_spec OK_ty :=
+#[local] Instance concurrent_simple_ext_spec (cs : compspecs) (ext_link : string -> ident) : Jext_spec Σ :=
   add_funspecs_rec OK_ty
     ext_link
-    (void_spec OK_ty)
+    (void_spec Σ)
     (concurrent_simple_specs cs ext_link).
 
 Lemma strong_nat_ind (P : nat -> Prop) (IH : forall n, (forall i, lt i n -> P i) -> P n) n : P n.
@@ -444,10 +444,10 @@ Definition concurrent_specs (cs : compspecs) (ext_link : string -> ident) :=
   (ext_link "spawn"%string, spawn_spec) ::
   nil.
 
-#[export] Instance concurrent_ext_spec (cs : compspecs) (ext_link : string -> ident) : ext_spec OK_ty :=
+#[export] Instance concurrent_ext_spec (cs : compspecs) (ext_link : string -> ident) : Jext_spec Σ :=
   add_funspecs_rec OK_ty
     ext_link
-    (void_spec OK_ty)
+    (void_spec Σ)
     (concurrent_specs cs ext_link).
 
 End mpred.
