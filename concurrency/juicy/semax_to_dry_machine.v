@@ -2304,23 +2304,39 @@ Proof.
   iApply "H". iSplit; done.
 Qed.
 
+Definition lock_state `{!conc_heapGS Σ} `{lockGS Σ} γ m ls := lock_state(heapGS0 := HeapGS _ _ (thread_gen_heapGS γ) _) m ls.
+
+Lemma locks_init `{!inG Σ (gmap_view.gmap_viewR address (laterO (iPropO Σ)))} m :
+  ⊢ |==> ∃ γ, ∀ (_ : conc_heapGS Σ) γh, let lG := LockGS Σ _ γ in lock_state γh m ∅.
+Proof.
+  unfold lock_state, semax_conc_pred.lock_state.
+  iMod (own_alloc(i := inG0)) as (γ) "H".
+  { apply gmap_view.gmap_view_auth_valid. }
+  iModIntro; iExists γ; iIntros.
+  iExists ∅; iSplit => //=.
+  rewrite fmap_empty.
+  iSplitL => //.
+Qed.  
+
 Lemma init_conc_VST: forall Z `{!VSTGpreS Z Σ} `{!inG Σ (gmap_view.gmap_viewR address (laterO (iPropO Σ)))} m (z : Z),
-  ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ HH : conc_gen_heapGS Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ, ∃ _ : lockGS Σ, ∃ γ0,
+  ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ HH : conc_gen_heapGS Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ, ∃ HL : lockGS Σ, ∃ γ0 γl γm,
     let H : conc_VSTGS Z Σ := ConcVSTGS _ _ (ConcHeapGS _ _ _ _) _ _ in
     (thread_state_interp γ0 Mem.empty z ∗ funspec_auth ∅ ∗ has_ext z) ∗
     ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta(gen_heapGpreS := conc_gen_heap_inG)) (@conc_gen_meta_name _ HH) 1 ∅ ∗
-    lock_state m ∅.
+    lock_state γl m ∅ ∗ thread_mem_auth γl Mem.empty ∗
+    ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta(gen_heapGpreS := conc_gen_heap_inG)) γm 1 ∅.
 Proof.
   intros; iIntros.
   iMod gen_heap_init_names_empty as (??) "(? & ?)".
   iMod (own_alloc(A := gmap_view.gmap_viewR address (@funspecO' Σ)) (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) ∅)) as (γf) "?".
   { apply gmap_view.gmap_view_auth_valid. }
   iMod (ext_alloc z) as (?) "(? & ?)".
-  iMod locks_init as (?) "?".
-  iIntros "!>" (?); iExists (ConcGenHeapGS _ _ γm), (FunspecG _ _ γf), _.
+  iMod gen_heap_init_names_empty as (γl ?) "(? & ?)".
+  iMod (locks_init) as (?) "HL".
+  iIntros "!>" (?).
+  iExists (ConcGenHeapGS _ _ γm), (FunspecG _ _ γf), _, _, γh, γl, γm0.
   iFrame.
-  iSplit => //; iPureIntro.
-  apply empty_coherent.
+  pose proof (empty_coherent Mem.empty); repeat iSplit => //.
 Qed.
 (* end concurrency setup *)
 
@@ -4121,9 +4137,38 @@ Qed.
     discriminate.
 Qed.
  
+(* It's vitally important that these lemmas use conc_VSTGS, not VSTGS, so that we're not assuming
+   invariants belong to a specific thread. *)
+Lemma lock_inv_acquire `{!conc_VSTGS unit Σ} m ls sh b o R : Mem_load_unchecked Mptr m b (Ptrofs.unsigned o) = Vptrofs (Ptrofs.one) →
+  juicy_mem.mem_auth m -∗ lock_state m ls -∗ lock_inv sh (Vptr b o) R ==∗
+  let m' := Mem_store_unchecked Mptr m b (Ptrofs.unsigned o) (Vptrofs (Ptrofs.zero)) in
+  ∃ p (Hp : permMapLt p (getMaxPerm m')), let m'' := restrPermMap Hp in
+  juicy_mem.mem_auth m'' ∗ lock_state m'' ls ∗ lock_inv sh (Vptr b o) R ∗ ▷R.
+Proof.
+  intros; rewrite /lock_state /lock_inv.
+  iIntros "Hm (% & <- & HI & HRs) (% & % & Hl & Hi)"; simpl in *; subst.
+  iDestruct (own_valid_2 with "HI Hi") as "#Heq".
+  rewrite gmap_view_both_validI bi.and_elim_r lookup_fmap option_equivI.
+  destruct (I !! _) as [Q|] eqn: HI; simpl; last by eauto.
+  rewrite later_equivI.
+  rewrite big_sepM_delete //; iDestruct "HRs" as "([HR | %Hload] & HRs)".
+  2: { rewrite H in Hload; inv Hload. }
+  iDestruct "HR" as "(_ & HR)".
+  (* Right now, we're assuming that R *)
+  iRewrite - "Heq".
+  iFrame.
+  rewrite /invariant_unfold.
+  iIntros "?". iExists Q; iSplit; first done.
+  by rewrite later_equivI.
+
+  Locate invariant_lookup.
+  Search gmap_view_frag gmap_view_auth.gmap_view_both_valid
+  rewrite /LKspec.
+
+
    
  (* these lemmas could be split off again into semax_acquire_safety, etc. *)
- Lemma acquire_safe `{!VSTGS unit Σ} g tp m ls perms i 
+ Lemma acquire_safe `{!conc_VSTGS unit Σ} g tp m ls perms i 
     (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
     (Hcompat : (*HybridMachineSig.*)mem_compatible tp m)
     (Hlocks : locks_coherent tp m ls) (Hperms : ∀ (i : nat) (r : access_map),

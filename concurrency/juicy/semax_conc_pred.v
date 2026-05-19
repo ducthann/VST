@@ -1,8 +1,43 @@
 Require Import VST.veric.SeparationLogic.
 Require Import VST.concurrency.common.lksize.
+Require Import VST.concurrency.common.permissions.
 (*From iris_ora.logic Require Import cancelable_invariants.*)
 From iris_ora.algebra Require Import gmap_view.
 
+(* up *)
+Definition Mem_load_unchecked (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) :=
+    decode_val chunk (Mem.getN (size_chunk_nat chunk) ofs (PMap.get b (Mem.mem_contents m))).
+
+    Definition Mem_store_unchecked_contents
+      (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) (v : val) :=
+      PMap.set b
+        (Mem.setN
+           (encode_val chunk v)
+           ofs
+           (PMap.get b (Mem.mem_contents m)))
+        (Mem.mem_contents m).
+
+    Program Definition Mem_store_unchecked
+      (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) (v : val) :=
+        Mem.mkmem
+           (Mem_store_unchecked_contents chunk m b ofs v)
+           (Mem.mem_access m)
+           (Mem.nextblock m)
+           _
+           _
+           _.
+    Next Obligation. intros; apply Mem.access_max. Qed.
+    Next Obligation. by intros; apply Mem.nextblock_noaccess. Qed.
+    Next Obligation.
+      intros; unfold Mem_store_unchecked_contents.
+      destruct (Coqlib.peq b0 b); subst.
+      - rewrite PMap.gss.
+        rewrite Mem.setN_default.
+        by rewrite Mem.contents_default.
+      - rewrite PMap.gso; auto.
+        by rewrite Mem.contents_default.
+    Qed.
+   
 Section mpred.
 
 Context `{!heapGS Σ}.
@@ -125,28 +160,17 @@ Class lockGS Σ := LockGS
 
 Context `{!lockGS Σ}.
 
-Definition lock_inv sh v R : mpred := ∃ l, <affine> ⌜val2adr v l⌝ ∗
+Definition lock_inv sh v (R : mpred) : mpred := ∃ l, <affine> ⌜val2adr v l⌝ ∗
   LKspec LKSIZE sh l ∗ own lockGS_gname (gmap_view_frag l DfracDiscarded (invariant_unfold R)).
 
-Definition rec_inv sh v (Q R: mpred): mpred := (R ∗-∗ Q ∗ ▷ lock_inv sh v R)%I.
+Definition rec_inv sh v (Q R: mpred) : mpred := (R ∗-∗ Q ∗ ▷ lock_inv sh v R)%I.
 
 #[global] Instance lock_inv_nonexpansive sh v : NonExpansive (lock_inv sh v).
 Proof. solve_proper. Qed.
 
-Definition Mem_load_unchecked (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) :=
-    Some (decode_val chunk (Mem.getN (size_chunk_nat chunk) ofs (PMap.get b (Mem.mem_contents m)))).
-
-Definition lock_state (m : mem) ls := ∃ I, <affine> ⌜dom I = ls⌝ ∗
+Definition lock_state (m : mem) ls : mpred := ∃ I : gmap address mpred, <affine> ⌜dom I = ls⌝ ∗
   own lockGS_gname (gmap_view_auth (DfracOwn 1) (invariant_unfold <$> I)) ∗
-  [∗ map] l ↦ R ∈ I, (<affine> ⌜Mem.load Mptr m l.1 l.2 = Some (Vptrofs (Ptrofs.one))⌝ ∗ R) ∨
-                       (<affine> ⌜Mem.load Mptr m l.1 l.2 = Some (Vptrofs (Ptrofs.zero))⌝).
+  [∗ map] l ↦ R ∈ I, (<affine> ⌜Mem_load_unchecked Mptr m l.1 l.2 = Vptrofs (Ptrofs.one)⌝ ∗ ▷R) ∨
+                       (<affine> ⌜Mem_load_unchecked Mptr m l.1 l.2 = Vptrofs (Ptrofs.zero)⌝).
 
 End mpred.
-
-Lemma locks_init `{!inG Σ (gmap_viewR address (laterO (iPropO Σ)))} m :
-  ⊢ |==> ∃ γ, let lG := LockGS Σ _ γ in lock_state m ∅.
-Proof.
-  iMod (own_alloc(i := inG0)) as (γ) "$".
-  { apply gmap_view_auth_valid. }
-  instantiate (1 := ∅); auto.
-Qed.  
