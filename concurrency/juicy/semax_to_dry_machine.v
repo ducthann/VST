@@ -4040,7 +4040,7 @@ If maxp has None there:
      apply Hwf.
  Qed.
 
- Lemma lock_inv_in_lock_state `{!heapGS Σ, !lockGS Σ} m ls sh l (R : iProp Σ) :
+(* Lemma lock_inv_in_lock_state `{!heapGS Σ, !lockGS Σ} m ls sh l (R : iProp Σ) :
    lock_state m ls -∗ lock_inv sh l R -∗
     ⌜∃ l_addr, val2adr l l_addr ∧ l_addr ∈ ls⌝.
  Proof.
@@ -4135,40 +4135,239 @@ Qed.
   - specialize (Hl l H).
     rewrite H0 in Hl.
     discriminate.
-Qed.
+Qed. *)
  
 (* It's vitally important that these lemmas use conc_VSTGS, not VSTGS, so that we're not assuming
    invariants belong to a specific thread. *)
-Lemma lock_inv_acquire `{!conc_VSTGS unit Σ} m ls sh b o R : Mem_load_unchecked Mptr m b (Ptrofs.unsigned o) = Vptrofs (Ptrofs.one) →
-  juicy_mem.mem_auth m -∗ lock_state m ls -∗ lock_inv sh (Vptr b o) R ==∗
-  let m' := Mem_store_unchecked Mptr m b (Ptrofs.unsigned o) (Vptrofs (Ptrofs.zero)) in
-  ∃ p (Hp : permMapLt p (getMaxPerm m')), let m'' := restrPermMap Hp in
-  juicy_mem.mem_auth m'' ∗ lock_state m'' ls ∗ lock_inv sh (Vptr b o) R ∗ ▷R.
-Proof.
-  intros; rewrite /lock_state /lock_inv.
-  iIntros "Hm (% & <- & HI & HRs) (% & % & Hl & Hi)"; simpl in *; subst.
-  iDestruct (own_valid_2 with "HI Hi") as "#Heq".
-  rewrite gmap_view_both_validI bi.and_elim_r lookup_fmap option_equivI.
-  destruct (I !! _) as [Q|] eqn: HI; simpl; last by eauto.
-  rewrite later_equivI.
-  rewrite big_sepM_delete //; iDestruct "HRs" as "([HR | %Hload] & HRs)".
-  2: { rewrite H in Hload; inv Hload. }
-  iDestruct "HR" as "(_ & HR)".
-  (* Right now, we're assuming that R *)
-  iRewrite - "Heq".
-  iFrame.
-  rewrite /invariant_unfold.
-  iIntros "?". iExists Q; iSplit; first done.
-  by rewrite later_equivI.
+ Check lock_state.
+ Locate Mem_store_unchecked.
+ Locate Mem_load_unchecked.
 
-  Locate invariant_lookup.
-  Search gmap_view_frag gmap_view_auth.gmap_view_both_valid
-  rewrite /LKspec.
+ Check semax_conc_pred.Mem_load_unchecked.
 
+ Lemma Mem_storebytes_unchecked
+   chunk m b ofs v :
+   Mem.range_perm m b ofs
+     (ofs + Z.of_nat (length (encode_val chunk v))) Cur Writable ->
+   Mem.storebytes m b ofs (encode_val chunk v) =
+     Some (semax_conc_pred.Mem_store_unchecked chunk m b ofs v).
+ Proof.
+   intros Hperm.
+   unfold Mem.storebytes.
+   destruct (Mem.range_perm_dec
+               m b ofs
+               (ofs + Z.of_nat (length (encode_val chunk v)))
+               Cur Writable) as [_ | Hbad].
+   - unfold semax_conc_pred.Mem_store_unchecked.
+     unfold semax_conc_pred.Mem_store_unchecked_contents.
+     f_equal.
+     repeat f_equal; apply proof_irrelevance.
+   - contradiction.
+ Qed.
+ 
+Ltac get_lk n dq rsh Hvalid Hincl Hlk :=
+  let Hseq := fresh "Hseq" in
+  assert (Hseq : seq 0 (Z.to_nat LKSIZE) !! n = Some n) by
+    (vm_compute; reflexivity);
+  iDestruct (big_sepL_lookup_acc with "HLK") as "[HLKi Hclose]";
+  first exact Hseq;
+  iDestruct (mapsto_lookup with "Hm HLKi")
+    as %(dq & rsh & Hvalid & Hincl & Hlk);
+  iDestruct ("Hclose" with "HLKi") as "HLK".
+
+Ltac norm_adr_add :=
+  repeat match goal with
+    | H : context[adr_add (?b, ?o) ?n] |- _ =>
+        replace (adr_add (b, o) n) with (b, (o + Z.of_nat n)%Z) in H
+          by (unfold adr_add; simpl; f_equal; lia)
+    end.
+
+Ltac solve_LK_VAL_contra :=
+  norm_adr_add;
+  match goal with
+  | Hval : (resR_to_resource (?σ !! _)).2 = Some (VAL _) |- False =>
+      erewrite resR_to_resource_eq in Hval; eauto;
+      rewrite /= elem_of_to_agree in Hval;
+      inversion Hval
+  end.
+
+ Lemma mem_auth_store_unchecked_lock_zero `{!conc_VSTGS unit Σ} `{!heapGS Σ}
+   (m : mem) (sh : share) (b : Values.block) o v:
+   mem_auth m -∗ LKspec LKSIZE sh (b, o) ==∗
+   mem_auth (semax_conc_pred.Mem_store_unchecked Mptr m b o v) ∗
+   LKspec LKSIZE sh (b, o).
+ Proof.
+   iIntros "(%σ & %Hcoh & Hm) HLK".
+     iDestruct (VST.shared.resource_map.resource_map_auth_valid with "Hm") as %(_ & Hvalid).
+   rewrite /LKspec /=.
+   get_lk 0%nat dq0 rsh0 Hvalid0 Hincl0 Hlk0.
+   get_lk 1%nat dq1 rsh1 Hvalid1 Hincl1 Hlk1.
+   get_lk 2%nat dq2 rsh2 Hvalid2 Hincl2 Hlk2.
+   get_lk 3%nat dq3 rsh3 Hvalid3 Hincl3 Hlk3.
+   get_lk 4%nat dq4 rsh4 Hvalid4 Hincl4 Hlk4.
+   get_lk 5%nat dq5 rsh5 Hvalid5 Hincl5 Hlk5.
+   get_lk 6%nat dq6 rsh6 Hvalid6 Hincl6 Hlk6.
+   get_lk 7%nat dq7 rsh7 Hvalid7 Hincl7 Hlk7.
+   iSplitL "Hm".
+   {
+     rewrite /mem_auth.
+     iExists σ.
+     iFrame "Hm".
+     iPureIntro; split; last done.
+     unfold coherent, resource_at in *.
+     intro loc.
+     destruct (Hcoh loc) as (Hnext & Hcontents & Haccess).
+     split3; try done.
+     unfold contents_cohere, contents_at in *.
+     intros mv Hval.
+     destruct (adr_range_dec (b, o) (size_chunk Mptr) loc) as [Hin | Hout].
+     destruct loc as [bb ofs].
+     destruct Hin as [Hb [Hlo Hhi]].
+     subst bb.
+     change (size_chunk Mptr) with 8%Z in Hhi.
+     assert (ofs = o \/ ofs = o + 1 \/ ofs = o + 2 \/ ofs = o + 3 \/
+               ofs = o + 4 \/ ofs = o + 5 \/ ofs = o + 6 \/ ofs = o + 7)%Z as Hor by lia.
+     exfalso.
+     repeat destruct Hor as [-> | Hor]. 
+     - replace (adr_add (b, o) 0%nat) with (b, o) in Hlk0; last first.
+       { unfold adr_add. simpl. f_equal. lia. }
+       erewrite resR_to_resource_eq in Hval; eauto.
+       rewrite /= elem_of_to_agree in Hval.
+       inversion Hval.
+     - solve_LK_VAL_contra.
+     - solve_LK_VAL_contra.
+     - solve_LK_VAL_contra.
+     - solve_LK_VAL_contra.
+     - solve_LK_VAL_contra.
+     - solve_LK_VAL_contra.
+     - subst ofs.
+       erewrite resR_to_resource_eq in Hval; eauto.
+       rewrite /= elem_of_to_agree in Hval.
+       inv Hval.
+     - rewrite <- (Hcontents mv Hval).
+       unfold juicy_mem.contents_at.
+       unfold semax_conc_pred.Mem_store_unchecked.
+       simpl.
+       unfold semax_conc_pred.Mem_store_unchecked_contents.
+       destruct loc as [b' ofs]; simpl in *.
+       destruct (Pos.eq_dec b' b) as [Hb | Hb].
+       + subst b'.
+         rewrite Maps.PMap.gss.
+         rewrite Mem.setN_other; auto.
+         intros.
+         intro Heq.
+         subst r.
+         apply Hout.
+         split; auto.
+         rewrite encode_val_length in H.
+         by rewrite size_chunk_conv.
+       + rewrite Maps.PMap.gso; auto.
+    }
+    done.
+ Qed.
+
+ Definition lock_addresses_disjoint (ls : gset address) : Prop :=
+   forall l k, l ∈ ls -> k ∈ ls ->
+     l <> k -> k.1 <> l.1 \/
+       (k.2 + size_chunk Mptr <= l.2 \/ l.2 + size_chunk Mptr <= k.2)%Z.
+
+ Lemma Mem_load_unchecked_store_unchecked_same_zero m b ofs :
+   semax_conc_pred.Mem_load_unchecked Mptr
+     (semax_conc_pred.Mem_store_unchecked Mptr m b ofs (Vptrofs Ptrofs.zero))
+     b ofs = Vptrofs Ptrofs.zero.
+ Proof.
+   unfold semax_conc_pred.Mem_load_unchecked.
+   unfold semax_conc_pred.Mem_store_unchecked.
+   simpl.
+   unfold semax_conc_pred.Mem_store_unchecked_contents.
+   rewrite Maps.PMap.gss.
+   rewrite <- (encode_val_length Mptr (Vptrofs Ptrofs.zero)).
+   by rewrite Mem.getN_setN_same.
+ Qed.
+ 
+ Lemma lock_inv_acquire `{!conc_VSTGS unit Σ} `{!heapGS Σ} γl m ls sh b o R:
+   semax_conc_pred.Mem_load_unchecked Mptr m b (Ptrofs.unsigned o) =
+     Vptrofs (Ptrofs.one) →
+   juicy_mem.mem_auth m -∗ lock_state γl m ls -∗
+   lock_inv sh (Vptr b o) R ==∗
+   let m' := semax_conc_pred.Mem_store_unchecked Mptr m b (Ptrofs.unsigned o) (Vptrofs (Ptrofs.zero)) in
+   ∃ p (Hp : permMapLt p (getMaxPerm m')),
+   let m'' := restrPermMap Hp in
+   juicy_mem.mem_auth m'' ∗ lock_state γl m'' ls ∗ lock_inv sh (Vptr b o) R ∗ ▷ R.
+ Proof.
+   intros; rewrite /lock_state /lock_inv.
+   iIntros "Hm (% & <- & HI & HRs) (% & % & Hl & Hi)"; simpl in *; subst.
+   iDestruct (own_valid_2 with "HI Hi") as "#Heq".
+   rewrite gmap_view_both_validI bi.and_elim_r lookup_fmap option_equivI.
+   destruct (invariant_unfold <$> I !! (b, Ptrofs.unsigned o)) as [Q|] eqn: HI; simpl.
+   2 : { unfold invariant_unfold.
+         rewrite HI. done. }
+   rewrite HI.
+   rewrite later_equivI.
+   apply fmap_Some in HI as [R0 [HIR0 HQ]].
+   rewrite (big_sepM_delete _ _ (b, Ptrofs.unsigned o)); eauto.
+   iDestruct "HRs" as "([HR | %Hload] & HRs)".
+   2: { rewrite H in Hload; inv Hload. }
+   iDestruct "HR" as "(_ & HR)".
+   subst Q.
+   simpl in *.
+   pose (m' :=
+           semax_conc_pred.Mem_store_unchecked
+             Mptr m b (Ptrofs.unsigned o) (Vptrofs Ptrofs.zero)).
+   pose (p := getCurPerm m').
+   assert (Hp : permMapLt p (getMaxPerm m')).
+   { apply cur_lt_max. }
+   iExists p, Hp.
+   iAssert (▷ R)%I with "[Heq HR]" as "HR".
+   { iNext; by iRewrite "Heq" in "HR". }
+   iMod (mem_auth_store_unchecked_lock_zero m sh b (Ptrofs.unsigned o)
+           (Vptrofs Ptrofs.zero) with "Hm Hl") as "[Hm Hl]".
+   rewrite restrPermMap_eq.
+   rewrite /m'.
+   iFrame "Hm Hl".
+   iFrame.
+   iSplitL; auto.
+   iModIntro.
+   iSplit; auto.
+   set (lk := (b, Ptrofs.unsigned o)).
+   rewrite -(insert_delete I lk R0); last exact HIR0.
+   iApply big_sepM_insert; try apply lookup_delete.
+   iSplitR.
+   - iRight.
+     subst lk.
+     rewrite Mem_load_unchecked_store_unchecked_same_zero; try done.
+   - rewrite delete_insert_delete delete_idemp.
+     iApply (big_sepM_mono with "HRs").
+     iIntros ((b1 & o1) y Hky) "Hk".
+     rewrite lookup_delete_Some in Hky.
+     destruct Hky as [Hlk_ne HkI].
+     iDestruct "Hk" as "[[%Hload Hy] | %Hload]".
+     + iLeft. iFrame.
+       iPureIntro.
+       simpl.
+       unfold semax_conc_pred.Mem_load_unchecked in Hload |- *.
+       simpl in Hload.
+       unfold semax_conc_pred.Mem_store_unchecked; simpl.
+       unfold semax_conc_pred.Mem_store_unchecked_contents.
+       rewrite Maps.PMap.gso; last first.
+       rewrite /lk in Hlk_ne.
+       admit. (* b <> b1*)
+       auto.
+     + iRight.
+       iPureIntro.
+       simpl.
+       unfold semax_conc_pred.Mem_load_unchecked in Hload |- *.
+       simpl in Hload.
+       unfold semax_conc_pred.Mem_store_unchecked; simpl.
+       unfold semax_conc_pred.Mem_store_unchecked_contents.
+       rewrite Maps.PMap.gso; last first. admit. (* b <> b1*)
+       auto.
+ Admitted.
 
    
  (* these lemmas could be split off again into semax_acquire_safety, etc. *)
- Lemma acquire_safe `{!conc_VSTGS unit Σ} g tp m ls perms i 
+ Lemma acquire_safe `{!VSTGS unit Σ} `{!conc_VSTGS unit Σ}
+   g γl tp m ls perms i 
     (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
     (Hcompat : (*HybridMachineSig.*)mem_compatible tp m)
     (Hlocks : locks_coherent tp m ls) (Hperms : ∀ (i : nat) (r : access_map),
@@ -4183,7 +4382,7 @@ Proof.
       Jext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge)
         (sig_args (ef_sig LOCK)) args -∗
       ▷ post_safe g (ef_sig LOCK) x (Ctypes.External LOCK argsty retty cc) args k -∗
-      lock_state m ls -∗
+      lock_state γl m ls -∗
       |={⊤}[∅]▷=> ∃ (tp' : t) (m' : mem) (ev : Events.sync_event) (perms' : gmap nat (gname * access_map)),
         ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧ locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev /\
           (∀ (i0 : nat) (r : access_map),
