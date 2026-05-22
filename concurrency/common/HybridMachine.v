@@ -160,9 +160,41 @@ Module DryHybridMachine.
                      end) dm.
     
 
-    Print Mem.store.
-    Check Ptrofs.intval.
+    Definition Mem_load_unchecked
+      (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) : val :=
+      decode_val chunk (Mem.getN (size_chunk_nat chunk) ofs (PMap.get b (Mem.mem_contents m))).
 
+    Definition Mem_store_unchecked_contents
+      (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) (v : val) :=
+      PMap.set b
+        (Mem.setN
+           (encode_val chunk v)
+           ofs
+           (PMap.get b (Mem.mem_contents m)))
+        (Mem.mem_contents m).
+
+    Program Definition Mem_store_unchecked
+      (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) (v : val) :=
+      Mem.mkmem
+        (Mem_store_unchecked_contents chunk m b ofs v)
+        (Mem.mem_access m)
+        (Mem.nextblock m)
+        _
+        _
+        _.
+    Next Obligation. intros; apply Mem.access_max. Qed.
+    Next Obligation. by intros; apply Mem.nextblock_noaccess. Qed.
+    Next Obligation.
+      intros; unfold Mem_store_unchecked_contents.
+      destruct (Coqlib.peq b0 b); subst.
+      - rewrite PMap.gss.
+        rewrite Mem.setN_default.
+        by rewrite Mem.contents_default.
+      - rewrite PMap.gso; auto.
+        by rewrite Mem.contents_default.
+    Qed.
+
+    (*
     Definition Mem_load_unchecked (chunk : memory_chunk) (m : mem) (b : Values.block) (ofs : Z) :=
       Some (decode_val chunk (Mem.getN (size_chunk_nat chunk) ofs (Mem.mem_contents m) !! b)).
 
@@ -197,8 +229,7 @@ Module DryHybridMachine.
       - rewrite PMap.gso; auto.
         by rewrite Mem.contents_default.
     Qed.
-   
-    Check Mem_store_unchecked.
+    *)
     
     Inductive ext_step {isCoarse:bool} {tid0 tp m}
               (cnt0:containsThread tp tid0)(Hcompat:mem_compatible tp m):
@@ -227,7 +258,7 @@ Module DryHybridMachine.
            (* (Haccess: Mem.range_perm m0 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Readable) *)
             (** check if the lock is free*)
             (* (Hload: Mem.load Mptr m b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.one)) *)
-            (Hload: Mem_load_unchecked Mptr m b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.one))
+            (Hload: Mem_load_unchecked Mptr m b (Ptrofs.intval ofs) = (Vptrofs Ptrofs.one))
             (** set the permissions on the lock location equal to the max permissions on the memory*)
            (* (Hset_perm: setPermBlock (Some Writable)
                                      b (Ptrofs.intval ofs) ((getThreadR cnt0).2) LKSIZE_nat = pmap_tid') *)
@@ -239,7 +270,7 @@ Module DryHybridMachine.
            (*  (Hrestrict_pmap: restrPermMap Hlt' = m1) *)
             (** acquire the lock*)
             (* (Hstore: Mem.store Mptr m b (Ptrofs.intval ofs) (Vptrofs Ptrofs.zero) = Some m') *)
-            (Hstore: Mem_store_unchecked Mptr m b (Ptrofs.intval ofs) (Vptrofs Ptrofs.zero) = Some m')
+            (Hstore: Mem_store_unchecked Mptr m b (Ptrofs.intval ofs) (Vptrofs Ptrofs.zero) = m')
             (HisLock: lockRes tp (b, Ptrofs.intval ofs) = Some pmap)
             (Hangel1: permMapJoin pmap.1 (getThreadR cnt0).1 newThreadPerm.1)
             (Hangel2: permMapJoin pmap.2 (getThreadR cnt0).2 newThreadPerm.2)
@@ -251,7 +282,7 @@ Module DryHybridMachine.
                               (Some (build_delta_content (fst virtueThread) m')))
 
     | step_release :
-        forall (tp' tp'':thread_pool) marg m0 m1 c m' b ofs virtueThread virtueLP pmap_tid' rmap
+        forall (tp' tp'':thread_pool) marg c m' b ofs virtueThread virtueLP rmap
           (Hbounded: if isCoarse then
                        ( sub_map virtueThread.1 (getMaxPerm m).2 /\
                          sub_map virtueThread.2 (getMaxPerm m).2)
@@ -274,17 +305,19 @@ Module DryHybridMachine.
             (Hat_external: semantics.at_external semSem c marg =
                            Some (UNLOCK, Vptr b ofs::nil))
             (** install the thread's permissions on lock locations *)
-            (Hrestrict_pmap0: restrPermMap (Hcompat tid0 cnt0).2 = m0)
+            (* (Hrestrict_pmap0: restrPermMap (Hcompat tid0 cnt0).2 = m0) *)
             (** To release the lock the thread must have [Readable] permission on it*)
-            (Haccess: Mem.range_perm m0 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Readable)
-            (Hload: Mem.load Mptr m0 b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.zero))
+            (* (Haccess: Mem.range_perm m0 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Readable) *)
+            (* (Hload: Mem.load Mptr m0 b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.zero)) *)
+            (Hload: Mem_load_unchecked Mptr m b (Ptrofs.intval ofs) = (Vptrofs Ptrofs.one))
             (** set the permissions on the lock location equal to [Writable]*)
-            (Hset_perm: setPermBlock (Some Writable)
-                                     b (Ptrofs.intval ofs) ((getThreadR cnt0).2) LKSIZE_nat = pmap_tid')
+            (* (Hset_perm: setPermBlock (Some Writable)
+                                     b (Ptrofs.intval ofs) ((getThreadR cnt0).2) LKSIZE_nat = pmap_tid') 
             (Hlt': permMapLt pmap_tid' (getMaxPerm m))
-            (Hrestrict_pmap: restrPermMap Hlt' = m1)
+            (Hrestrict_pmap: restrPermMap Hlt' = m1) *)
             (** release the lock *)
-            (Hstore: Mem.store Mptr m1 b (Ptrofs.intval ofs) (Vptrofs Ptrofs.one) = Some m')
+            (* (Hstore: Mem.store Mptr m1 b (Ptrofs.intval ofs) (Vptrofs Ptrofs.one) = Some m') *)
+            (Hstore: Mem_store_unchecked Mptr m b (Ptrofs.intval ofs) (Vptrofs Ptrofs.zero) = m')
             (HisLock: lockRes tp (b, Ptrofs.intval ofs) = Some rmap)
             (Hrmap: forall b ofs, rmap.1 !! b ofs = None /\ rmap.2 !! b ofs = None)
             (Hangel1: permMapJoin newThreadPerm.1 virtueLP.1 (getThreadR cnt0).1)
@@ -368,7 +401,7 @@ Module DryHybridMachine.
             ext_step cnt0 Hcompat tp'' m' (mklock (b, Ptrofs.intval ofs))
 
     | step_freelock :
-        forall  (tp' tp'': thread_pool) c marg b ofs pmap_tid' m1 pdata rmap
+        forall  (tp' tp'': thread_pool) c marg b ofs pmap_tid' pdata rmap
            (Hbounded: if isCoarse then
                         ( bounded_maps.bounded_nat_func' pdata LKSIZE_nat)
                       else
@@ -385,16 +418,16 @@ Module DryHybridMachine.
             (** And the lock is taken *)
             (Hrmap: forall b ofs, rmap.1 !! b ofs = None /\ rmap.2 !! b ofs = None)
             (** Install the thread's lock permissions*)
-            (Hrestrict_pmap: restrPermMap (Hcompat tid0 cnt0).2 = m1)
+            (* (Hrestrict_pmap: restrPermMap (Hcompat tid0 cnt0).2 = m1) *)
             (** To free the lock the thread must have at least Writable on it*)
-            (Hfreeable: Mem.range_perm m1 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Writable)
+            (* (Hfreeable: Mem.range_perm m1 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Writable) *)
             (** lock permissions of the thread are dropped to empty *)
-            (Hlock_perm: setPermBlock
+            (* (Hlock_perm: setPermBlock
                            None
                            b
                            (Ptrofs.intval ofs)
                            pmap_tid.2
-                           LKSIZE_nat = pmap_tid'.2)
+                           LKSIZE_nat = pmap_tid'.2) *)
             (** data permissions are computed in a non-deterministic way *)
             (Hneq_perms: forall i,
                 (0 <= Z.of_nat i < LKSIZE)%Z ->
@@ -411,19 +444,22 @@ Module DryHybridMachine.
             (Htp'': tp'' = remLockSet tp' (b, Ptrofs.intval ofs)),
             ext_step cnt0 Hcompat  tp'' m (freelock (b, Ptrofs.intval ofs))
     | step_acqfail :
-        forall  c b ofs marg m1
+        forall  c b ofs marg
            (Hinv : invariant tp)
            (Hcode: getThreadC cnt0 = Kblocked c)
            (* To check if the machine is at an external step and load its arguments install the thread data permissions*)
            (Hrestrict_pmap_arg: restrPermMap (Hcompat tid0 cnt0).1 = marg)
            (Hat_external: semantics.at_external semSem c marg = Some (LOCK, Vptr b ofs::nil))
            (** Install the thread's lock permissions*)
-           (Hrestrict_pmap: restrPermMap (Hcompat tid0 cnt0).2 = m1)
+           (* (Hrestrict_pmap: restrPermMap (Hcompat tid0 cnt0).2 = m1) *)
            (** To acquire the lock the thread must have [Readable] permission on it*)
-           (Haccess: Mem.range_perm m1 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Readable)
+           (* (Haccess: Mem.range_perm m1 b (Ptrofs.intval ofs) ((Ptrofs.intval ofs) + LKSIZE) Cur Readable) *)
            (** Lock is already acquired.*)
-           (Hload: Mem.load Mptr m1 b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.zero)),
-          ext_step cnt0 Hcompat tp m (failacq (b, Ptrofs.intval ofs)).
+           (* (Hload: Mem.load Mptr m1 b (Ptrofs.intval ofs) = Some (Vptrofs Ptrofs.zero)),
+          ext_step cnt0 Hcompat tp m (failacq (b, Ptrofs.intval ofs)) *)
+           (Hload: Mem_load_unchecked Mptr m b (Ptrofs.intval ofs) = (Vptrofs Ptrofs.zero)),
+          ext_step cnt0 Hcompat tp m (failacq (b, Ptrofs.intval ofs))
+           .
 
     Definition threadStep: forall {tid0 ms m},
         containsThread ms tid0 -> mem_compatible ms m ->
