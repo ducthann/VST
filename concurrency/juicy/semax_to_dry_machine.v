@@ -4136,36 +4136,8 @@ Qed.
     rewrite H0 in Hl.
     discriminate.
 Qed. *)
- 
-(* It's vitally important that these lemmas use conc_VSTGS, not VSTGS, so that we're not assuming
-   invariants belong to a specific thread. *)
- Check lock_state.
- Locate Mem_store_unchecked.
- Locate Mem_load_unchecked.
 
- Check semax_conc_pred.Mem_load_unchecked.
-
- Lemma Mem_storebytes_unchecked
-   chunk m b ofs v :
-   Mem.range_perm m b ofs
-     (ofs + Z.of_nat (length (encode_val chunk v))) Cur Writable ->
-   Mem.storebytes m b ofs (encode_val chunk v) =
-     Some (semax_conc_pred.Mem_store_unchecked chunk m b ofs v).
- Proof.
-   intros Hperm.
-   unfold Mem.storebytes.
-   destruct (Mem.range_perm_dec
-               m b ofs
-               (ofs + Z.of_nat (length (encode_val chunk v)))
-               Cur Writable) as [_ | Hbad].
-   - unfold semax_conc_pred.Mem_store_unchecked.
-     unfold semax_conc_pred.Mem_store_unchecked_contents.
-     f_equal.
-     repeat f_equal; apply proof_irrelevance.
-   - contradiction.
- Qed.
- 
-Ltac get_lk n dq rsh Hvalid Hincl Hlk :=
+ Ltac get_lk n dq rsh Hvalid Hincl Hlk :=
   let Hseq := fresh "Hseq" in
   assert (Hseq : seq 0 (Z.to_nat LKSIZE) !! n = Some n) by
     (vm_compute; reflexivity);
@@ -4191,15 +4163,19 @@ Ltac solve_LK_VAL_contra :=
       inversion Hval
   end.
 
- Lemma mem_auth_store_unchecked_lock_zero `{!conc_VSTGS unit Σ} `{!heapGS Σ}
+ Lemma mem_auth_store_unchecked_lock_zero `{!conc_VSTGS unit Σ, !heapGS Σ}
    (m : mem) (sh : share) (b : Values.block) o v:
    mem_auth m -∗ LKspec LKSIZE sh (b, o) ==∗
    mem_auth (semax_conc_pred.Mem_store_unchecked Mptr m b o v) ∗
    LKspec LKSIZE sh (b, o).
  Proof.
    iIntros "(%σ & %Hcoh & Hm) HLK".
-     iDestruct (VST.shared.resource_map.resource_map_auth_valid with "Hm") as %(_ & Hvalid).
+   iDestruct (VST.shared.resource_map.resource_map_auth_valid with "Hm") as %(_ & Hvalid).
    rewrite /LKspec /=.
+   (* Mptr store changes 8 bytes
+      -> coherent must be re-proved for all 8 bytes
+      -> need LK facts for all 8 addresses
+    *)
    get_lk 0%nat dq0 rsh0 Hvalid0 Hincl0 Hlk0.
    get_lk 1%nat dq1 rsh1 Hvalid1 Hincl1 Hlk1.
    get_lk 2%nat dq2 rsh2 Hvalid2 Hincl2 Hlk2.
@@ -4208,64 +4184,63 @@ Ltac solve_LK_VAL_contra :=
    get_lk 5%nat dq5 rsh5 Hvalid5 Hincl5 Hlk5.
    get_lk 6%nat dq6 rsh6 Hvalid6 Hincl6 Hlk6.
    get_lk 7%nat dq7 rsh7 Hvalid7 Hincl7 Hlk7.
-   iSplitL "Hm".
-   {
-     rewrite /mem_auth.
-     iExists σ.
-     iFrame "Hm".
-     iPureIntro; split; last done.
-     unfold coherent, resource_at in *.
-     intro loc.
-     destruct (Hcoh loc) as (Hnext & Hcontents & Haccess).
-     split3; try done.
-     unfold contents_cohere, contents_at in *.
-     intros mv Hval.
-     destruct (adr_range_dec (b, o) (size_chunk Mptr) loc) as [Hin | Hout].
+   iSplitL "Hm"; auto.
+   rewrite /mem_auth.
+   iExists σ.
+   iFrame "Hm".
+   iPureIntro; split; last done.
+     (* the store changes only these bytes: (b,o)+0 ... (b,o)+7
+        and LKspec says exactly those bytes are LK, not VAL.
+        coherent requires concrete memory contents to match σ only for VAL locations.
+        -> contradiction
+
+       - outside range: memory unchanged, use old coherence
+       - inside range: locations are LK, so no VAL-content obligation
+     *)
+   unfold coherent, resource_at in *.
+   intro loc.
+   destruct (Hcoh loc) as (Hnext & Hcontents & Haccess).
+   split3; try done.
+   unfold contents_cohere, contents_at in *.
+   intros mv Hval.
+   destruct (adr_range_dec (b, o) (size_chunk Mptr) loc) as [Hin | Hout].
+   - (* loc is inside the stored range *)
      destruct loc as [bb ofs].
-     destruct Hin as [Hb [Hlo Hhi]].
+     destruct Hin as (Hb & Hlo & Hhi); simpl in *.
      subst bb.
      change (size_chunk Mptr) with 8%Z in Hhi.
      assert (ofs = o \/ ofs = o + 1 \/ ofs = o + 2 \/ ofs = o + 3 \/
                ofs = o + 4 \/ ofs = o + 5 \/ ofs = o + 6 \/ ofs = o + 7)%Z as Hor by lia.
      exfalso.
-     repeat destruct Hor as [-> | Hor]. 
-     - replace (adr_add (b, o) 0%nat) with (b, o) in Hlk0; last first.
-       { unfold adr_add. simpl. f_equal. lia. }
+     repeat destruct Hor as [-> | Hor]; repeat solve_LK_VAL_contra.
+     (* solve_LK_VAL_contra doesn't work well with adr_add (b, o) 0 and adr_add (b, o) 7  *)
+     + replace (adr_add (b, o) 0%nat) with (b, o) in Hlk0; last first.
+       { rewrite /adr_add //=; f_equal. lia. }
        erewrite resR_to_resource_eq in Hval; eauto.
        rewrite /= elem_of_to_agree in Hval.
        inversion Hval.
-     - solve_LK_VAL_contra.
-     - solve_LK_VAL_contra.
-     - solve_LK_VAL_contra.
-     - solve_LK_VAL_contra.
-     - solve_LK_VAL_contra.
-     - solve_LK_VAL_contra.
-     - subst ofs.
+     + subst ofs.
        erewrite resR_to_resource_eq in Hval; eauto.
        rewrite /= elem_of_to_agree in Hval.
        inv Hval.
-     - rewrite <- (Hcontents mv Hval).
-       unfold juicy_mem.contents_at.
-       unfold semax_conc_pred.Mem_store_unchecked.
-       simpl.
-       unfold semax_conc_pred.Mem_store_unchecked_contents.
-       destruct loc as [b' ofs]; simpl in *.
-       destruct (Pos.eq_dec b' b) as [Hb | Hb].
-       + subst b'.
-         rewrite Maps.PMap.gss.
-         rewrite Mem.setN_other; auto.
-         intros.
-         intro Heq.
-         subst r.
-         apply Hout.
-         split; auto.
-         rewrite encode_val_length in H.
-         by rewrite size_chunk_conv.
-       + rewrite Maps.PMap.gso; auto.
-    }
-    done.
+   - (* outside range: memory unchanged, use old coherence *)
+     rewrite <- (Hcontents mv Hval).
+     rewrite /juicy_mem.contents_at /semax_conc_pred.Mem_store_unchecked /=.
+     rewrite /semax_conc_pred.Mem_store_unchecked_contents.
+     destruct loc as (b' & ofs); simpl in *.
+     destruct (Pos.eq_dec b' b) as [Hb | Hb].
+     + subst b'.
+       rewrite Maps.PMap.gss Mem.setN_other; auto.
+       intros.
+       intro Heq; subst r.
+       apply Hout.
+       split; auto.
+       rewrite encode_val_length in H.
+       by rewrite size_chunk_conv.
+     + rewrite Maps.PMap.gso; auto.
  Qed.
 
+ (* Should we need this invariant? *)
  Definition lock_addresses_disjoint (ls : gset address) : Prop :=
    forall l k, l ∈ ls -> k ∈ ls ->
      l <> k -> k.1 <> l.1 \/
@@ -4276,16 +4251,16 @@ Ltac solve_LK_VAL_contra :=
      (semax_conc_pred.Mem_store_unchecked Mptr m b ofs (Vptrofs Ptrofs.zero))
      b ofs = Vptrofs Ptrofs.zero.
  Proof.
-   unfold semax_conc_pred.Mem_load_unchecked.
-   unfold semax_conc_pred.Mem_store_unchecked.
-   simpl.
+   unfold semax_conc_pred.Mem_load_unchecked, semax_conc_pred.Mem_store_unchecked; simpl.
    unfold semax_conc_pred.Mem_store_unchecked_contents.
    rewrite Maps.PMap.gss.
    rewrite <- (encode_val_length Mptr (Vptrofs Ptrofs.zero)).
    by rewrite Mem.getN_setN_same.
  Qed.
- 
- Lemma lock_inv_acquire `{!conc_VSTGS unit Σ} `{!heapGS Σ} γl m ls sh b o R:
+
+ (* It's vitally important that these lemmas use conc_VSTGS, not VSTGS, so that we're not assuming
+   invariants belong to a specific thread. *)
+ Lemma lock_inv_acquire `{!conc_VSTGS unit Σ, !heapGS Σ} γl m ls sh b o R:
    semax_conc_pred.Mem_load_unchecked Mptr m b (Ptrofs.unsigned o) =
      Vptrofs (Ptrofs.one) →
    juicy_mem.mem_auth m -∗ lock_state γl m ls -∗
@@ -4300,31 +4275,26 @@ Ltac solve_LK_VAL_contra :=
    iDestruct (own_valid_2 with "HI Hi") as "#Heq".
    rewrite gmap_view_both_validI bi.and_elim_r lookup_fmap option_equivI.
    destruct (invariant_unfold <$> I !! (b, Ptrofs.unsigned o)) as [Q|] eqn: HI; simpl.
-   2 : { unfold invariant_unfold.
-         rewrite HI. done. }
+   2 : { by rewrite /invariant_unfold HI. }
    rewrite HI.
    rewrite later_equivI.
-   apply fmap_Some in HI as [R0 [HIR0 HQ]].
+   apply fmap_Some in HI as (R0 & HIR0 & HQ).
    rewrite (big_sepM_delete _ _ (b, Ptrofs.unsigned o)); eauto.
    iDestruct "HRs" as "([HR | %Hload] & HRs)".
    2: { rewrite H in Hload; inv Hload. }
    iDestruct "HR" as "(_ & HR)".
    subst Q.
    simpl in *.
-   pose (m' :=
-           semax_conc_pred.Mem_store_unchecked
-             Mptr m b (Ptrofs.unsigned o) (Vptrofs Ptrofs.zero)).
-   pose (p := getCurPerm m').
-   assert (Hp : permMapLt p (getMaxPerm m')).
-   { apply cur_lt_max. }
+   set m' := semax_conc_pred.Mem_store_unchecked
+               Mptr m b (Ptrofs.unsigned o) (Vptrofs Ptrofs.zero).
+   set p := getCurPerm m'.
+   assert (Hp : permMapLt p (getMaxPerm m')) by apply cur_lt_max.
    iExists p, Hp.
    iAssert (▷ R)%I with "[Heq HR]" as "HR".
    { iNext; by iRewrite "Heq" in "HR". }
-   iMod (mem_auth_store_unchecked_lock_zero m sh b (Ptrofs.unsigned o)
-           (Vptrofs Ptrofs.zero) with "Hm Hl") as "[Hm Hl]".
+   iMod (mem_auth_store_unchecked_lock_zero with "Hm Hl") as "[Hm Hl]".
    rewrite restrPermMap_eq.
    rewrite /m'.
-   iFrame "Hm Hl".
    iFrame.
    iSplitL; auto.
    iModIntro.
@@ -4342,26 +4312,24 @@ Ltac solve_LK_VAL_contra :=
      rewrite lookup_delete_Some in Hky.
      destruct Hky as [Hlk_ne HkI].
      iDestruct "Hk" as "[[%Hload Hy] | %Hload]".
-     + iLeft. iFrame.
+     + iLeft; iFrame.
        iPureIntro.
        simpl.
        unfold semax_conc_pred.Mem_load_unchecked in Hload |- *.
        simpl in Hload.
-       unfold semax_conc_pred.Mem_store_unchecked; simpl.
-       unfold semax_conc_pred.Mem_store_unchecked_contents.
-       rewrite Maps.PMap.gso; last first.
+       unfold semax_conc_pred.Mem_store_unchecked,
+         semax_conc_pred.Mem_store_unchecked_contents; simpl.
+       rewrite Maps.PMap.gso; auto.
        rewrite /lk in Hlk_ne.
        admit. (* b <> b1*)
-       auto.
-     + iRight.
-       iPureIntro.
+     + iRight; iPureIntro.
        simpl.
        unfold semax_conc_pred.Mem_load_unchecked in Hload |- *.
        simpl in Hload.
-       unfold semax_conc_pred.Mem_store_unchecked; simpl.
-       unfold semax_conc_pred.Mem_store_unchecked_contents.
-       rewrite Maps.PMap.gso; last first. admit. (* b <> b1*)
-       auto.
+       unfold semax_conc_pred.Mem_store_unchecked,
+         semax_conc_pred.Mem_store_unchecked_contents; simpl.
+       rewrite Maps.PMap.gso; auto.
+       admit. (* b <> b1*)
  Admitted.
 
    
