@@ -2539,12 +2539,24 @@ Section Safety.
 
   Context `{!VSTGS unit Σ} `{!lockGS Σ}.
 
+  (* placeholder *)
+  Definition do_alloc (b : Values.block) (lo hi : Z) (p : access_map) : access_map :=
+    p.
+  (* placeholder *)
+  Definition do_free (fl : list (Values.block * Z * Z)) (p : access_map) : access_map :=
+    p.
+
   Fixpoint do_events (le : list mem_event) (p : access_map) : access_map :=
     match le with
     | [] => p
-    | Read _ _ _ :: rest | Write _ _ _ :: rest => do_events rest p
-    | Alloc b lo hi :: rest => do_events rest (do_alloc b lo hi p)
-    | Free fl -> do_events rest (do_free fl p)
+    | Write _ _ _ :: rest =>
+        do_events rest p
+    | Read _ _ _ _ :: rest =>
+        do_events rest p
+    | Alloc b lo hi :: rest =>
+        do_events rest (do_alloc b lo hi p)
+    | Free fl :: rest =>
+        do_events rest (do_free fl p)
     end.
 
   Program Definition jsafe_perm_pre
@@ -2552,7 +2564,7 @@ Section Safety.
     coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
       |={E}=> ∀ m (Hp : permMapLt p (getMaxPerm m)), state_interp m z -∗
         (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ state_interp m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
-        (|={E}=> ∃ es c' m', ⌜ev_step (Clight_evsem.CLC_evsem ge) c m es c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (do_events p e)) ∨
+      (|={E}=> ∃ es c' m', ⌜ev_step (Clight_evsem.CLC_evsem ge) c m es c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (do_events es p)) ∨
         (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
             |={E}=> state_interp m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
