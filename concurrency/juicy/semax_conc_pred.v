@@ -37,7 +37,12 @@ Definition Mem_load_unchecked (chunk : memory_chunk) (m : mem) (b : Values.block
       - rewrite PMap.gso; auto.
         by rewrite Mem.contents_default.
     Qed.
-   
+
+    Definition lock_addresses_disjoint (ls : gset address) : Prop :=
+      forall l k, l ∈ ls -> k ∈ ls ->
+             l <> k -> k.1 <> l.1 \/
+               (k.2 + size_chunk Mptr <= l.2 \/ l.2 + size_chunk Mptr <= k.2)%Z.
+    
 Section mpred.
 
 Context `{!heapGS Σ}.
@@ -169,7 +174,8 @@ Definition rec_inv sh v (Q R: mpred) : mpred := (R ∗-∗ Q ∗ ▷ lock_inv sh
 Proof. solve_proper. Qed.
 
 (* This implies that the invariants all hold on one heap (rmap). *)
-Definition lock_state (m : mem) ls : mpred := ∃ I : gmap address mpred, <affine> ⌜dom I = ls⌝ ∗
+Definition lock_state (m : mem) ls : mpred :=
+  ∃ I : gmap address mpred, <affine> ⌜dom I = ls ∧ lock_addresses_disjoint ls⌝ ∗
   own lockGS_gname (gmap_view_auth (DfracOwn 1) (invariant_unfold <$> I)) ∗
   [∗ map] l ↦ R ∈ I, (<affine> ⌜Mem_load_unchecked Mptr m l.1 l.2 = Vptrofs (Ptrofs.one)⌝ ∗ ▷R) ∨
                        (<affine> ⌜Mem_load_unchecked Mptr m l.1 l.2 = Vptrofs (Ptrofs.zero)⌝).
