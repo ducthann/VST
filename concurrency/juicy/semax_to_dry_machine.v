@@ -2539,12 +2539,20 @@ Section Safety.
 
   Context `{!VSTGS unit Σ} `{!lockGS Σ}.
 
+  Fixpoint do_events (le : list mem_event) (p : access_map) : access_map :=
+    match le with
+    | [] => p
+    | Read _ _ _ :: rest | Write _ _ _ :: rest => do_events rest p
+    | Alloc b lo hi :: rest => do_events rest (do_alloc b lo hi p)
+    | Free fl -> do_events rest (do_free fl p)
+    end.
+
   Program Definition jsafe_perm_pre
     (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
     coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
       |={E}=> ∀ m (Hp : permMapLt p (getMaxPerm m)), state_interp m z -∗
         (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ state_interp m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
-        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (getCurPerm m')) ∨
+        (|={E}=> ∃ c' m', ⌜ev_step (cl_core_sem ge) c m es c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (do_events p e)) ∨
         (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
             |={E}=> state_interp m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
