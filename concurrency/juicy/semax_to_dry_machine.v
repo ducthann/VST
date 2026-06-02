@@ -69,61 +69,11 @@ Import ThreadPool.
 
 Set Bullet Behavior "Strict Subproofs".
 
-(* concurrent state interpretation *)
-Class conc_gen_heapGS Σ := ConcGenHeapGS
-  { conc_gen_heap_inG :: gen_heapGpreS share address resource Σ;
-    conc_gen_meta_name : gname }.
-
-Class conc_heapGS Σ := ConcHeapGS
-  { conc_heapGS_invGS :: invGS_gen HasNoLc Σ;
-    conc_heapGS_gen_heapGS :: conc_gen_heapGS Σ;
-    conc_heapGS_funspecGS :: funspecGS Σ }.
-
-Class conc_VSTGS OK_ty Σ := ConcVSTGS
-  { conc_VST_heapGS :: conc_heapGS Σ;
-    conc_VST_extGS :: externalGS OK_ty Σ;
-    conc_VST_lockGS :: lockGS Σ }.
-
-Print VSTGS.
-
-Definition thread_gen_heapGS `{!conc_gen_heapGS Σ} g := GenHeapGS _ _ _ _ (gen_heap_inG := conc_gen_heap_inG) g conc_gen_meta_name.
-
 Definition access_equiv (m: mem) k (r : prodO dfracO (optionO (leibnizO resource))) :=
   (access_at m k Cur) = (perm_of_res r).
 
 Definition access_map_rmap (m: mem) σ : Prop :=
   forall loc, access_equiv m loc (σ @ loc).
-
-
-(*
-
-Definition mem_auth1 `{Σ : gFunctors}
-  (gen_heapGS : gen_heapGS share address resource Σ) (m : mem) :=
-  ∃ σ, ⌜juicy_mem.coherent m σ /\ access_map_rmap m σ⌝ ∧ resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := gen_heap_inG)) (gen_heap_name _) 1 σ.
-
-*)
-
-
-Definition thread_mem_auth `{!conc_gen_heapGS Σ} g m :=
-  mem_auth (gen_heapGS0 := thread_gen_heapGS g) m.
-
-
-(*
-Definition access_equiv (m: mem) k r := (access_at m k Cur) = (perm_of_res r).
-
-Definition access_map_rmap m phi: forall (loc: positive * Z),
-    access_equiv m loc phi.
-    (access_at m loc Cur) = (perm_of_res (phi @ loc)).
-*)
-
-
-
-Definition conc_mem_auth `{!conc_gen_heapGS Σ} m (perms : gmap nat (gname * access_map)) := ∃ σs : gmap nat (resource_map.rmapUR _ _ _),
-  ([∗ map] '(g,p);σ∈perms;σs,
-     ⌜∃ Hp : permMapLt p (getMaxPerm m),
-         coherent (restrPermMap Hp) σ (*/\ access_map_rmap (restrPermMap Hp) σ *)  ⌝ ∧
-    resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := conc_gen_heap_inG)) g 1 σ) (* ∗
-  let σ := [^op map] σ∈σs, σ in <affine> ⌜✓ σ ∧ coherent m σ⌝ *).
 
 (*
   perms : gmap nat (gname * access_map) : for each thread id
@@ -143,12 +93,6 @@ If σs = ∅, then it equals ε.
 two different thread owns dont conflict, at most one. 
  *)
 
-Definition thread_VSTGS `{!conc_VSTGS OK_ty Σ} g := Build_VSTGS _ _ (HeapGS _ _ (thread_gen_heapGS g) _) _.
-
-Definition thread_state_interp `{!conc_VSTGS OK_ty Σ} g m z := thread_mem_auth g m ∗ ext_auth z.
-
-Definition conc_state_interp `{!conc_VSTGS OK_ty Σ} m perms z := conc_mem_auth m perms ∗ ext_auth z.
-
 (* fix in seplog *)
 Definition funspec_auth `{!funspecGS Σ} m := own(inG0 := funspec_inG) funspec_name (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) m).
 
@@ -164,28 +108,7 @@ Proof.
   - rewrite /resource_at; erewrite resR_to_resource_eq; done.
 Qed.
 
-
-Lemma thread_conc_mem_auth `{!conc_VSTGS OK_ty Σ} i g m :
-  thread_mem_auth g m ⊢ conc_mem_auth m {[i := (g, getCurPerm m)]}.
-Proof.
-  intros; rewrite /thread_mem_auth /conc_mem_auth.
-  iIntros "(% & % & H)".
-  iDestruct (resource_map.resource_map_auth_valid with "H") as %(_ & ?).
-  iExists {[i := σ]}; rewrite big_sepM2_singleton; iFrame.
-  iPureIntro.
-  esplit.
-  exists (cur_lt_max m); rewrite restrPermMap_eq //.
-  done.
-Qed.
-
-Lemma thread_conc_state_interp `{!conc_VSTGS OK_ty Σ} i g m z :
-  thread_state_interp g m z ⊢ conc_state_interp m {[i := (g, getCurPerm m)]} z.
-Proof.
-  iIntros "(? & $)".
-  iApply thread_conc_mem_auth; iFrame.
-Qed.
-
-Definition add_fresh_block (b : Values.block) (cur : access_map) : access_map :=
+(*Definition add_fresh_block (b : Values.block) (cur : access_map) : access_map :=
   PMap.set b (fun _ => None) cur.
 
 (* Definition remove_region (b: Values.block) (lo hi: Z) (pm: access_map) : access_map :=
@@ -2354,6 +2277,7 @@ Proof.
   pose proof (empty_coherent Mem.empty); repeat iSplit => //.
 Qed.
 (* end concurrency setup *)
+*)
 
 Ltac absurd_ext_link_naming :=
   exfalso;
@@ -2485,7 +2409,7 @@ Section Safety.
       (Ofe (iProp Σ) ouPred_ofe_mixin)
       (Ofe (iPropI Σ) (bi_ofe_mixin (iPropI Σ))). *)
 
-  Lemma CEspec_acquire_pre : forall `{Hconc : conc_VSTGS unit Σ} `{Hlock : lockGS Σ} (g : gname),
+(*  Lemma CEspec_acquire_pre : forall `{Hconc : conc_VSTGS unit Σ} `{Hlock : lockGS Σ} (g : gname),
     let HVST : VSTGS unit Σ := @thread_VSTGS unit Σ Hconc g in
      forall (x : Jext_spec_type (concurrent_ext_spec CS ext_link) LOCK) args,
         (Jext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge)
@@ -2578,6 +2502,7 @@ Section Safety.
     solve_spec x.
   Qed.
 *)
+*)
 
   Program Definition spr (HH : VSTGS unit Σ) (HL : lockGS Σ) :=
     semax_prog_rule (concurrent_ext_spec CS ext_link) V G prog
@@ -2612,38 +2537,38 @@ Section Safety.
 
   Section conc_heap.
 
-  Context `{!conc_VSTGS unit Σ}.
+  Context `{!VSTGS unit Σ} `{!lockGS Σ}.
 
-  Program Definition jsafe_perm_pre g
+  Program Definition jsafe_perm_pre
     (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
     coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
-      |={E}=> ∀ m, ⌜mem_equiv.access_map_equiv (getCurPerm m) p ⌝ → thread_state_interp(*'*) g m z -∗
-        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ thread_state_interp g m z ∗ Jext_spec_exit (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) (Some (Vint i))) ∨
-        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ thread_state_interp(*'*) g m' z (* ?? *) ∗ ▷ jsafe E z c' (getCurPerm m')) ∨
-        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ thread_state_interp g m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
+      |={E}=> ∀ m (Hp : permMapLt p (getMaxPerm m)), state_interp m z -∗
+        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ state_interp m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
+        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (getCurPerm m')) ∨
+        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
-            |={E}=> thread_state_interp g m' z' -∗ Jext_spec_post (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
-                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ thread_state_interp(*'*) g m' z' ∗ jsafe E z' c' (getCurPerm m'))).
+            |={E}=> state_interp m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
+                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ state_interp m' z' ∗ jsafe E z' c' (getCurPerm m'))).
 
-  Local Instance jsafe_perm_pre_contractive g : Contractive (jsafe_perm_pre g).
+  Local Instance jsafe_perm_pre_contractive : Contractive (jsafe_perm_pre).
   Proof.
     rewrite /jsafe_perm_pre => n jsafe jsafe' Hsafe E z c [??].
-    do 14 f_equiv.
+    do 15 f_equiv.
     - try f_contractive; repeat f_equiv. apply Hsafe.
-    - do 2 f_equiv. try f_contractive; repeat f_equiv. apply Hsafe.
+    - do 2 f_equiv. f_contractive; repeat f_equiv. apply Hsafe.
   Qed.
 
-  Local Definition jsafe_perm_def g : coPset -> unit -> CC_core -> _ -> iProp Σ := fixpoint (jsafe_perm_pre g).
+  Local Definition jsafe_perm_def : coPset -> unit -> CC_core -> _ -> iProp Σ := fixpoint (jsafe_perm_pre).
   Local Definition jsafe_perm_aux : seal (jsafe_perm_def). Proof. by eexists. Qed.
   Definition jsafe_perm := jsafe_perm_aux.(unseal).
   Local Lemma jsafe_perm_unseal : jsafe_perm = jsafe_perm_def.
   Proof. rewrite -jsafe_perm_aux.(seal_eq) //. Qed.
 
-  Lemma jsafe_perm_unfold g E z c p :
-    jsafe_perm g E z c p ⊣⊢ jsafe_perm_pre g (jsafe_perm g) E z c p.
+  Lemma jsafe_perm_unfold E z c p :
+    jsafe_perm E z c p ⊣⊢ jsafe_perm_pre (jsafe_perm) E z c p.
   Proof.
     rewrite jsafe_perm_unseal.
-    apply (fixpoint_unfold (jsafe_perm_pre g)).
+    apply (fixpoint_unfold (jsafe_perm_pre)).
   Qed.
 
   (*
@@ -2680,19 +2605,19 @@ Section Safety.
 *)
   Existing Instance mem_equiv.access_map_equiv_Equivalence.
   
-  Lemma jsafe_perm_equiv : forall `{!VSTGS unit Σ} g E z c
+  Lemma jsafe_perm_equiv : forall E z c
                              (p1 p2 : access_map), mem_equiv.access_map_equiv p1 p2 -> 
-     jsafe_perm g E z c p1 ⊢ jsafe_perm g E z c p2.
+     jsafe_perm E z c p1 ⊢ jsafe_perm E z c p2.
   Proof.
     intros.
     iLöb as "IH" forall (z c p1 p2 H).
     rewrite !jsafe_perm_unfold /jsafe_perm_pre.
     iIntros ">H !>" (? Hcur) "S".
-    assert (Heq: mem_equiv.access_map_equiv (getCurPerm m) p1).
-    { by eapply Equivalence_Transitive; eauto. }
-    iDestruct ("H" $! _ with "[%] S") as "[H | [H | H]]"; auto.
- Qed.
-
+    assert (Hlt: permMapLt p1 (getMaxPerm m)).
+    { by rewrite H. }
+    iDestruct ("H" $! _ Hlt with "S") as "[H | [H | H]]"; auto.
+  Qed.
+    
 (*  Axiom external_call_memLt
     : ∀ (ef : external_function) (ge : Senv.t) (vargs : list val) (m1 : mem) 
         (t : Events.trace) (vres : val) (m2 m1' : mem),
@@ -2860,14 +2785,14 @@ Section Safety.
     by rewrite -Heq in Hmax.
   Qed.
 
-  Lemma jsafe_jsafe_perm : forall g E z c p,
-    jsafe(genv_symb := genv_symb_injective)(gen_heapGS0 := thread_gen_heapGS g) (cl_core_sem ge) (concurrent_ext_spec(VSTGS0 := thread_VSTGS g) CS ext_link) ge E z c ⊢
-    jsafe_perm g E z c p.
+  Lemma jsafe_jsafe_perm : forall E z c p,
+    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢
+    jsafe_perm E z c p.
   Proof.
     intros.
-    iLöb as "IH" forall (p z c).
+    iLöb as "IH" forall (z c p).
     rewrite jsafe_unfold jsafe_perm_unfold /jsafe_pre /jsafe_perm_pre.
-    iIntros ">H !>" (? ?) "S".
+    iIntros ">H !> %% S".
     iDestruct ("H" with "S") as "[H | [H | H]]".
     - by iLeft.
     - iRight; iLeft.
@@ -3016,25 +2941,24 @@ Section Safety.
     [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe max tp i g.
   *)
 
-  Definition thread_safe (tp : dtp) i g :=
+  Definition thread_safe (tp : dtp) i :=
     ∃ cnti : containsThread tp i,
       match getThreadC cnti with
-      | Krun c | Kblocked c => jsafe_perm g ⊤ tt c ((getThreadR cnti).1)
+      | Krun c | Kblocked c => jsafe_perm ⊤ tt c ((getThreadR cnti).1)
       | Kresume c v =>
           ∀ c',
             (* [v] is not used here. The problem is probably coming from
            the definition of JuicyMachine.resume_thread'. *)
             ⌜cl_after_external None c = Some c'⌝ →
-            jsafe_perm g ⊤ tt c' ((getThreadR cnti).1)
+            jsafe_perm ⊤ tt c' ((getThreadR cnti).1)
       | Kinit v1 v2 =>
           ∃ q_new,
     ⌜cl_initial_core ge v1 (v2 :: nil) = Some q_new⌝ ∧
-      jsafe_perm g ⊤ tt q_new ((getThreadR cnti).1)
+      jsafe_perm ⊤ tt q_new ((getThreadR cnti).1)
   end%I.
 
-  Definition threads_safe (tp : dtp) (gs : gmap nat gname) :=
-    [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
-      ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe tp i g.
+  Definition threads_safe (tp : dtp) :=
+    [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), thread_safe tp i.
 
   Definition threads_wellformed (tp : dtp) :=
     forall i (cnti : containsThread(ThreadPool := OrdinalPool.OrdinalThreadPool) tp i),
