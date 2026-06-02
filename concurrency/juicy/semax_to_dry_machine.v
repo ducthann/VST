@@ -2539,44 +2539,39 @@ Section Safety.
 
   Context `{!VSTGS unit Σ} `{!lockGS Σ}.
 
-  Fixpoint do_events (le : list mem_event) (p : access_map) : access_map :=
-    match le with
-    | [] => p
-    | Read _ _ _ :: rest | Write _ _ _ :: rest => do_events rest p
-    | Alloc b lo hi :: rest => do_events rest (do_alloc b lo hi p)
-    | Free fl -> do_events rest (do_free fl p)
-    end.
+  Definition frag_mem_auth q m := ∃ σ, ⌜coherent m σ⌝ ∧ resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := gen_heap_inG)) (gen_heap_name _) q σ.
+  Definition frag_state_interp q m z := frag_mem_auth q m ∗ ext_auth z.
 
-  Program Definition jsafe_perm_pre
-    (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
-    coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
-      |={E}=> ∀ m (Hp : permMapLt p (getMaxPerm m)), state_interp m z -∗
-        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ state_interp m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
-        (|={E}=> ∃ es c' m', ⌜ev_step (Clight_evsem.CLC_evsem ge) c m es c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (do_events p e)) ∨
-        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
+  Program Definition jsafe_frag_pre q
+    (jsafe : coPset -d> unit -d> CC_core -d> iPropO Σ) :
+    coPset -d> unit -d> CC_core -d> iPropO Σ := λ E z c,
+      |={E}=> ∀ m, frag_state_interp q m z -∗
+        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ frag_state_interp q m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
+        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ frag_state_interp q m' z ∗ ▷ jsafe E z c') ∨
+        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ frag_state_interp q m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
-            |={E}=> state_interp m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
-                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ state_interp m' z' ∗ ∃ p', jsafe E z' c' p')).
+            |={E}=> frag_state_interp q m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
+                ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ frag_state_interp q m' z' ∗ jsafe E z' c')).
 
-  Local Instance jsafe_perm_pre_contractive : Contractive (jsafe_perm_pre).
+  Local Instance jsafe_frag_pre_contractive q: Contractive (jsafe_frag_pre q).
   Proof.
-    rewrite /jsafe_perm_pre => n jsafe jsafe' Hsafe E z c [??].
-    do 15 f_equiv.
+    rewrite /jsafe_frag_pre => n jsafe jsafe' Hsafe E z c.
+    do 13 f_equiv.
     - try f_contractive; repeat f_equiv. apply Hsafe.
     - do 2 f_equiv. f_contractive; repeat f_equiv. apply Hsafe.
   Qed.
 
-  Local Definition jsafe_perm_def : coPset -> unit -> CC_core -> _ -> iProp Σ := fixpoint (jsafe_perm_pre).
-  Local Definition jsafe_perm_aux : seal (jsafe_perm_def). Proof. by eexists. Qed.
-  Definition jsafe_perm := jsafe_perm_aux.(unseal).
-  Local Lemma jsafe_perm_unseal : jsafe_perm = jsafe_perm_def.
-  Proof. rewrite -jsafe_perm_aux.(seal_eq) //. Qed.
+  Local Definition jsafe_frag_def q: coPset -> unit -> CC_core -> iProp Σ := fixpoint (jsafe_frag_pre q).
+  Local Definition jsafe_frag_aux : seal (jsafe_frag_def). Proof. by eexists. Qed.
+  Definition jsafe_frag := jsafe_frag_aux.(unseal).
+  Local Lemma jsafe_frag_unseal : jsafe_frag = jsafe_frag_def.
+  Proof. rewrite -jsafe_frag_aux.(seal_eq) //. Qed.
 
-  Lemma jsafe_perm_unfold E z c p :
-    jsafe_perm E z c p ⊣⊢ jsafe_perm_pre (jsafe_perm) E z c p.
+  Lemma jsafe_frag_unfold q E z c :
+    jsafe_frag q E z c ⊣⊢ jsafe_frag_pre q (jsafe_frag q) E z c.
   Proof.
-    rewrite jsafe_perm_unseal.
-    apply (fixpoint_unfold (jsafe_perm_pre)).
+    rewrite jsafe_frag_unseal.
+    apply (fixpoint_unfold (jsafe_frag_pre q)).
   Qed.
 
   (*
@@ -2612,19 +2607,6 @@ Section Safety.
   Qed.
 *)
   Existing Instance mem_equiv.access_map_equiv_Equivalence.
-  
-  Lemma jsafe_perm_equiv : forall E z c
-                             (p1 p2 : access_map), mem_equiv.access_map_equiv p1 p2 -> 
-     jsafe_perm E z c p1 ⊢ jsafe_perm E z c p2.
-  Proof.
-    intros.
-    iLöb as "IH" forall (z c p1 p2 H).
-    rewrite !jsafe_perm_unfold /jsafe_perm_pre.
-    iIntros ">H !>" (? Hcur) "S".
-    assert (Hlt: permMapLt p1 (getMaxPerm m)).
-    { by rewrite H. }
-    iDestruct ("H" $! _ Hlt with "S") as "[H | [H | H]]"; auto.
-  Qed.
     
 (*  Axiom external_call_memLt
     : ∀ (ef : external_function) (ge : Senv.t) (vargs : list val) (m1 : mem) 
@@ -2793,22 +2775,20 @@ Section Safety.
     by rewrite -Heq in Hmax.
   Qed.
 
-  Lemma jsafe_jsafe_perm : forall E z c p,
+  Lemma jsafe_jsafe_frag : forall E z c,
     jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢
-    jsafe_perm E z c p.
+    jsafe_frag 1 E z c.
   Proof.
     intros.
-    iLöb as "IH" forall (z c p).
-    rewrite jsafe_unfold jsafe_perm_unfold /jsafe_pre /jsafe_perm_pre.
-    iIntros ">H !> %% S".
+    iLöb as "IH" forall (z c).
+    rewrite jsafe_unfold jsafe_frag_unfold /jsafe_pre /jsafe_frag_pre.
+    iIntros ">H !> % S".
     iDestruct ("H" with "S") as "[H | [H | H]]".
     - by iLeft.
     - iRight; iLeft.
-      iMod "H" as (??) "(% & (? & Hsafe))".
+      iMod "H" as (??) "(% & ($ & Hsafe))".
       iIntros "!>".
-      iExists c', m'.
-      iSplit; auto.
-      iFrame.
+      iFrame "%".
       by iApply "IH".
     - iRight; iRight.
       iDestruct "H" as (????) "($ & $ & H)".
@@ -2819,7 +2799,6 @@ Section Safety.
       by iApply "IH".
   Qed.
 
-  
   (*
   Lemma jsafe_jsafe_perm1 : forall `{!VSTGS unit Σ} max E z c p, p = max ->
    jsafe(genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge E z c ⊢ jsafe_perm max E z c p.
