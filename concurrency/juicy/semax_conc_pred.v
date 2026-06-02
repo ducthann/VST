@@ -168,6 +168,7 @@ Definition rec_inv sh v (Q R: mpred) : mpred := (R ∗-∗ Q ∗ ▷ lock_inv sh
 #[global] Instance lock_inv_nonexpansive sh v : NonExpansive (lock_inv sh v).
 Proof. solve_proper. Qed.
 
+(* This implies that the invariants all hold on one heap (rmap). *)
 Definition lock_state (m : mem) ls : mpred := ∃ I : gmap address mpred, <affine> ⌜dom I = ls⌝ ∗
   own lockGS_gname (gmap_view_auth (DfracOwn 1) (invariant_unfold <$> I)) ∗
   [∗ map] l ↦ R ∈ I, (<affine> ⌜Mem_load_unchecked Mptr m l.1 l.2 = Vptrofs (Ptrofs.one)⌝ ∗ ▷R) ∨
