@@ -2542,13 +2542,13 @@ Section Safety.
   Definition frag_mem_auth q m := ∃ σ, ⌜coherent m σ⌝ ∧ resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := gen_heap_inG)) (gen_heap_name _) q σ.
   Definition frag_state_interp q m z := frag_mem_auth q m ∗ ext_auth z.
 
-  Program Definition jsafe_frag_pre q
-    (jsafe : coPset -d> unit -d> CC_core -d> iPropO Σ) :
-    coPset -d> unit -d> CC_core -d> iPropO Σ := λ E z c,
-      |={E}=> ∀ m, frag_state_interp q m z -∗
-        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ frag_state_interp q m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
-        (|={E}=> ∃ c' m', ⌜corestep (cl_core_sem ge) c m c' m'⌝ ∧ frag_state_interp q m' z ∗ ▷ jsafe E z c') ∨
-        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ frag_state_interp q m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
+  Program Definition jsafe_perm_pre
+    (jsafe : coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ) :
+    coPset -d> unit -d> CC_core -d> access_map -d> iPropO Σ := λ E z c p,
+      |={E}=> ∀ m (Hp : permMapLt p (getMaxPerm m)), state_interp m z -∗
+        (∃ i, ⌜halted (cl_core_sem ge) c i⌝ ∧ state_interp m z ∗ Jext_spec_exit (concurrent_ext_spec CS ext_link) (Some (Vint i))) ∨
+        (|={E}=> ∃ es c' m', ⌜ev_step (Clight_evsem.CLC_evsem ge) c m es c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c' (do_events p e)) ∨
+        (∃ e args x, ⌜at_external (cl_core_sem ge) c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_args (ef_sig e)) args ∗
            ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
             |={E}=> frag_state_interp q m' z' -∗ Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge) (sig_res (ef_sig e)) ret -∗
                 ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧ frag_state_interp q m' z' ∗ jsafe E z' c')).
