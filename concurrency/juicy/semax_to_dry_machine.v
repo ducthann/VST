@@ -126,6 +126,7 @@ Definition remove_region (b : Values.block) (lo hi : Z) (cur : access_map)
 
 Definition add_region (b : Values.block) (lo hi : Z) (perm : permission) (cur : access_map)
   : access_map := setPerm_range (Some perm) b lo hi cur.
+*)
 
 Definition can_store_at (p : access_map) (l : positive * Z) : Prop :=
   match (p # (fst l)) (snd l) with
@@ -148,6 +149,7 @@ Qed.
 Definition contents_at (m : mem) (l : positive * Z) : memval :=
   ZMap.get (snd l) ((Mem.mem_contents m) # (fst l)).
 
+(*
 
 Definition permMapsDisjoint_at
   (perms : gmap nat (gname * access_map))
@@ -224,6 +226,7 @@ Record OpSC (i : nat) (m m' : mem)
               getCurPerm m' = add_region b lo hi (getCurPerm m)) ; *)
 
 }.
+*)
 
 Lemma writable_at_perm_order_cases
   (p : access_map) (loc : positive * Z) (x : option permission) :
@@ -235,7 +238,6 @@ Proof.
   - inv H0. inv H. by right. by left.
   - discriminate.
 Qed.
-*)
 
 Lemma access_at_restrPermMap_Cur p m loc (Hlt : permMapLt p (getMaxPerm m)):
   access_at (restrPermMap Hlt) loc Cur = p # (loc.1) loc.2 .
@@ -307,6 +309,7 @@ Proof.
   destruct Hcontra as (? & (Hsh & ?)).
   by inv Hsh.
 Qed.
+*)
 
 Lemma restrPermMap_Cur_eq m p (Hlt : permMapLt p (getMaxPerm m)) :
   ∀ b ofs, (Mem.mem_access (restrPermMap Hlt)) # b ofs Cur = p # b ofs.
@@ -376,6 +379,7 @@ Proof.
   eapply mem_lemmas.po_trans; eauto.
 Qed.
 
+(*
 Lemma permMapLt_getMax_setPermBlock_Freeable
   (m : mem) (b : positive) (lo hi : Z) :
   permMapLt (getMaxPerm m)
@@ -968,6 +972,8 @@ Proof.
         + rewrite lookup_insert; auto.
 Qed.
 
+*)
+
 Lemma can_store_at_getCurPerm_of_perm_order'
   (m : Mem.mem) (b : Values.block) (ofs : Z) :
   Mem.perm_order' ((Mem.mem_access m) # b ofs Cur) Writable ->
@@ -994,6 +1000,7 @@ Proof.
   destruct (Mem.range_perm_dec (restrPermMap Hlt) b ofs
               (ofs + Z.of_nat (length bytes)) Cur Writable) as [Hrp | Hnrp]; try discriminate.
   inversion Hst1; subst m'; clear Hst1.
+  Require Import Classical_Prop.
   destruct (peq b0 b) as [-> | Hbneq].
   - destruct (classic (ofs <= ofs0 < ofs + Z.of_nat (length bytes))%Z) as [Hin | Hout].
     + right; apply can_store_at_getCurPerm_of_perm_order'; by apply Hf.
@@ -1001,7 +1008,6 @@ Proof.
    - left; rewrite /contents_at PMap.gso //=.
 Qed.
 
-(*
 Lemma storebytes_contents_or_canstore_cur1 m (m' : Mem.mem) b ofs bytes
   (Hst1 : Mem.storebytes m b ofs bytes = Some m')
   (Hf : forall ofs0 : Z, (ofs <= ofs0 < ofs + Z.of_nat (length bytes))%Z ->
@@ -1029,7 +1035,8 @@ Proof.
      rewrite /contents_at /=.
      rewrite PMap.gso //=.
 Qed.
-*)
+
+(*
 
 Lemma permMapLt_respects_left
   (a1 a2 amax : access_map) (Heq : mem_equiv.access_map_equiv a1 a2):
@@ -2025,7 +2032,6 @@ Qed. *)
       split.
       + intro Hge.
         apply Hchr.
-        Check mem_lemmas.nextblock_freelist l m0 m'.
         assert (Hnxt: Mem.nextblock m' = Mem.nextblock m0).
         { apply (mem_lemmas.nextblock_freelist l (restrPermMap Hp) m'); auto. }
         rewrite restrPermMap_nextblock in Hge.
@@ -2061,8 +2067,140 @@ Qed. *)
           rewrite access_at_restrPermMap_Cur in H2.
           rewrite access_at_restrPermMap_Cur.
           done.
-       - 
-Admitted.
+       - (* Alloc *)
+         Transparent Mem.alloc.
+         rewrite /Mem.alloc /= in H.
+         injection H as Hxy.
+         pose proof (f_equal Mem.mem_access (eq_sym Hxy)) as Hacc.
+         simpl in Hacc.
+         assert (mem_equiv.access_map_equiv (getCurPerm (restrPermMap Hp)) p).
+         { apply mem_equiv.getCur_restr. }
+         pose proof (f_equal Mem.mem_contents (eq_sym Hxy)) as Hcnt.
+         simpl in Hcnt.
+         pose proof (f_equal Mem.nextblock (eq_sym Hxy)) as Hnxt.
+         simpl in Hnxt.
+         clear Hxy.
+         unfold coherent in *.
+         intros.
+         specialize (Hchr loc).
+         split.
+         + intro Hge.
+           apply Hchr.
+           rewrite restrPermMap_nextblock in Hge.
+           rewrite /coherent in Hchr.
+           rewrite restrPermMap_nextblock.
+           subst; lia.
+         + rewrite /coherent_loc.
+           split.
+           ** rewrite /contents_cohere restrPermMap_contents /juicy_mem.contents_at /=.
+              intros.
+              rewrite /coherent in Hchr.
+              destruct Hchr as (? & Hchr).
+              rewrite /coherent_loc /contents_cohere in Hchr.
+              destruct Hchr as (Hchr & ?).
+              destruct (peq (loc.1) (Mem.nextblock m0)) as [Heq1 | Hneq].
+              { destruct (σ !! loc) eqn: E; last first.
+                { rewrite /resource_at in H1.
+                  rewrite E in H1. inv H1.
+                }
+                rewrite restrPermMap_nextblock in H2.
+                rewrite Heq1 in H2.
+                assert (Hge: (Mem.nextblock m0 >= Mem.nextblock m0)%positive) by lia.
+                by apply H2 in Hge.
+              }
+              apply Hchr in H1.
+              rewrite /juicy_mem.contents_at mem_contents_restrPermMap in H1.
+              rewrite Hcnt.
+              rewrite PMap.gso //.
+           ** rewrite /access_cohere.
+              rewrite access_at_restrPermMap_Cur.
+              rewrite /coherent in Hchr.
+              destruct Hchr as (? & ?).
+              rewrite /coherent_loc in H2.
+              destruct H2 as (? & ?).
+              rewrite /access_cohere in H3.
+              by rewrite access_at_restrPermMap_Cur in H3.
+       - (* Mem.storebytes  *)
+         pose proof H as Hst.
+         pose proof H as Hst1.
+         Transparent Mem.storebytes.
+         rewrite /Mem.storebytes in H.
+         destruct (Mem.range_perm_dec _ _ _ _ Cur Writable) as [Hf | Hf]; last first; try done.  
+         injection H as Hxy.
+         pose proof (f_equal Mem.mem_access (eq_sym Hxy)) as Hacc.
+         simpl in Hacc.
+         assert (Hcur : getCurPerm m' = getCurPerm (restrPermMap Hp)).
+         { rewrite /getCurPerm.
+           rewrite Hacc. done. }
+         assert (Hmax : getMaxPerm m' = getMaxPerm (restrPermMap Hp)).
+         { by rewrite /getMaxPerm Hacc. }
+         pose proof (f_equal Mem.mem_contents (eq_sym Hxy)) as Hcnt.
+         simpl in Hcnt.
+         pose proof (f_equal Mem.nextblock (eq_sym Hxy)) as Hnxt.
+         simpl in Hnxt.
+         clear Hxy.
+         unfold coherent in *.
+         intros.
+         split; auto.
+         + intros. apply Hchr; auto; simpl in *; rewrite Hnxt // in H.
+         + unfold Mem.range_perm, Mem.perm in Hf.
+           assert (Hloc: forall loc, contents_at m' loc = contents_at (restrPermMap Hp) loc
+                                     \/ can_store_at (getCurPerm (restrPermMap Hp)) loc).
+           { eapply storebytes_contents_or_canstore_cur; eauto. }
+           destruct (Hchr loc) as (_ & Hcoh).
+           destruct (Hloc loc) as [Hmem_eq | Hwrite].
+           * rewrite /contents_at in Hmem_eq.
+             rewrite /coherent_loc /contents_cohere /resource_at /juicy_mem.contents_at
+               in Hcoh |- *.
+             split; simpl.
+             intros.
+             rewrite Hmem_eq mem_contents_restrPermMap.
+             rewrite mem_contents_restrPermMap in Hcoh.
+             apply Hcoh; auto.
+             rewrite /access_cohere !access_at_restrPermMap_Cur in Hcoh |- *.
+             apply Hcoh.
+           * rewrite / coherent_loc in Hcoh |- *.
+             rewrite /contents_cohere /access_cohere /= in Hcoh |- *.
+             rewrite ! access_at_restrPermMap_Cur in Hcoh |- *.
+             split; try apply Hcoh.
+             intros ? Hres.
+             destruct Hcoh as (Hv & _); specialize (Hv _ Hres).
+             rewrite !restrPermMap_contents in Hv |- *.
+             rewrite /resource_at /resR_to_resource in Hres.
+             rewrite /permMapsDisjoint in Hother.
+             specialize (Hother loc.1 loc.2).
+             destruct (σ !! loc) eqn: E; last first.
+             { rewrite E in Hres. inv Hres. } 
+             rewrite E /= in Hres.
+             destruct s; last first. inv Hres.
+             rewrite /resource_at in Hchr.
+             specialize (Hchr loc).
+             destruct Hchr as (_ & _ & HpermHlt1).
+             rewrite E in HpermHlt1.
+             apply writable_at_perm_order_cases
+               with (x := access_at (restrPermMap Hp) loc Cur) in Hwrite; auto.
+             2 : { by rewrite /getCurPerm /access_at PMap.gmap. }
+             rewrite /access_at in Hwrite.
+             rewrite restrPermMap_Cur_eq in Hwrite.
+             pose proof (access_at_restrPermMap_Cur (perm_of_rmap σ) m0 loc Hσ) as Haccess1.
+             rewrite /access_cohere Haccess1 in HpermHlt1.
+             assert (Hread: Mem.perm_order' ((perm_of_rmap σ) # (loc.1) loc.2) Readable).
+             { rewrite mem_lemmas.po_oo.
+               eapply readable_dfrac_perm_order with (Hlt:= Hσ) (rsh := rsh) ; try eauto.
+               by rewrite Haccess1.
+             }
+             assert (Hwrite1: Mem.perm_order' (p # (loc.1) loc.2) Writable).
+             { destruct Hwrite as [Hwrite | Hwrite];
+                 rewrite mem_lemmas.po_oo; rewrite Hwrite;
+                 [try apply perm_F_any | apply perm_refl].
+             }
+             assert (¬ ∃ pu : option permission,
+                    perm_union ((perm_of_rmap σ) # (loc.1) loc.2) (p # (loc.1) loc.2) = Some pu).
+             { apply (perm_order_clash
+                        ((perm_of_rmap σ) # (loc.1) loc.2) (p # (loc.1) loc.2)); auto. }
+             rewrite perm_union_comm in H.
+             done.
+  Qed.
 
 
 Lemma permMapLt_decay_disjoint
