@@ -2599,7 +2599,6 @@ Proof.
   by rewrite Maps.PMap.gmap in Hcur.
 Qed.
 
-
 (*
 Lemma can_store_at_getCurPerm_of_perm_order'1
   (m : Mem.mem) (b : Values.block) (ofs : Z) :
@@ -2617,11 +2616,7 @@ Lemma Mem_unchecked_restrPermMap :
   forall (m: Mem.mem) (p: access_map) (Hlt : permMapLt p (getMaxPerm m)) l,
     Mem_load_unchecked Mptr (restrPermMap Hlt) l.1 l.2 =
       Mem_load_unchecked Mptr m l.1 l.2.
-Proof.
-  intros m p Hlt [b ofs].
-  by unfold Mem_load_unchecked.
-Qed.
-
+Proof. intros m p Hlt [b ofs]; by unfold Mem_load_unchecked. Qed.
 
 Lemma state_interp_to_frag m z :
   @state_interp Σ unit heapGS_gen_heapGS VST_extGS m z
@@ -2741,7 +2736,17 @@ Proof.
   { subst tp0.
     constructor.
     - intros.
-      admit.
+      assert (cnt_old : containsThread tp tid).
+      { eapply cntUpdate'; eauto. }
+      destruct (eq_nat_dec i tid); subst.
+      + split.
+        * replace cnt with cnti0 by apply proof_irrelevance.
+          rewrite gssThreadRes //.
+        * replace cnt with cnti0 by apply proof_irrelevance.
+          rewrite gssThreadRes.
+          apply (proj2 (DryHybridMachine.compat_th _ _ Hcompat cnti)).
+      + erewrite @gsoThreadRes with (cntj := cnt_old); auto.
+        apply (Hcompat tid cnt_old).
     - intros laddr pmaps Hres.
       rewrite gsoThreadLPool in Hres.
       eapply DryHybridMachine.compat_lp; eauto.
@@ -2750,20 +2755,27 @@ Proof.
       eapply DryHybridMachine.lockRes_blocks; eauto.
   }
 
+  pose proof Hstep as Hev.
+  apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hev as (ev & Hev).
+  assert (Hrestr0: restrPermMap (proj1(DryHybridMachine.compat_th _ _ Hcompat0 cnti0)) =
+        restrPermMap Hlt).
+  { eapply restrPermMap_irr; eauto.
+    subst tp0; rewrite gssThreadRes //. }  
+  assert (Hev0 : ev_step semSem s
+                   (restrPermMap(proj1 (DryHybridMachine.compat_th _ _ Hcompat0 cnti0))) ev c' m').
+  { rewrite Hrestr0 //. }
   (* UP *)
   assert (Hcompat1 : mem_compatible
                        (updThread cnti0 (Krun c') (getCurPerm m', (getThreadR cnti0).2)) m').
   { eapply
       (CoreLanguageDry.corestep_compatible
          (Sem := Sem)); eauto.
-    subst tp0.
-    - rewrite gssThreadCode; auto.
-    - 
-      reflexivity.
-    - exact Hcompat0.
-    - exact Hev0.
-  }
-  
+    - subst tp0; rewrite gssThreadCode; auto.
+    - simpl; done. }
+  unfold tp0 in cnti0, Hcompat1.
+  rewrite gssThreadRes /= in Hcompat1.
+  rewrite OrdinalPool.updThread_twice // in Hcompat1.
+Qed.
 
   End conc_heap.
 
@@ -2984,41 +2996,11 @@ Proof.
           destruct (eq_dec j i); first by subst; rewrite gssThreadCode.
           pose proof (cntUpdate' _ _ cnti cntj).
           rewrite gsoThreadCode //; apply Htp_wf.
-        * Check corestep_invariant_sub.
-          eapply corestep_invariant_sub with (p := perm_of_rmap σ1) (m := m) (s := s); eauto.
+        * eapply corestep_invariant_sub with (p := perm_of_rmap σ1) (m := m) (s := s); eauto.
           instantiate (1 := Hlt).
           by rewrite Hrestr in Hstep.
-        * Search mem_compatible.
-
-          assert (mem_compatible (updThread cnti (Krun c')
-                                    (getCurPerm m', (getThreadR cnti).2)) m') as Hcompat'.
-          { eapply (CoreLanguageDry.corestep_compatible(Sem := Sem)); eauto.
-            Check (ev_step_ax2 (Clight_evsem.CLC_evsem ge)).
-            eapply ev_step_ax2 in Hstep.
-            Search ev_step corestep.
-            
-
-          Set Printing Implicit.
-          eapply ThreadPoolWF.updThread_inv.
-
-
-          assert (corestep (cl_core_sem ge) s
-                    (restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1) c' m') as Hstep'.
-          { rewrite Hrestr in Hstep.
-            replace (restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1)
-              with (restrPermMap Hlt); auto.
-            symmetry.
-            apply restrPermMap_irr; auto.
-            
-            erewrite restrPermMap_irr; eauto. }
-
-          apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hstep' as (? & Hstep').
-
-          eapply (CoreLanguageDry.corestep_invariant(Sem := Sem)); try done.
-          eapply ev_step_ax1; eauto.
-
-
-          admit. * admit. * admit. * admit.
+        * rewrite Hrestr in Hstep; eapply corestep_compatible_sub; eauto.
+        * admit.
         * iApply "Hsafe".
           ** iIntros "!>" (k y (-> & ?)%lookup_seq Hneq) "Hy".
              iDestruct "Hy" as (q0 σ0 cnty Hltσ0) "((% & %Hqy) & Hsafe_y & Hfrag_y)".
@@ -3043,11 +3025,8 @@ Proof.
                - apply (Hlt1 b ofs).
                - apply (Hqy b ofs). }
              assert (Hdecay : decay (restrPermMap Hlt) m').
-             { Check @msem_decay CC_core (CLC_memsem ge) s
-                 (restrPermMap Hlt) c' m'.
-               rewrite Hrestr in Hstep.
-               apply (@msem_decay CC_core (CLC_memsem ge) s
-                        (restrPermMap Hlt) c' m' Hstep). }
+             { rewrite Hrestr in Hstep.
+               apply (@msem_decay CC_core (CLC_memsem ge) s (restrPermMap Hlt) c' m' Hstep). }
              assert (Hpres : permMapLt (perm_of_rmap σ0) (getMaxPerm m')).
              { eapply (permMapLt_decay_disjoint _ (restrPermMap Hlt)); eauto.
                + by rewrite restr_Max_eq.
