@@ -647,6 +647,21 @@ Qed.
     permMapLt (perm_of_rmap σj) (getMaxPerm m) /\
     permMapsDisjoint p (perm_of_rmap σj).
 
+  (*
+    Lemma coherent_mem_step_other
+    (m m' : mem) (p r r' : access_map) (σ : rmap)
+    (Hp  : permMapLt p  (getMaxPerm m))
+    (Hr  : permMapLt r  (getMaxPerm m))
+    (Hr' : permMapLt r' (getMaxPerm m'))
+    (Hsub  : permMapLt (perm_of_rmap σ) r)
+    (Hsub' : permMapLt (perm_of_rmap σ) r') :
+  coherent (restrPermMap Hr) σ ->
+  mem_step (restrPermMap Hp) m' ->
+  permMapsDisjoint p (perm_of_rmap σ) ->
+  coherent (restrPermMap Hr') σ.
+
+   *)
+
   Lemma coherent_mem_step_other_aux (m m' : mem) (p : access_map) (σ : rmap)
     (Hp : permMapLt p (getMaxPerm m))
     (Hσ : permMapLt (perm_of_rmap σ) (getMaxPerm m))
@@ -1756,6 +1771,22 @@ Section Safety.
     eapply coherent_mem_step_other_aux; eauto. 
   Qed.
 
+  (*
+    Lemma frag_mem_auth_corestep_other
+    (q : Qp) (m m' : mem)
+    (p r r' : access_map) (σ : rmap)
+    (Hp  : permMapLt p  (getMaxPerm m))
+    (Hr  : permMapLt r  (getMaxPerm m))
+    (Hr' : permMapLt r' (getMaxPerm m'))
+    (Hsub  : permMapLt (perm_of_rmap σ) r)
+    (Hsub' : permMapLt (perm_of_rmap σ) r') :
+  mem_step (restrPermMap Hp) m' ->
+  permMapsDisjoint p (perm_of_rmap σ) ->
+  frag_mem_auth q (restrPermMap Hr) σ -∗
+  frag_mem_auth q (restrPermMap Hr') σ.
+
+   *)
+
   Lemma coherent_perm_of_rmap m σ :
     coherent m σ -> permMapLt (perm_of_rmap σ) (getCurPerm m).
   Proof.
@@ -1765,10 +1796,53 @@ Section Safety.
     destruct Hcoh as (_ & _ & ?).
     rewrite perm_of_rmap_lookup.
     rewrite /access_at /= in H.
-    unfold getCurPerm.
-    by rewrite PMap.gmap.
+    rewrite /getCurPerm PMap.gmap //.
   Qed.
 
+  Definition mem_coherent_le (a b : mem) : Prop :=
+    Ple (Mem.nextblock a) (Mem.nextblock b) /\
+      (forall k,
+          juicy_mem.contents_at b k =
+            juicy_mem.contents_at a k) /\
+      (forall k,
+          Mem.perm_order''
+            (access_at b k Cur)
+            (access_at a k Cur)).
+
+  Lemma coherent_mono (a b : mem) (s : rmap) :
+    mem_coherent_le a b ->
+    coherent a s ->
+    coherent b s.
+  Proof.
+    rewrite /coherent.
+    intros (Hnext & (Hcnt & Hperm)) Hcoh loc.
+    specialize (Hcoh loc).
+    destruct Hcoh as (Hval & Hcnt_a & Hacc_a).
+    split.
+    - intros Hge.
+      apply Hval.
+      rewrite /Ple in Hnext.
+      lia.
+    - split.
+      + intros v Hv.
+        rewrite Hcnt.
+        apply (Hcnt_a v Hv).
+      + eapply mem_lemmas.po_trans; eauto.
+  Qed.
+
+  Lemma frag_mem_auth_mono q (a b : mem) (s : rmap) :
+    mem_coherent_le a b ->
+    frag_mem_auth q a s ⊢ frag_mem_auth q b s.
+  Proof.
+    intros Hab.
+    rewrite /frag_mem_auth.
+    iIntros "(%Hcoh & Hauth)".
+    iSplit; auto.
+    iPureIntro.
+    eapply coherent_mono; eauto.
+ Qed.
+
+  
   Lemma coherent_perm_of_rmap_max m σ :
     coherent m σ -> permMapLt (perm_of_rmap σ) (getMaxPerm m).
   Proof.
@@ -2311,6 +2385,18 @@ Definition threads_safe (tp : dtp) : iProp Σ :=
         (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm m)),
         ⌜qs !! i = Some q ∧ permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
             thread_safe tp i q ∗ frag_mem_auth q (restrPermMap Hlt) σ.
+
+  (*
+    Definition threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) : iProp Σ :=
+  [∗ list] _ ↦ i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
+    ∃ q (σ : rmap) (cnti : containsThread tp i)
+      (Hlt : permMapLt (getThreadR cnti).1 (getMaxPerm m)),
+      ⌜qs !! i = Some q ∧
+        permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
+      thread_safe tp i q ∗
+      frag_mem_auth q (restrPermMap Hlt) σ.
+
+   *)
   
   Definition threads_wellformed (tp : dtp) :=
     forall i (cnti : containsThread(ThreadPool := OrdinalPool.OrdinalThreadPool) tp i),
@@ -2794,6 +2880,7 @@ Qed.
     eapply ouPred.pure_soundness, (step_fupdN_soundness_no_lc' _ (S n) O); [apply _..|].
     simpl; intros; iIntros "_".
     pose proof (empty_coherent Mem.empty) as Hcoh_empty.
+    Check  init_conc_VST_frag.
     iMod (init_conc_VST_frag () tt) as "H".
     iSpecialize ("H" $! Hinv).
     iDestruct "H" as (HG FS ES HL) "(Hstate & Hfunspec & Hext & locks & _)".
@@ -2803,7 +2890,6 @@ Qed.
                 heapGS_gen_heapGS := HG;
                 heapGS_funspecGS := FS |} : heapGS Σ)
              ES).
-
     destruct (spr HHfrag HL) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
     iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as "(S & Hsafe)".
     iAssert (|={⊤}[∅]▷=>^n ⌜HybridMachineSig.HybridCoarseMachine.csafe
@@ -2972,6 +3058,8 @@ Qed.
         apply coherent_restrPermMap_of_coherent in Hcoh.
         destruct Hcoh as (Hlt2 & Hcoh).
         iMod "Hsafei" as "Hsafei".
+        Print frag_mem_auth.
+        Search coherent permMapLt.
         iDestruct ("Hsafei" $! (restrPermMap Hlt) σ1
                     with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
         iDestruct "Hhalt" as (? Hhalt') "?"; done.
@@ -3059,8 +3147,22 @@ Qed.
             iSplit; auto.
             iPureIntro.
             apply coherent_restrPermMap; auto.
-     * (* UP *)
-       
+        * iApply (step_fupdN_mono with "IH").
+          iPureIntro; intros Hsafe.
+          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last exact Hsafe.
+          rewrite /HybridMachineSig.MachStep /=.
+          change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
+          change m' with (HybridMachineSig.diluteMem m') at 3.
+          eapply HybridMachineSig.thread_step; first done.
+          eapply step_dry
+            with (c := s)
+                 (m1 := restrPermMap (proj1 (Hcompat i cnti)))
+                 (c' := c')
+                 (ev := _); eauto.
+          (* Do we actually need p = (getThreadR cnti).1 ? *)
+          Check (Hcompat i cnti).
+          Print perm_of_rmap.
+          Check frag_mem_auth.
 
        
             done.
