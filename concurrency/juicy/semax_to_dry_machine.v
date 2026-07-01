@@ -61,40 +61,544 @@ Require Import VST.concurrency.juicy.semax_preservation.
 Require Import VST.concurrency.juicy.semax_simlemmas.*)
 Require Import VST.concurrency.common.dry_machine_lemmas.
 Require Import VST.concurrency.common.dry_machine_step_lemmas.
-(* Require Import VST.concurrency.juicy.memLt. (* added memLt *) *)
+Require Import VST.veric.Clight_initial_world.
+Require Import VST.concurrency.juicy.initial_world_with_rmap.
+Require Import VST.veric.initialize.
 Require Import iris_ora.algebra.gmap.
 
 
 Import ThreadPool.
 Set Bullet Behavior "Strict Subproofs".
 
-Definition access_equiv (m: mem) k (r : prodO dfracO (optionO (leibnizO resource))) :=
-  (access_at m k Cur) = (perm_of_res r).
-
-Definition access_map_rmap (m: mem) σ : Prop :=
-  forall loc, access_equiv m loc (σ @ loc).
-
-(*
-  perms : gmap nat (gname * access_map) : for each thread id
-
-σs : gmap nat (rmapUR ...) : for each thread id, a ghost snapshot σ in heap - record the thread-local ghost view of memory that must be coherent with those perms?
-
-([∗ map]  ... ∈ perms; σs, ...) is a zip over two maps keyed by the same domain.
-perms : gmap nat (gname * access_map) - At key i: value (g,p).
-σs : gmap nat (rmapUR ...) - At key i: value σ.
-
-
-If σs = {0↦σ0, 1↦σ1}, then [^op map] σi ∈ σs, σi = σ0 ∙ σ1. 
-
-If σs = ∅, then it equals ε.
-
-\sigma_i is combination of all the point to for thread i
-two different thread owns dont conflict, at most one. 
- *)
-
-(* fix in seplog *)
 Definition funspec_auth `{!funspecGS Σ} m :=
-  own(inG0 := funspec_inG) funspec_name (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) m).
+  own (inG0 := funspec_inG) funspec_name (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) m).
+
+Section semax_prog_with_rmap.
+  Context `{!VSTGS OK_ty Σ} (OK_spec : Jext_spec Σ).
+
+  Definition state_interp_with_rmap (m : mem) (z : OK_ty) (σ : rmap) : iProp Σ :=
+    frag_mem_auth 1 m σ ∗ ext_auth z.
+
+  Lemma inflate_initial_mem_with_rmap_rev :
+    forall m bounds (gev : Genv.t Clight.fundef type) G
+       (vl : list (ident * globdef Clight.fundef type)) (Hnr : list_norepet (map fst (rev vl)))
+           (SAME_IDS : match_fdecs (prog_funct' vl) (rev G)),
+      inflate_initial_mem_with_rmap m bounds gev G ⊣⊢
+        inflate_initial_mem_with_rmap m bounds gev (rev G).
+  Proof.
+    intros.
+    rewrite /inflate_initial_mem_with_rmap.
+    apply big_sepL_proper; intros.
+    destruct (bounds _).
+    apply big_sepL_proper; intros.
+    rewrite /inflate_loc_with_rmap.
+    destruct (access_at _ _ _); last done.
+    destruct p; try done.
+    rewrite /funspec_of_loc.
+    if_tac; try done.
+    destruct (Genv.invert_symbol _ _) eqn:Hb; last done.
+    rewrite find_id_rev //.
+    rewrite -list_norepet_rev -map_rev -match_fdecs_norepet //.
+    apply list_norepet_prog_funct'.
+    rewrite -list_norepet_rev -map_rev //.
+  Qed.
+
+  Lemma init_data_list_lem_with_rmap :
+  forall (ge : genv) m0 (v : globvar type) m1 b m2 m3 m4,
+    Mem.alloc m0 0 (init_data_list_size (gvar_init v)) = (m1, b) ->
+    store_zeros m1 b 0 (init_data_list_size (gvar_init v)) = Some m2 ->
+    Genv.store_init_data_list ge m2 b 0 (gvar_init v) = Some m3 ->
+    Mem.drop_perm m3 b 0 (init_data_list_size (gvar_init v))
+              (Genv.perm_globvar v) = Some m4 ->
+    forall {F} (gl : list (ident * globdef F type)) i G
+      (SANITY : (common.AST.init_data_list_size (gvar_init v) < Ptrofs.modulus)%Z)
+      (AL : initializers_aligned 0 (gvar_init v) = true)
+      (Hgl : Mem.nextblock m0 = Z.to_pos (Z.succ (Zlength gl))),
+      inflate_initial_mem_with_rmap
+        m4 (globals_bounds 1 (gl ++ [(i, Gvar v)])) ge G
+      ⊢
+      inflate_initial_mem_with_rmap
+        m0 (globals_bounds 1 gl) ge G ∗
+      if gvar_volatile v then True
+      else init_data_list2pred
+             (genviron2globals (filter_genv ge))
+             (gvar_init v)
+             (readonly2share (gvar_readonly v))
+             (Vptr b Ptrofs.zero).
+  Proof.
+    intros.
+    rewrite /inflate_initial_mem_with_rmap.
+    erewrite Mem.nextblock_drop,
+      Genv.store_init_data_list_nextblock,
+      Genv.store_zeros_nextblock,
+      Mem.nextblock_alloc by done.
+    rewrite Pos2Nat.inj_succ /= Nat.sub_0_r.
+    destruct (Pos2Nat.is_succ (Mem.nextblock m0)) as (n & Hnext).
+    rewrite Hnext seq_S big_sepL_app /=.
+    pose proof (Mem.alloc_result _ _ _ _ _ H) as ->.
+    iIntros "(Hrest & Hb & _)".
+    iSplitL "Hrest".
+    - rewrite Nat.sub_0_r.
+      iApply (big_sepL_mono with "Hrest").
+      intros ?? (-> & ?)%lookup_seq.
+      rewrite globals_bounds_app1;
+        last by rewrite Zlength_correct in Hgl; lia.
+      destruct (globals_bounds _ _ _).
+      iIntros "Hrest".
+      iApply (big_sepL_mono with "Hrest").
+      intros.
+      rewrite /Mem.drop_perm in H2.
+      destruct Mem.range_perm_dec; inv H2.
+      rewrite /inflate_loc_with_rmap /access_at /contents_at /=.
+      assert (Pos.of_nat (S k) <> Mem.nextblock m0) by lia.
+      erewrite store_init_data_list_other_block; [|eassumption..].
+      erewrite store_zeros_other_block; [|eassumption..].
+      erewrite mem_lemmas.AllocContentsOther; [|eassumption..].
+      rewrite Maps.PMap.gso //.
+      apply (alloc_dry_unchanged_on
+               _ _ (Pos.of_nat (S k), (z + y)%Z))
+        in H as (Haccess & Hcontents);
+        last by intros [??].
+      rewrite {1}/access_at /= in Haccess.
+      apply equal_f with Cur in Haccess.
+      rewrite Haccess.
+      erewrite <- store_zeros_access by eassumption.
+      by apply store_init_data_list_outside'
+        in H1 as (Hcontents3 & -> & _).
+    - destruct (gvar_volatile v) eqn:VOL; first done.
+      rewrite -Hnext Pos2Nat.id.
+      pose proof (nth_error_app gl [(i, Gvar v)] O) as Hv.
+      replace (length gl)
+        with (Pos.to_nat (Mem.nextblock m0) - 1)%nat in Hv
+          by (rewrite Zlength_correct in Hgl; lia).
+      rewrite Nat.add_0_r /= in Hv.
+      erewrite globals_bounds_nth; [|lia|done].
+      simpl.
+      pose proof (load_store_init_data_lem1 H0 H1).
+      assert
+        (forall (chunk : memory_chunk) (ofs : Z),
+            Mem.load chunk m4 (Mem.nextblock m0) ofs =
+              Mem.load chunk m3 (Mem.nextblock m0) ofs).
+      {
+        intros.
+        eapply Mem.load_drop; eauto.
+        right; right; right.
+        rewrite /Genv.perm_globvar VOL.
+        simple_if_tac; constructor.
+      }
+      rewrite seq_app big_sepL_app.
+      iDestruct "Hb" as "(Hb & Hend)".
+      iAssert emp with "[Hend]" as "_".
+      {
+        rewrite /inflate_loc_with_rmap /=.
+        pose proof (init_data_list_size_pos (gvar_init v)).
+        rewrite Z.add_0_l Z2Nat.id; last lia.
+        erewrite <- access_drop_3; [|eauto|lia].
+        edestruct store_init_data_list_outside'
+          as (_ & <- & _); first done.
+        erewrite store_zeros_access by done.
+        erewrite <- alloc_access_other; [|eauto|lia].
+        rewrite nextblock_access_empty //; last lia.
+      }
+      
+    (* In this range [drop_perm] installs [Readable] or [Writable],
+       so the old and new inflate-location predicates coincide. *)
+      iAssert ([∗ list] o ∈ seq 0 (Z.to_nat (init_data_list_size (gvar_init v))),
+         inflate_loc m4 ge G (Mem.nextblock m0, (0 + Z.of_nat o)%Z)) with "[Hb]" as "Hb_old".
+      {
+        iApply (big_sepL_mono with "Hb").
+        intros k o (-> & Hk)%lookup_seq.
+        rewrite /inflate_loc_with_rmap /inflate_loc.
+        erewrite drop_perm_access by done.
+        rewrite Z.sub_0_r.
+        rewrite if_true.
+        2: {
+          split; first done.
+          split; first lia.
+          pose proof (init_data_list_size_pos (gvar_init v)) as Hpos.
+          apply Nat2Z.inj_lt in Hk. lia.
+        }
+        rewrite /Genv.perm_globvar VOL.
+        erewrite drop_perm_access by exact H2.
+        rewrite Z.sub_0_r.
+        rewrite if_true.
+        2: {
+          split; first reflexivity.
+          split; lia. }
+        rewrite /Genv.perm_globvar VOL.
+        destruct (gvar_readonly v) eqn:Hreadonly; done.
+      }
+      iApply (init_data_list_lem' _ _ _ _ _ _ [] with "Hb_old");
+        try done.
+      + eapply Genv.load_store_init_data_invariant,
+          Genv.store_init_data_list_charact; try done.
+        eapply Genv.store_zeros_read_as_zero; eauto.
+      + intros.
+        erewrite drop_perm_access by done.
+        rewrite Z.sub_0_r if_true //.
+      + intros.
+        eapply load_store_init_data1_invariant; eauto.
+  Qed.
+
+  Lemma global_initializers_with_rmap :
+    forall (prog : Clight.program) G m
+      (Hnorepet : list_norepet (prog_defs_names prog))
+      (AL: initialize.all_initializers_aligned prog)
+      (SAME_IDS: match_fdecs (prog_funct prog) G)
+      (Hinit : Genv.init_mem prog = Some m),
+      inflate_initial_mem_with_rmap m (block_bounds prog) (globalenv prog) G ⊢
+        initialize.globvars2pred (initialize.globals_of_genv (filter_genv (globalenv prog)))
+        (prog_vars prog).
+  Proof.
+    intros prog G m Hnorepet AL SAME_IDS Hinit.
+    change
+      (inflate_initial_mem_with_rmap m (block_bounds prog) (globalenv prog) G ⊢
+         globvars2pred (genviron2globals (filter_genv (globalenv prog))) (prog_vars prog)).
+    set (gp := globalenv prog).
+    unfold all_initializers_aligned in AL.
+    unfold Genv.init_mem in Hinit.
+    unfold globalenv, Genv.globalenv in *.
+    unfold prog_vars, prog_funct in *.
+    destruct prog as [fl prog_pub main prog_types cenv Hcenv].
+    simpl in * |-.
+    simpl prog_vars'.
+    simpl initial_core.
+    remember (Genv.add_globals _ fl) as gev.
+    rewrite <- (rev_involutive fl) in *.
+    rewrite alloc_globals_rev_eq in Hinit.
+    forget (rev fl) as vl.
+    unfold prog_defs_names in Hnorepet.
+    simpl in Hnorepet.
+    rewrite <- rev_prog_vars' in AL |- *.
+    rewrite <- rev_prog_funct' in SAME_IDS.
+    rewrite globvars2pred_rev.
+    rewrite forallb_rev in AL.
+    rewrite <- (rev_involutive G) in SAME_IDS.
+    rewrite match_fdecs_rev in SAME_IDS.
+    2: {
+      apply list_norepet_prog_funct'.
+      rewrite <- list_norepet_rev, <- map_rev; auto.
+    }
+    rewrite -> inflate_initial_mem_with_rmap_rev with (vl := vl) by auto.
+    rewrite map_rev in Hnorepet.
+    rewrite list_norepet_rev in Hnorepet.
+    forget (rev G) as G'.
+    clear G.
+    rename G' into G.
+    assert (Hsymb := add_globals_hack _ _ prog_pub Hnorepet Heqgev).
+    assert (H1 : forall j, In j (map (@fst _ _) G) -> ~ In j (map (@fst _ _) (prog_vars' vl))).
+    { intros j Hj.
+      pose proof (proj2 (match_ids (prog_funct' vl) G j SAME_IDS) Hj) as Hin'.
+      clear -Hnorepet Hin'.
+      intro Hjvar.
+      induction vl.
+      { inv Hjvar. }
+      inv Hnorepet.
+      specialize (IHvl H2).
+      destruct a as [i [fd | gv]]; simpl in *.
+      - destruct Hin' as [Hin' | Hin'].
+        + subst j.
+          clear -Hjvar H1.
+          apply H1; clear H1.
+          induction vl; simpl in *; auto.
+          destruct a as [i' [fd' | gv']]; auto.
+          destruct Hjvar; auto.
+        + apply IHvl; auto.
+      - destruct Hjvar as [Hjvar | Hjvar].
+        + subst j.
+          apply H1; clear -Hin'.
+          induction vl; simpl in *; auto.
+          destruct a as [i' [fd' | gv']]; auto.
+          destruct Hin'; auto.
+        + apply IHvl; auto.
+    }
+    assert (H1' : forall j, In j (map fst (prog_funct' vl)) -> In j (map fst G)).
+    { clear -SAME_IDS.
+      forget (prog_funct' vl) as fs.
+      intro j.
+      induction SAME_IDS; simpl; auto; tauto.
+    }
+    assert (NRG : list_norepet (map fst G)).
+    {
+      clear -SAME_IDS Hnorepet.
+      eapply match_fdecs_norepet; eauto.
+      apply list_norepet_prog_funct'; auto.
+    }
+    clear SAME_IDS Heqgev.
+    change (map fst vl)
+      with (map fst (@nil (ident * funspec)) ++ map fst vl)
+      in Hnorepet.
+    change G with (nil ++ G).
+    set (G0 := @nil (ident * funspec)) in *.
+    change G with (G0 ++ G) in NRG.
+    clearbody G0.
+    revert Hsymb m G0 G NRG Hnorepet Hinit H1 H1'.
+    induction vl; intros; simpl.
+    - inv Hinit.
+      rewrite /globvars2pred /=.
+      by iIntros "_".
+    - simpl in Hinit.
+      revert Hinit.
+      case_eq (alloc_globals_rev gev Mem.empty vl); intros; try congruence.
+      spec IHvl.
+      { clear -AL.
+        simpl in AL.
+        destruct a as [i g].
+        destruct g; auto.
+        simpl in AL.
+        apply andb_true_iff in AL.
+        destruct AL; auto.
+      }
+      spec IHvl.
+      { intros.
+        assert (H4' : (Pos.to_nat b <= length vl)%nat).
+        { clear -H0. rewrite Zlength_correct in H0. lia. }
+        assert (POS := Pos2Z.is_pos b).
+        rewrite Hsymb.
+        rewrite Pos_to_nat_eq_S /=.
+        replace
+          (length vl - (Z.to_nat (Z.pos b) - 1))%nat
+          with
+          (S (length vl - S (Z.to_nat (Z.pos b) - 1)))%nat
+          by (simpl; pose proof (Pos2Nat.is_pos b); lia).
+        simpl.
+        apply iff_refl.
+        rewrite Zlength_cons.
+        lia.
+      }
+      destruct a as [i g].
+      assert (FS : Genv.find_symbol gev i = Some (Mem.nextblock m0)).
+      { assert (Genv.find_symbol gev i = Some (Mem.nextblock m0)); auto.
+        apply Hsymb.
+        apply alloc_globals_rev_nextblock in H.
+        rewrite H.
+        rewrite Zlength_cons.
+        rewrite Z2Pos.id.
+        + rewrite Zlength_correct; lia.
+        + rewrite Zlength_correct; lia.
+        + simpl.
+          apply alloc_globals_rev_nextblock in H.
+          rewrite H.
+          replace
+            (Pos.to_nat (Z.to_pos (Z.succ (Zlength vl))))
+            with (S (length vl))
+            by (rewrite Pos_to_nat_eq_S Zlength_correct; lia).
+          rewrite Nat.sub_diag.
+          reflexivity.
+      }
+      specialize (IHvl m0 G0 G NRG).
+      spec IHvl.
+      { clear -Hnorepet.
+        apply list_norepet_app in Hnorepet as [? [? ?]].
+        inv H0.
+        apply list_norepet_app; split3; auto.
+        apply list_disjoint_cons_right in H1; auto.
+      }
+      specialize (IHvl H).
+      spec IHvl.
+      { intros ? Hin%H1 ?.
+        contradiction Hin.
+        destruct g; simpl; auto.
+      }
+      spec IHvl.
+      { intros.
+        apply H1'.
+        destruct g; simpl; auto.
+      }
+      destruct g as [fd | v].
+      + (* Gfun case *)
+        simpl.
+        simpl in Hinit.
+        destruct (Mem.alloc m0 0 1) eqn:Halloc.
+        assert (Hfun : exists fs, funspec_of_loc gev (G0 ++ G) (Mem.nextblock m0, 0%Z) = Some fs).
+        { assert (Hin_i : In i (map fst G)).
+          { apply H1'. simpl; auto. }
+          apply in_map_iff in Hin_i.
+          destruct Hin_i as [[j fs] [Hij Hinfs]].
+          simpl in Hij; subst j.
+          exists fs.
+          rewrite /funspec_of_loc /=.
+          erewrite Genv.find_invert_symbol by exact FS.
+          erewrite find_id_i; eauto.
+          Search In "++".
+          apply in_or_app; auto.
+        }
+        destruct Hfun as [fs Hfun].
+        iIntros "Hmem".
+        iApply IHvl.
+        rewrite /inflate_initial_mem_with_rmap.
+        erewrite Mem.nextblock_drop, Mem.nextblock_alloc by eassumption.
+        replace (Pos.to_nat (Pos.succ _) - 1)%nat with (S (Pos.to_nat (Mem.nextblock m0) - 1))%nat
+          by lia.
+        rewrite seq_S big_sepL_app /= -Nat.sub_succ_l /=; last lia.
+        iDestruct "Hmem" as "(Hmem & Hnew & _)".
+        pose proof (Mem.alloc_result _ _ _ _ _ Halloc) as Hb.
+        assert (Hfun1 : exists fs : funspec,
+                   funspec_of_loc gev G (Mem.nextblock m0, 0%Z) = Some fs).
+        {
+          assert (Hin_i : In i (map fst G)).
+          { apply H1'; simpl; auto. }
+          rewrite in_map_iff in Hin_i.
+          destruct Hin_i as [[i' fs1] [Hi Hinfs]].
+          simpl in Hi.
+          subst i'.
+          exists fs1.
+          rewrite /funspec_of_loc /=.
+          erewrite Genv.find_invert_symbol by exact FS.
+          erewrite find_id_i; eauto.
+          rewrite map_app in NRG.
+          apply list_norepet_app in NRG as [_ [NRG_G _]]; auto.
+        }
+        destruct Hfun as [fs1 Hfun].
+        iPoseProof (affine with "Hnew") as "_".
+        { destruct (block_bounds _) as [lo hi].
+          apply big_sepL_affine.
+          intros k o Ho.
+          rewrite /inflate_loc_with_rmap.
+          rewrite Nat.sub_0_r Pos2Nat.id.
+          erewrite drop_perm_access by eassumption.
+          if_tac.
+          - replace (lo + Z.of_nat o)%Z with 0%Z.
+            2: { destruct H0 as [_ [? ?]]; lia. }
+            destruct Hfun1 as (? & Hfun1).
+            rewrite Hfun1.
+            apply _.
+          - eapply alloc_dry_unchanged_on
+              in H0 as [Ha _]; last done.
+            rewrite -Ha nextblock_access_empty //; last lia.
+            apply _.
+        }
+        iApply (big_sepL_mono with "Hmem").
+        intros ?? (-> & ?)%lookup_seq.
+        rewrite /block_bounds /=.
+        apply alloc_globals_rev_nextblock in H.
+        rewrite globals_bounds_app1;
+          last by rewrite Zlength_correct in H; rewrite rev_length; lia.
+        destruct (globals_bounds _ _ _).
+        iIntros "Hmem".
+        iApply (big_sepL_mono with "Hmem").
+        intros.
+        rewrite /inflate_loc_with_rmap.
+        pose proof (Mem.alloc_result _ _ _ _ _ Halloc) as ->.
+        assert (Pos.of_nat (S k) <> Mem.nextblock m0) by lia.
+        erewrite <- access_drop_3; [|eassumption|auto].
+        erewrite <- alloc_access_other; [|eassumption|auto].
+        erewrite <- drop_perm_contents by eassumption.
+        rewrite /contents_at.
+        erewrite mem_lemmas.AllocContentsOther1; done.
+      + (* Gvar case *)
+        rewrite /globvars2pred /globvar2pred /=.
+        simpl in Hinit.
+        destruct (Mem.alloc m0 0) eqn:Halloc.
+        destruct (store_zeros m1 b 0 _) eqn:Hstore; last done.
+        destruct (Genv.store_init_data_list _ _ _ _ _)
+          eqn:Hinit_data; last done.
+        rewrite /= !andb_true_iff in AL.
+        destruct AL as ((? & ?%Z.ltb_lt) & ?).
+        rewrite (init_data_list_lem_with_rmap gp) //.
+        rewrite IHvl.
+        iIntros "($ & ?)".
+        rewrite /genviron2globals /Map.get /filter_genv FS.
+        apply Mem.alloc_result in Halloc as ->; done.
+        Locate Zlength_rev.
+        rewrite sublist.Zlength_rev.
+        eapply alloc_globals_rev_nextblock; eauto.
+   Qed.
+  
+  Lemma semax_prog_rule_with_rmap {CS : compspecs} :
+    forall V G prog m h z,
+      postcondition_allows_exit OK_spec Ctypesdefs.tint ->
+      semax_prog OK_spec (C := CS) prog z V G  ->
+      Genv.init_mem prog = Some m ->
+      { b : Values.block & { q : CC_core &
+                            (Genv.find_symbol
+                               (globalenv prog) (prog_main prog) = Some b) *
+      (exists m',
+         semantics.initial_core (cl_core_sem (globalenv prog)) h m q m' (Vptr b Ptrofs.zero) nil) *
+
+      (state_interp Mem.empty z ∗ funspec_auth ∅ ∗ has_ext z
+       ⊢ |==> ∃ σ : rmap,
+           state_interp_with_rmap m z σ ∗
+           ⌜access_map_pointwise_eq (perm_of_rmap σ) (getCurPerm m)⌝ ∗
+           (jsafeN OK_spec (globalenv prog) ⊤ z q ∧
+            matchfunspecs (globalenv prog) G))
+    } }%type.
+  Proof.
+    intros until z.
+    intro EXIT.
+    intros ? H1.
+    generalize H; intros [? [AL [HGG [[? [GC ?]] [GV ?]]]]].
+    destruct (find_id (prog_main prog) G) as [fspec |] eqn:Hfind; last first.
+    rewrite Hfind in H4; try contradiction.
+    assert (H4' : exists post, In (prog_main prog, main_spec_ext' prog z post) G /\
+                            fspec = main_spec_ext' prog z post).
+    { rewrite Hfind in H4.
+      destruct H4 as [post ?].
+      pose proof Hfind as Hin.
+      apply find_id_e in Hin.
+      exists post.
+      subst fspec.
+      split; auto.
+    }
+    clear H4.
+    rename H4' into H4.
+    assert (H5 : { f | In (prog_main prog, f) (prog_funct prog) }).
+    forget (prog_main prog) as id.
+    assert (H4' : In id (map fst G)).
+    { destruct H4 as [? [H4 _]].
+      apply in_map_fst in H4; auto. }
+    pose proof (initialize.match_fdecs_in _ _ _ H4' H2).
+    apply in_map_sig in H5.
+    2: decide equality.
+    destruct H5 as [[? ?] [? ?]]; subst.
+    eauto.
+    destruct H5 as [f H5].
+    apply compute_list_norepet_e in H0.
+    assert (indefs : In (prog_main prog, Gfun f) (AST.prog_defs prog)).
+    { apply in_prog_funct_in_prog_defs; auto. }
+    pose proof (find_funct_ptr_exists prog (prog_main prog) f) as EXx.
+    apply find_symbol_funct_ptr_ex_sig in EXx; auto.
+    destruct EXx as [b [Hsymbol Hfunct]]; auto.
+    destruct fspec as [[params retty] cc A E P Q].
+    assert (cc = cc_default /\ params = nil) as (-> & ->).
+    { clear -H4; destruct H4 as [? [? ?]]; inv H0; auto. }
+    assert (Hretty : retty = Ctypesdefs.tint).
+    { destruct H4 as [post [? ?]]; by inv H6. }
+    subst retty.
+    assert (SPEP := semax_prog_entry_point OK_spec V G prog b (prog_main prog)
+                      nil nil A E P Q h z EXIT H Hsymbol Hfind).
+    spec SPEP.
+    constructor.
+    set (gargs := (filter_genv (globalenv prog), @nil val)) in *.
+    cbv beta iota zeta in SPEP.
+    destruct SPEP as [q [Hinit Hsafe]].
+    exists b, q.
+    split; [split |]; auto.
+    clear Hinit.
+    iIntros "((Hm & Hext) & Hf & Hz)".
+    iMod (initialize_mem_with_rmap' with "[$Hm $Hf]")
+      as "((%σ & Hσ & %Hperm) & Hm & Hcore & Hmatch)"; [done.. |].
+    iModIntro.
+    iExists σ.
+    iSplitL "Hσ Hext".
+    { rewrite /state_interp_with_rmap; iFrame. }
+    iSplit.
+    { iPureIntro; done. }
+    iSplit; last done.
+    destruct H4 as [post [H4 H4']].
+    unfold main_spec_ext' in H4'.
+    injection H4' as -> HP HQ.
+    apply inj_pair2 in HP as ->.
+    apply inj_pair2 in HQ as ->.
+    iApply (Hsafe (initialize.globals_of_genv (filter_genv (globalenv prog)))).
+    iCombine "Hcore Hmatch" as "Hcore".
+    rewrite (initial_core_funassert _ V _ _ (Map.empty _) (Map.empty _)) //; iFrame.
+    iIntros "!>".
+    iSplit; first done.
+    iApply global_initializers_with_rmap; eauto.
+Qed.
+ 
+End semax_prog_with_rmap.
 
 (* up *)
 Existing Instance shared.shared_equiv.
@@ -469,6 +973,8 @@ Proof.
         rewrite PMap.gso //.
   - eapply free_list_preserve_disjoint_and_lt; eauto.
 Qed.
+
+(*
 Definition perm_row_of_rmap (σ : rmap) (b : positive) : Z -> option permission :=
     fun ofs => perm_of_res (σ @ (b, ofs)).
 
@@ -518,6 +1024,9 @@ Qed.
     apply perm_of_rmap_fold_lookup.
     intros; rewrite elem_of_map_to_list //.
   Qed.
+*)
+
+
 
   Lemma free_preserves_other_cur (q : access_map) (m m' : mem) (b : Values.block) (lo hi : Z) :
     permMapLt q (getCurPerm m) ->
@@ -584,7 +1093,6 @@ Qed.
       + done.
   Qed.
 
-  
   Lemma free_list_preserves_other_cur
     (q : access_map) :
     forall (l : list (Values.block * Z * Z)) (m m' : mem),
@@ -870,7 +1378,6 @@ Qed.
              rewrite perm_union_comm in H.
              done.
   Qed.
-
 
 Lemma permMapLt_decay_disjoint
     (pmap : access_map) (m m' : mem)
@@ -1623,11 +2130,23 @@ Section Safety.
 *)
 *)
 
-  Program Definition spr (HH : VSTGS unit Σ) (HL : lockGS Σ) :=
+  (* Program Definition spr (HH : VSTGS unit Σ) (HL : lockGS Σ) :=
     semax_prog_rule (concurrent_ext_spec CS ext_link) V G prog
       (proj1_sig init_mem) 0 tt _ (all_safe HH HL) (proj2_sig init_mem).
   Next Obligation.
+  Proof. intros; iIntros (??); done. Qed. *)
+
+  Program Definition spr
+    (HH : VSTGS unit Σ)
+    (HL : lockGS Σ) :=
+    semax_prog_rule_with_rmap
+      (concurrent_ext_spec CS ext_link)
+      V G prog
+      (proj1_sig init_mem) 0 tt
+      _ (all_safe HH HL) (proj2_sig init_mem).
+  Next Obligation.
   Proof. intros; iIntros (??); done. Qed.
+ 
 
   Instance Sem : Semantics :=
     ClightSemanticsForMachines.ClightSem (Clight.globalenv CPROOF.(CSL_prog)).
@@ -2862,7 +3381,6 @@ Proof.
   rewrite gssThreadRes /= in Hcompat1.
   rewrite OrdinalPool.updThread_twice // in Hcompat1.
 Qed.
-
   End conc_heap.
 
   Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
@@ -2891,7 +3409,7 @@ Qed.
                 heapGS_funspecGS := FS |} : heapGS Σ)
              ES).
     destruct (spr HHfrag HL) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
-    iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as "(S & Hsafe)".
+    iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as (?) "(S & Hsafe)".
     iAssert (|={⊤}[∅]▷=>^n ⌜HybridMachineSig.HybridCoarseMachine.csafe
                (ThreadPool:= threadPool.OrdinalPool.OrdinalThreadPool(Sem:=ClightSem ge))
                (sch, [],
@@ -2918,6 +3436,7 @@ Qed.
       rewrite /frag_state_interp.
       unfold threads_safe, thread_safe; simpl.
       iSplit; auto.
+      Print resource_map.resource_map_auth .
       assert (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm (`init_mem))).
       { apply (coherent_perm_of_rmap_max (`init_mem) σ Hcoh). }
       iExists 1%Qp, σ, _, Hlt.
@@ -3055,6 +3574,151 @@ Qed.
         rewrite jsafe_frag_unfold /jsafe_frag_pre.
         iAssert (⌜coherent (restrPermMap Hlt) σ1⌝) with "[Hfragi]" as "%Hcoh".
         { by iDestruct "Hfragi" as "(? & ?)". }
+        
+        (* UP *)
+        
+        Check compat_th _ _ Hcompat cnti.
+        pose proof (proj1 (compat_th _ _ Hcompat cnti)) as Hthread.
+        assert (Hab :
+                 mem_coherent_le
+                   (restrPermMap Hlt)
+                   (@restrPermMap (getThreadR cnti).1 m Hthread)).
+        { split.
+          - rewrite !restrPermMap_nextblock.
+            apply Ple_refl.
+          - split; intro k.
+            + rewrite !restrPermMap_contents //.
+            + rewrite !access_at_restrPermMap_Cur //.
+        }
+        Check frag_mem_auth_mono q (restrPermMap Hlt).
+        Check (getThreadR cnti).1 .
+        iPoseProof (frag_mem_auth_mono q (restrPermMap Hlt)
+          (@restrPermMap (getThreadR cnti).1 m Hthread) σ1 Hab
+          with "Hfragi") as "Hfragi".
+        iMod "Hsafei" as "Hsafei".
+        iDestruct ("Hsafei" $! (restrPermMap Hthread) σ1
+                    with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
+        iDestruct "Hhalt" as (? Hhalt') "?"; done.
+        
+        assert (Heq : restrPermMap Hlt0 = restrPermMap Hlt).
+        { etransitivity; try apply restrPermMap_idem; apply restr_proof_irr. }
+        (* HStep *)
+        iMod "Hstep" as (???) "(%Hstep & S & Hsafei)".
+        rewrite Heq in Hstep.
+        (* Does we need getThreadR cnti = perm_of_rmap σ *)
+        assert (Hmemstep : mem_step (restrPermMap Hlt) m').
+        { eapply (CLC_corestep_mem _ _ (restrPermMap Hlt)); eauto. }
+        iApply step_fupd_intro; try done.
+        iNext.
+        iDestruct "S" as "(Hfragi & Hext)".
+        iSpecialize ("IH" $! _ _ (updThread cnti (Krun c')
+                                    (getCurPerm m', (getThreadR cnti).2)) m' n ls qs
+                      with "[%] [%] [%] [%] locks Hext [Hsafe Hsafei Hfragi]"); try done.
+        * admit.
+        * admit.
+        * admit.
+        * admit.
+        * iApply "Hsafe".
+          ** iIntros "!>" (k y (-> & ?)%lookup_seq Hneq) "Hy".
+             iDestruct "Hy" as (q0 σ0 cnty Hltσ0) "((% & %Hqy) & Hsafe_y & Hfrag_y)".
+             replace (0 + k) with k in * by lia.
+             assert (Hneq' : i <> k) by lia.
+             set (cnty' :=
+                    @cntUpdate _ _ _ i (0 + k) tp
+                      (Krun c')
+                      (getCurPerm m', (getThreadR cnti).2)
+                      cnti cnty).
+             iExists q0, σ0, cnty'.
+             assert (Hlt0' : permMapLt (perm_of_rmap σ0) (getThreadR cnty').1).
+             { subst cnty'.
+               erewrite gsoThreadRes; eauto. }
+             pose proof ((no_race_thr _ Hinvariant) _ _ cnti cnty Hneq') as Hthread_disj2.
+             assert (Hrmap_disj : permMapsDisjoint (perm_of_rmap σ1) (perm_of_rmap σ0)).
+             { unfold permMapsDisjoint in *.
+               intros b ofs.
+               rewrite /permMapsDisjoint2 in Hthread_disj2.
+               eapply perm_union_lower_2.
+               - eapply ((proj1 Hthread_disj2) b ofs).
+               - apply (Hlt1 b ofs).
+               - apply (Hqy b ofs). }
+             assert (Hdecay : decay (restrPermMap Hlt) m').
+             { apply (@msem_decay CC_core (CLC_memsem ge) s (restrPermMap Hlt) c' m' Hstep). }
+             assert (Hpres : permMapLt (perm_of_rmap σ0) (getMaxPerm m')).
+             { eapply (permMapLt_decay_disjoint _ (restrPermMap Hlt)); eauto.
+               + by rewrite restr_Max_eq.
+               + unfold permMapsDisjoint in *.
+                 intros b ofs.
+                 rewrite getCurPerm_correct.
+                 rewrite (restrPermMap_Cur Hlt b ofs).
+                 apply (Hrmap_disj b ofs).
+             }
+             iExists Hpres.
+             iSplit; auto.
+             iSplitL "Hsafe_y".
+             ++ iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
+                iExists cnty'.
+                rewrite gsoThreadCode; auto.
+             ++ iApply (frag_mem_auth_corestep_other
+                    q0 m m' (perm_of_rmap σ1)  σ0 Hlt Hltσ0 Hpres Hmemstep Hrmap_disj); auto.
+          ** iDestruct "Hfragi" as "(% & Hauth)".
+             assert (Hσcur : permMapLt (perm_of_rmap σ') (getCurPerm m')).
+             { by apply coherent_perm_of_rmap. }
+             (* assert (Hlt0 : permMapLt (perm_of_rmap σ') (getMaxPerm m')).
+                   { etransitivity; eauto.
+                     apply cur_lt_max. } *)
+             iExists q, σ', _, _.
+             repeat iSplit; auto.
+             rewrite gssThreadRes; auto.
+             iSplitR "Hauth".
+             { iExists _; rewrite gssThreadCode; auto. }
+             iFrame.
+             iSplit; auto.
+             iPureIntro.
+             apply coherent_restrPermMap; auto.
+        * iApply (step_fupdN_mono with "IH").
+          iPureIntro; intros Hsafe.
+          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last exact Hsafe.
+          rewrite /HybridMachineSig.MachStep /=.
+          change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
+          change m' with (HybridMachineSig.diluteMem m') at 3.
+          eapply HybridMachineSig.thread_step; first done.
+          simpl in Hsafe.
+          eapply step_dry; eauto.
+          simpl.
+            with (c := s)
+                 (m1 := restrPermMap (proj1 (Hcompat i cnti)))
+                 (c' := c')
+                 (ev := _); eauto.
+          
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+        (* UP *)
         apply coherent_restrPermMap_of_coherent in Hcoh.
         destruct Hcoh as (Hlt2 & Hcoh).
         iMod "Hsafei" as "Hsafei".
