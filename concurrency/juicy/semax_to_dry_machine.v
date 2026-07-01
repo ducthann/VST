@@ -79,167 +79,6 @@ Section semax_prog_with_rmap.
   Definition state_interp_with_rmap (m : mem) (z : OK_ty) (σ : rmap) : iProp Σ :=
     frag_mem_auth 1 m σ ∗ ext_auth z.
 
-  Lemma inflate_initial_mem_with_rmap_rev :
-    forall m bounds (gev : Genv.t Clight.fundef type) G
-       (vl : list (ident * globdef Clight.fundef type)) (Hnr : list_norepet (map fst (rev vl)))
-           (SAME_IDS : match_fdecs (prog_funct' vl) (rev G)),
-      inflate_initial_mem_with_rmap m bounds gev G ⊣⊢
-        inflate_initial_mem_with_rmap m bounds gev (rev G).
-  Proof.
-    intros.
-    rewrite /inflate_initial_mem_with_rmap.
-    apply big_sepL_proper; intros.
-    destruct (bounds _).
-    apply big_sepL_proper; intros.
-    rewrite /inflate_loc_with_rmap.
-    destruct (access_at _ _ _); last done.
-    destruct p; try done.
-    rewrite /funspec_of_loc.
-    if_tac; try done.
-    destruct (Genv.invert_symbol _ _) eqn:Hb; last done.
-    rewrite find_id_rev //.
-    rewrite -list_norepet_rev -map_rev -match_fdecs_norepet //.
-    apply list_norepet_prog_funct'.
-    rewrite -list_norepet_rev -map_rev //.
-  Qed.
-
-  Lemma init_data_list_lem_with_rmap :
-  forall (ge : genv) m0 (v : globvar type) m1 b m2 m3 m4,
-    Mem.alloc m0 0 (init_data_list_size (gvar_init v)) = (m1, b) ->
-    store_zeros m1 b 0 (init_data_list_size (gvar_init v)) = Some m2 ->
-    Genv.store_init_data_list ge m2 b 0 (gvar_init v) = Some m3 ->
-    Mem.drop_perm m3 b 0 (init_data_list_size (gvar_init v))
-              (Genv.perm_globvar v) = Some m4 ->
-    forall {F} (gl : list (ident * globdef F type)) i G
-      (SANITY : (common.AST.init_data_list_size (gvar_init v) < Ptrofs.modulus)%Z)
-      (AL : initializers_aligned 0 (gvar_init v) = true)
-      (Hgl : Mem.nextblock m0 = Z.to_pos (Z.succ (Zlength gl))),
-      inflate_initial_mem_with_rmap
-        m4 (globals_bounds 1 (gl ++ [(i, Gvar v)])) ge G
-      ⊢
-      inflate_initial_mem_with_rmap
-        m0 (globals_bounds 1 gl) ge G ∗
-      if gvar_volatile v then True
-      else init_data_list2pred
-             (genviron2globals (filter_genv ge))
-             (gvar_init v)
-             (readonly2share (gvar_readonly v))
-             (Vptr b Ptrofs.zero).
-  Proof.
-    intros.
-    rewrite /inflate_initial_mem_with_rmap.
-    erewrite Mem.nextblock_drop,
-      Genv.store_init_data_list_nextblock,
-      Genv.store_zeros_nextblock,
-      Mem.nextblock_alloc by done.
-    rewrite Pos2Nat.inj_succ /= Nat.sub_0_r.
-    destruct (Pos2Nat.is_succ (Mem.nextblock m0)) as (n & Hnext).
-    rewrite Hnext seq_S big_sepL_app /=.
-    pose proof (Mem.alloc_result _ _ _ _ _ H) as ->.
-    iIntros "(Hrest & Hb & _)".
-    iSplitL "Hrest".
-    - rewrite Nat.sub_0_r.
-      iApply (big_sepL_mono with "Hrest").
-      intros ?? (-> & ?)%lookup_seq.
-      rewrite globals_bounds_app1;
-        last by rewrite Zlength_correct in Hgl; lia.
-      destruct (globals_bounds _ _ _).
-      iIntros "Hrest".
-      iApply (big_sepL_mono with "Hrest").
-      intros.
-      rewrite /Mem.drop_perm in H2.
-      destruct Mem.range_perm_dec; inv H2.
-      rewrite /inflate_loc_with_rmap /access_at /contents_at /=.
-      assert (Pos.of_nat (S k) <> Mem.nextblock m0) by lia.
-      erewrite store_init_data_list_other_block; [|eassumption..].
-      erewrite store_zeros_other_block; [|eassumption..].
-      erewrite mem_lemmas.AllocContentsOther; [|eassumption..].
-      rewrite Maps.PMap.gso //.
-      apply (alloc_dry_unchanged_on
-               _ _ (Pos.of_nat (S k), (z + y)%Z))
-        in H as (Haccess & Hcontents);
-        last by intros [??].
-      rewrite {1}/access_at /= in Haccess.
-      apply equal_f with Cur in Haccess.
-      rewrite Haccess.
-      erewrite <- store_zeros_access by eassumption.
-      by apply store_init_data_list_outside'
-        in H1 as (Hcontents3 & -> & _).
-    - destruct (gvar_volatile v) eqn:VOL; first done.
-      rewrite -Hnext Pos2Nat.id.
-      pose proof (nth_error_app gl [(i, Gvar v)] O) as Hv.
-      replace (length gl)
-        with (Pos.to_nat (Mem.nextblock m0) - 1)%nat in Hv
-          by (rewrite Zlength_correct in Hgl; lia).
-      rewrite Nat.add_0_r /= in Hv.
-      erewrite globals_bounds_nth; [|lia|done].
-      simpl.
-      pose proof (load_store_init_data_lem1 H0 H1).
-      assert
-        (forall (chunk : memory_chunk) (ofs : Z),
-            Mem.load chunk m4 (Mem.nextblock m0) ofs =
-              Mem.load chunk m3 (Mem.nextblock m0) ofs).
-      {
-        intros.
-        eapply Mem.load_drop; eauto.
-        right; right; right.
-        rewrite /Genv.perm_globvar VOL.
-        simple_if_tac; constructor.
-      }
-      rewrite seq_app big_sepL_app.
-      iDestruct "Hb" as "(Hb & Hend)".
-      iAssert emp with "[Hend]" as "_".
-      {
-        rewrite /inflate_loc_with_rmap /=.
-        pose proof (init_data_list_size_pos (gvar_init v)).
-        rewrite Z.add_0_l Z2Nat.id; last lia.
-        erewrite <- access_drop_3; [|eauto|lia].
-        edestruct store_init_data_list_outside'
-          as (_ & <- & _); first done.
-        erewrite store_zeros_access by done.
-        erewrite <- alloc_access_other; [|eauto|lia].
-        rewrite nextblock_access_empty //; last lia.
-      }
-      
-    (* In this range [drop_perm] installs [Readable] or [Writable],
-       so the old and new inflate-location predicates coincide. *)
-      iAssert ([∗ list] o ∈ seq 0 (Z.to_nat (init_data_list_size (gvar_init v))),
-         inflate_loc m4 ge G (Mem.nextblock m0, (0 + Z.of_nat o)%Z)) with "[Hb]" as "Hb_old".
-      {
-        iApply (big_sepL_mono with "Hb").
-        intros k o (-> & Hk)%lookup_seq.
-        rewrite /inflate_loc_with_rmap /inflate_loc.
-        erewrite drop_perm_access by done.
-        rewrite Z.sub_0_r.
-        rewrite if_true.
-        2: {
-          split; first done.
-          split; first lia.
-          pose proof (init_data_list_size_pos (gvar_init v)) as Hpos.
-          apply Nat2Z.inj_lt in Hk. lia.
-        }
-        rewrite /Genv.perm_globvar VOL.
-        erewrite drop_perm_access by exact H2.
-        rewrite Z.sub_0_r.
-        rewrite if_true.
-        2: {
-          split; first reflexivity.
-          split; lia. }
-        rewrite /Genv.perm_globvar VOL.
-        destruct (gvar_readonly v) eqn:Hreadonly; done.
-      }
-      iApply (init_data_list_lem' _ _ _ _ _ _ [] with "Hb_old");
-        try done.
-      + eapply Genv.load_store_init_data_invariant,
-          Genv.store_init_data_list_charact; try done.
-        eapply Genv.store_zeros_read_as_zero; eauto.
-      + intros.
-        erewrite drop_perm_access by done.
-        rewrite Z.sub_0_r if_true //.
-      + intros.
-        eapply load_store_init_data1_invariant; eauto.
-  Qed.
-
   Lemma global_initializers_with_rmap :
     forall (prog : Clight.program) G m
       (Hnorepet : list_norepet (prog_defs_names prog))
@@ -420,7 +259,6 @@ Section semax_prog_with_rmap.
           rewrite /funspec_of_loc /=.
           erewrite Genv.find_invert_symbol by exact FS.
           erewrite find_id_i; eauto.
-          Search In "++".
           apply in_or_app; auto.
         }
         destruct Hfun as [fs Hfun].
@@ -2178,20 +2016,11 @@ Section Safety.
 
   Context `{HH: !VSTGS unit Σ} `{!lockGS Σ}.
 
-  Definition frag_mem_auth q (m : mem) (σ : rmap) : iProp Σ :=
+  (* Definition frag_mem_auth q (m : mem) (σ : rmap) : iProp Σ :=
     ⌜coherent m σ⌝ ∧ resource_map.resource_map_auth
                        (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
-                       (gen_heap_name heapGS_gen_heapGS) q σ.
+                       (gen_heap_name heapGS_gen_heapGS) q σ. *)
 
-  (*
-  Definition frag_mem_auth q m : iProp Σ :=
-    ∃ σ : rmap,
-      ⌜coherent m σ⌝ ∧
-        resource_map.resource_map_auth
-          (H1 := gen_heapGpreS_heap
-                   (gen_heapGpreS := gen_heap_inG))
-          (gen_heap_name heapGS_gen_heapGS)
-          q σ. *)
   
   Definition frag_state_interp q (m : mem) (σ : rmap) z : iProp Σ :=
     frag_mem_auth q m σ ∗ ext_auth z.
@@ -2891,31 +2720,22 @@ Definition threads_safe (tp : dtp) : iProp Σ :=
       jsafe_frag q ⊤ tt q_new
   end%I.
 
-  (*
-  Definition threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) :=
+ (* Definition threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) : iProp Σ :=
     [∗ list] _ ↦ i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
-      ∃ q σ (cnti : containsThread tp i),
-        ⌜qs !! i = Some q ∧ permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∧
-          thread_safe tp i q ∗ frag_mem_auth q m σ. *)
+      ∃ q (σ : rmap) (cnti : containsThread tp i)
+        (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm m)),
+        ⌜qs !! i = Some q ∧ permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
+            thread_safe tp i q ∗ frag_mem_auth q (restrPermMap Hlt) σ. *)
 
   Definition threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) : iProp Σ :=
     [∗ list] _ ↦ i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
       ∃ q (σ : rmap) (cnti : containsThread tp i)
         (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm m)),
-        ⌜qs !! i = Some q ∧ permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
-            thread_safe tp i q ∗ frag_mem_auth q (restrPermMap Hlt) σ.
+        ⌜qs !! i = Some q ∧
+          access_map_pointwise_eq (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
+            thread_safe tp i q ∗
+            frag_mem_auth q (restrPermMap Hlt) σ.
 
-  (*
-    Definition threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) : iProp Σ :=
-  [∗ list] _ ↦ i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
-    ∃ q (σ : rmap) (cnti : containsThread tp i)
-      (Hlt : permMapLt (getThreadR cnti).1 (getMaxPerm m)),
-      ⌜qs !! i = Some q ∧
-        permMapLt (perm_of_rmap σ) (getThreadR cnti).1⌝ ∗
-      thread_safe tp i q ∗
-      frag_mem_auth q (restrPermMap Hlt) σ.
-
-   *)
   
   Definition threads_wellformed (tp : dtp) :=
     forall i (cnti : containsThread(ThreadPool := OrdinalPool.OrdinalThreadPool) tp i),
@@ -3223,17 +3043,12 @@ Lemma Mem_unchecked_restrPermMap :
       Mem_load_unchecked Mptr m l.1 l.2.
 Proof. intros m p Hlt [b ofs]; by unfold Mem_load_unchecked. Qed.
 
-Lemma state_interp_to_frag m z :
-  @state_interp Σ unit heapGS_gen_heapGS VST_extGS m z
-  -∗ ∃ σ, frag_state_interp 1 m σ z.
+Lemma state_interp_with_rmap_to_frag m (z : unit) σ :
+  state_interp_with_rmap m z σ ⊢ frag_state_interp 1 m σ z.
 Proof.
   rewrite /state_interp /frag_state_interp /frag_mem_auth /mem_auth .
   iIntros "(Hmem & Hext)".
-  iDestruct "Hmem" as (σ Hcoh) "Hauth".
-  iFrame "Hext".
-  iExists σ.
-  iSplit; first done.
-  iExact "Hauth".
+  iFrame.
 Qed.
 
 Lemma corestep_invariant_sub (tp : dtp) (m m' : mem) (i : nat)
@@ -3409,7 +3224,8 @@ Qed.
                 heapGS_funspecGS := FS |} : heapGS Σ)
              ES).
     destruct (spr HHfrag HL) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
-    iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as (?) "(S & Hsafe)".
+    iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as (?) "(S & Heq & Hsafe)".
+    iDestruct "Heq" as "%Heq".
     iAssert (|={⊤}[∅]▷=>^n ⌜HybridMachineSig.HybridCoarseMachine.csafe
                (ThreadPool:= threadPool.OrdinalPool.OrdinalThreadPool(Sem:=ClightSem ge))
                (sch, [],
@@ -3427,7 +3243,7 @@ Qed.
     assert (HybridMachineSig.mem_compatible tp (`init_mem)) as Hcompat
         by apply ThreadPoolWF.initial_mem_compatible.
     assert (threads_wellformed tp) as Htp_wf by done.
-    iPoseProof (state_interp_to_frag with "S") as (σ) "S".
+    iPoseProof (state_interp_with_rmap_to_frag with "S") as "S".
     set qs := (<[0 := 1%Qp]> (∅ : gmap nat Qp)).
     rewrite /frag_state_interp /frag_mem_auth.
     iDestruct "S" as "([%Hcoh Hmem] & Hext)".
@@ -3436,22 +3252,16 @@ Qed.
       rewrite /frag_state_interp.
       unfold threads_safe, thread_safe; simpl.
       iSplit; auto.
-      Print resource_map.resource_map_auth .
       assert (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm (`init_mem))).
       { apply (coherent_perm_of_rmap_max (`init_mem) σ Hcoh). }
       iExists 1%Qp, σ, _, Hlt.
-      iSplit; auto.
-      - rewrite /frag_mem_auth.
-        iSplit; auto.
-        iPureIntro.
-        by apply coherent_perm_of_rmap.
-      - rewrite /frag_mem_auth.
-        iFrame.
-        iSplit; auto.
-        unshelve iExists _; first done.
+      repeat iSplit; auto.
+      iSplitL "Hsafe".
+      - unshelve iExists _; first done.
         iApply (jsafe_jsafe_frag with "Hsafe").
+      - rewrite /frag_mem_auth.
+        iSplit; auto.
         iPureIntro.
-        split; auto.
         by apply coherent_restrPermMap.
     }
     assert (locks_coherent tp (`init_mem) ∅) as Hlocks by done.
@@ -3463,9 +3273,10 @@ Qed.
     clear dependent b x q.
     clearbody qs.
     clear Hcoh.
-    clear σ.
     (* Is σ also generalized by the Löb induction *)
-    iLöb as "IH" forall (sch tr tp m n ls qs Htp_wf Hinvariant Hcompat Hlocks).
+    iLöb as "IH" forall
+                (sch tr tp m n ls qs σ Heq
+                   Htp_wf Hinvariant Hcompat Hlocks).
     destruct n as [|n].
     { iPureIntro. constructor. }
     destruct sch as [|i sch].
@@ -3477,7 +3288,7 @@ Qed.
       iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
       { rewrite step_fupdN_plain_forall //.
         iIntros (U'').
-        iApply ("IH" $! U'' tr tp m n ls qs with "[] [] [] [] locks Hext"); try done. }
+        iApply ("IH" $! U'' tr tp m n ls qs with "[] [] [] [] [] locks Hext"); try done. }
       iApply (step_fupdN_mono with "H"); iPureIntro.
       intros Hsafe.
       eapply HybridMachineSig.HybridCoarseMachine.AngelSafe
@@ -3514,7 +3325,7 @@ Qed.
         iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
         { rewrite step_fupdN_plain_forall //.
           iIntros (x).
-          iApply ("IH" $! _ _ _ _ _ _ with "[] [] [] [] locks Hext Hsafe"); try done.
+          iApply ("IH" $! _ _ _ _ _ _ with "[] [] [] [] [] locks Hext Hsafe"); try done.
         }
         iApply (step_fupdN_mono with "H"); iPureIntro.
         intros Hsafe.
@@ -3529,7 +3340,7 @@ Qed.
         { rewrite step_fupdN_plain_forall //.
           iIntros.
           iApply ("IH" $! x tr (updThreadC cnti (Kblocked s)) m n ls qs
-                   with "[%] [%] [%] [%] locks Hext [Hsafe Hfragi Hsafei]"); try done.
+                   with "[%] [%] [%] [%] [%] locks Hext [Hsafe Hfragi Hsafei]"); try done.
           - intros j cntj.
             destruct (eq_dec j i) as [-> | Hneq].
             + rewrite (gssThreadCC cnti (Kblocked s) cntj).

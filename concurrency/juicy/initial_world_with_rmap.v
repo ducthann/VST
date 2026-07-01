@@ -33,7 +33,7 @@ Require Import VST.veric.mpred.
 Require Import VST.veric.mapsto_memory_block.
 Require Import VST.veric.initial_world.
 Require Import VST.veric.Clight_initial_world.
-
+Require Import VST.veric.initialize.
 Require Import VST.concurrency.common.addressFiniteMap.
 Require Import VST.concurrency.common.permissions.
 Require Import VST.concurrency.compiler.mem_equiv.
@@ -299,8 +299,6 @@ Section initial_world_with_rmap_lemmas.
     simple_if_tac; try done.
     apply rmap_of_loc_with_rmap_valid.
   Qed.
-
-  (* UP *)
 
  Lemma rmap_of_mem_with_rmap_nextblock :
     forall m block_bounds {F}
@@ -830,5 +828,163 @@ Proof.
   iModIntro.
   iFrame.
 Qed.
+
+Lemma inflate_initial_mem_with_rmap_rev :
+  forall m bounds (gev : Genv.t Clight.fundef type) G
+         (vl : list (ident * globdef Clight.fundef type)) (Hnr : list_norepet (map fst (rev vl)))
+         (SAME_IDS : match_fdecs (prog_funct' vl) (rev G)),
+    inflate_initial_mem_with_rmap m bounds gev G ⊣⊢
+      inflate_initial_mem_with_rmap m bounds gev (rev G).
+Proof.
+  intros.
+  rewrite /inflate_initial_mem_with_rmap.
+  apply big_sepL_proper; intros.
+  destruct (bounds _).
+  apply big_sepL_proper; intros.
+  rewrite /inflate_loc_with_rmap.
+  destruct (access_at _ _ _); last done.
+  destruct p; try done.
+  rewrite /funspec_of_loc.
+  if_tac; try done.
+  destruct (Genv.invert_symbol _ _) eqn:Hb; last done.
+  rewrite find_id_rev //.
+  rewrite -list_norepet_rev -map_rev -match_fdecs_norepet //.
+  apply list_norepet_prog_funct'.
+  rewrite -list_norepet_rev -map_rev //.
+Qed.
+
+Lemma init_data_list_lem_with_rmap :
+  forall (ge : Clight.genv) m0 (v : globvar type) m1 b m2 m3 m4,
+    Mem.alloc m0 0 (init_data_list_size (gvar_init v)) = (m1, b) ->
+    store_zeros m1 b 0 (init_data_list_size (gvar_init v)) = Some m2 ->
+    Genv.store_init_data_list (Clight.genv_genv ge) m2 b 0 (gvar_init v) = Some m3 ->
+    Mem.drop_perm m3 b 0 (init_data_list_size (gvar_init v))
+              (Genv.perm_globvar v) = Some m4 ->
+    forall {F} (gl : list (ident * globdef F type)) i G
+      (SANITY : (common.AST.init_data_list_size (gvar_init v) < Ptrofs.modulus)%Z)
+      (AL : initializers_aligned 0 (gvar_init v) = true)
+      (Hgl : Mem.nextblock m0 = Z.to_pos (Z.succ (Zlength gl))),
+      inflate_initial_mem_with_rmap
+        m4 (globals_bounds 1 (gl ++ [(i, Gvar v)])) (Clight.genv_genv ge) G
+      ⊢
+      inflate_initial_mem_with_rmap
+      m0 (globals_bounds 1 gl) (Clight.genv_genv ge) G ∗
+      if gvar_volatile v then True
+      else init_data_list2pred
+             (genviron2globals (tycontext.filter_genv ge))
+             (gvar_init v)
+             (readonly2share (gvar_readonly v))
+             (Vptr b Ptrofs.zero).
+  Proof.
+    intros.
+    rewrite /inflate_initial_mem_with_rmap.
+    erewrite Mem.nextblock_drop,
+      Genv.store_init_data_list_nextblock,
+      Genv.store_zeros_nextblock,
+      Mem.nextblock_alloc by done.
+    rewrite Pos2Nat.inj_succ /= Nat.sub_0_r.
+    destruct (Pos2Nat.is_succ (Mem.nextblock m0)) as (n & Hnext).
+    rewrite Hnext seq_S big_sepL_app /=.
+    pose proof (Mem.alloc_result _ _ _ _ _ H) as ->.
+    iIntros "(Hrest & Hb & _)".
+    iSplitL "Hrest".
+    - rewrite Nat.sub_0_r.
+      iApply (big_sepL_mono with "Hrest").
+      intros ?? (-> & ?)%lookup_seq.
+      rewrite globals_bounds_app1;
+        last by rewrite Zlength_correct in Hgl; lia.
+      destruct (globals_bounds _ _ _).
+      iIntros "Hrest".
+      iApply (big_sepL_mono with "Hrest").
+      intros.
+      rewrite /Mem.drop_perm in H2.
+      destruct Mem.range_perm_dec; inv H2.
+      rewrite /inflate_loc_with_rmap /access_at /contents_at /=.
+      assert (Pos.of_nat (S k) <> Mem.nextblock m0) by lia.
+      erewrite store_init_data_list_other_block; [|eassumption..].
+      erewrite store_zeros_other_block; [|eassumption..].
+      erewrite mem_lemmas.AllocContentsOther; [|eassumption..].
+      rewrite Maps.PMap.gso //.
+      apply (alloc_dry_unchanged_on
+               _ _ (Pos.of_nat (S k), (z + y)%Z))
+        in H as (Haccess & Hcontents);
+        last by intros [??].
+      rewrite {1}/access_at /= in Haccess.
+      apply equal_f with Cur in Haccess.
+      rewrite Haccess.
+      erewrite <- store_zeros_access by eassumption.
+      by apply store_init_data_list_outside'
+        in H1 as (Hcontents3 & -> & _).
+    - destruct (gvar_volatile v) eqn:VOL; first done.
+      rewrite -Hnext Pos2Nat.id.
+      pose proof (nth_error_app gl [(i, Gvar v)] O) as Hv.
+      replace (length gl)
+        with (Pos.to_nat (Mem.nextblock m0) - 1)%nat in Hv
+          by (rewrite Zlength_correct in Hgl; lia).
+      rewrite Nat.add_0_r /= in Hv.
+      erewrite globals_bounds_nth; [|lia|done].
+      simpl.
+      pose proof (load_store_init_data_lem1 H0 H1).
+      assert
+        (forall (chunk : memory_chunk) (ofs : Z),
+            Mem.load chunk m4 (Mem.nextblock m0) ofs =
+              Mem.load chunk m3 (Mem.nextblock m0) ofs).
+      {
+        intros.
+        eapply Mem.load_drop; eauto.
+        right; right; right.
+        rewrite /Genv.perm_globvar VOL.
+        simple_if_tac; constructor.
+      }
+      rewrite seq_app big_sepL_app.
+      iDestruct "Hb" as "(Hb & Hend)".
+      iAssert emp with "[Hend]" as "_".
+      {
+        rewrite /inflate_loc_with_rmap /=.
+        pose proof (init_data_list_size_pos (gvar_init v)).
+        rewrite Z.add_0_l Z2Nat.id; last lia.
+        erewrite <- access_drop_3; [|eauto|lia].
+        edestruct store_init_data_list_outside'
+          as (_ & <- & _); first done.
+        erewrite store_zeros_access by done.
+        erewrite <- alloc_access_other; [|eauto|lia].
+        rewrite nextblock_access_empty //; last lia.
+      }
+      iAssert ([∗ list] o ∈ seq 0 (Z.to_nat (init_data_list_size (gvar_init v))),
+                inflate_loc m4 (Clight.genv_genv ge) G (Mem.nextblock m0, (0 + Z.of_nat o)%Z)) with "[Hb]" as "Hb_old".
+      {
+        iApply (big_sepL_mono with "Hb").
+        intros k o (-> & Hk)%lookup_seq.
+        rewrite /inflate_loc_with_rmap /inflate_loc.
+        erewrite drop_perm_access by done.
+        rewrite Z.sub_0_r.
+        rewrite if_true.
+        2: {
+          split; first done.
+          split; first lia.
+          pose proof (init_data_list_size_pos (gvar_init v)) as Hpos.
+          apply Nat2Z.inj_lt in Hk. lia.
+        }
+        rewrite /Genv.perm_globvar VOL.
+        erewrite drop_perm_access by exact H2.
+        rewrite Z.sub_0_r.
+        rewrite if_true.
+        2: {
+          split; first reflexivity.
+          split; lia. }
+        rewrite /Genv.perm_globvar VOL.
+        destruct (gvar_readonly v) eqn:Hreadonly; done.
+      }
+      iApply (init_data_list_lem' _ _ _ _ _ _ [] with "Hb_old");
+        try done.
+      + eapply Genv.load_store_init_data_invariant,
+          Genv.store_init_data_list_charact; try done.
+        eapply Genv.store_zeros_read_as_zero; eauto.
+      + intros.
+        erewrite drop_perm_access by done.
+        rewrite Z.sub_0_r if_true //.
+      + intros.
+        eapply load_store_init_data1_invariant; eauto.
+  Qed.
 
 End initial_world_with_rmap_lemmas.
