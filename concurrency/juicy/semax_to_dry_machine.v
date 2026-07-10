@@ -170,7 +170,7 @@ Section semax_prog_with_rmap.
     iIntros "!>".
     iSplit; first done.
     iApply global_initializers; eauto.
-Qed.
+  Qed.
  
 End semax_prog_with_rmap.
 
@@ -278,8 +278,7 @@ Proof.
 Qed.
 
 Lemma permMapLt_trans (p q r : access_map): permMapLt p q -> permMapLt q r -> permMapLt p r.
-Proof. intros Hpq Hqr b ofs; eapply mem_lemmas.po_trans; eauto.
-Qed.
+Proof. intros Hpq Hqr b ofs; eapply mem_lemmas.po_trans; eauto. Qed.
 
 Lemma can_store_at_getCurPerm_of_perm_order' (m : Mem.mem) (b : Values.block) (ofs : Z):
   Mem.perm_order' ((Mem.mem_access m) # b ofs Cur) Writable ->
@@ -312,11 +311,14 @@ Proof.
    - left; rewrite /contents_at PMap.gso //=.
 Qed.
 
+Local Transparent Mem.alloc.
+Local Transparent Mem.storebytes.
+Local Transparent Mem.free.
+
 Lemma free_contents : forall m b lo hi m',
     Mem.free m b lo hi = Some m' -> Mem.mem_contents m' = Mem.mem_contents m.
 Proof.
   intros m b lo hi m' H.
-  Transparent Mem.free.
   unfold Mem.free in H.
   destruct (Mem.range_perm_dec m b lo hi Cur Freeable);
     inversion H; subst; simpl; reflexivity.
@@ -349,7 +351,6 @@ Lemma free_preserve_disjoint_and_lt :
     permMapsDisjoint (getCurPerm m1) a /\ permMapLt a (getMaxPerm m1).
 Proof.
   intros m m1 b lo hi a Hlt Hdis Hfree.
-  Transparent Mem.free.
   unfold Mem.free in Hfree.
   destruct (Mem.range_perm_dec m b lo hi Cur Freeable); try discriminate.
   inv Hfree.
@@ -480,13 +481,10 @@ Proof.
   - eapply free_list_preserve_disjoint_and_lt; eauto.
 Qed.
 
-
-  Lemma free_preserves_other_cur (q : access_map) (m m' : mem) (b : Values.block) (lo hi : Z) :
-    permMapLt q (getCurPerm m) ->
-    permMapsDisjoint (getCurPerm m) q ->
-    Mem.free m b lo hi = Some m' ->
+Lemma free_preserves_other_cur (q : access_map) (m m' : mem) (b : Values.block) (lo hi : Z) :
+  permMapLt q (getCurPerm m) -> permMapsDisjoint (getCurPerm m) q -> Mem.free m b lo hi = Some m' ->
     permMapLt q (getCurPerm m') /\ permMapsDisjoint (getCurPerm m') q.
-  Proof.
+Proof.
     intros Hq Hdisj Hfree.
     split.
     - (* q remains below the current permissions *)
@@ -584,12 +582,6 @@ Qed.
       rewrite Heq; eexists; done.
   Qed.
 
-  (*
-  Definition other_lt_and_disjoint (p : access_map) (σj : rmap) (m m' : mem) : Prop :=
-  permMapLt (perm_of_rmap σj) (getMaxPerm m') /\
-    permMapLt (perm_of_rmap σj) (getMaxPerm m) /\
-    permMapsDisjoint p (perm_of_rmap σj).
-*)
   Lemma access_map_equiv_permMapLt (p q : access_map) :
     mem_equiv.access_map_equiv p q -> permMapLt p q.
   Proof. intros Heq b ofs; rewrite (Heq b); apply po_refl. Qed.
@@ -669,7 +661,6 @@ Qed.
           rewrite access_at_restrPermMap_Cur.
           done.
        - (* Alloc *)
-         Transparent Mem.alloc.
          rewrite /Mem.alloc /= in H.
          injection H as Hxy.
          pose proof (f_equal Mem.mem_access (eq_sym Hxy)) as Hacc.
@@ -722,7 +713,6 @@ Qed.
        - (* Mem.storebytes  *)
          pose proof H as Hst.
          pose proof H as Hst1.
-         Transparent Mem.storebytes.
          rewrite /Mem.storebytes in H.
          destruct (Mem.range_perm_dec _ _ _ _ Cur Writable) as [Hf | Hf]; last first; try done.  
          injection H as Hxy.
@@ -1030,9 +1020,6 @@ Section Safety.
   Qed.
 
   (*
-  
-  Search (conc_VSTGS _ _ -> VSTGS _ _).
-
   Lemma CEspec_acquire_pre : forall `{!conc_VSTGS unit Σ, lockGS Σ} x args,
     Jext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args ⊣⊢
     match acquire_spec with mk_funspec _ _ A _ P _ => ∃ x'', ⌜JMeq.JMeq x x''⌝ ∧ funspec2pre' A P x'' (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args end.
@@ -1111,18 +1098,11 @@ Section Safety.
   Next Obligation.
   Proof. intros; iIntros (??); done. Qed. *)
 
-  Program Definition spr
-    (HH : VSTGS unit Σ)
-    (HL : lockGS Σ) :=
-    semax_prog_rule_with_rmap
-      (concurrent_ext_spec CS ext_link)
-      V G prog
-      (proj1_sig init_mem) 0 tt
-      _ (all_safe HH HL) (proj2_sig init_mem).
-  Next Obligation.
-  Proof. intros; iIntros (??); done. Qed.
+  Program Definition spr (HH : VSTGS unit Σ) (HL : lockGS Σ) :=
+    semax_prog_rule_with_rmap (concurrent_ext_spec CS ext_link) V G prog
+      (proj1_sig init_mem) 0 tt _ (all_safe HH HL) (proj2_sig init_mem).
+  Next Obligation. Proof. intros; iIntros (??); done. Qed.
  
-
   Instance Sem : Semantics :=
     ClightSemanticsForMachines.ClightSem (Clight.globalenv CPROOF.(CSL_prog)).
   
@@ -1149,13 +1129,7 @@ Section Safety.
      the current max permissions as an upper bound on the max permissions of the state_interp. *)
 
 Section conc_heap.
-
   Context `{HH: !VSTGS unit Σ} `{!lockGS Σ}.
-
-  (* Definition frag_mem_auth q (m : mem) (σ : rmap) : iProp Σ :=
-    ⌜coherent m σ⌝ ∧ resource_map.resource_map_auth
-                       (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
-                       (gen_heap_name heapGS_gen_heapGS) q σ. *)
 
   Definition frag_state_interp q (m : mem) (σ : rmap) z : iProp Σ :=
     frag_mem_auth q m σ ∗ ext_auth z.
@@ -1420,49 +1394,8 @@ Section conc_heap.
     iIntros "(((%Hcoh & %Heq) & Hauth) & Hext)".
     iFrame; iPureIntro; split; auto; apply coherent_restrPermMap; auto.
   Qed.
-(*
-  Lemma coherent_to_exact_rmap
-    (m : mem) (s : rmap)
-    (block_bounds : Values.block -> Z * nat)
-    {F : Type}
-    (ge : Genv.t (fundef F) type)
-    (G : funspecs)
-    (Hcover : block_bounds_cover m block_bounds) :
-    coherent m s ->
-    exists s',
-      coherent m s' /\
-        mem_equiv.access_map_equiv (getCurPerm m) (perm_of_rmap s') /\
-        resource_map.resource_map_auth (H1 := gen_heapGpreS_heap
-                                                (gen_heapGpreS := gen_heap_inG))
-          (gen_heap_name heapGS_gen_heapGS) 1 s ~~>
-          resource_map.resource_map_auth (gen_heap_name heapGS_gen_heapGS)  1 s'.
-  Proof.
-    intros Hcoh.
 
-    set (s' :=
-           rmap_of_mem_with_rmap
-             (Σ := Σ) m block_bounds ge G).
-
-    exists s'.
-    split.
-    - rewrite /coherent.
-      intro loc.
-      apply rmap_of_mem_with_rmap_coherent.
-      apply rmap_of_mem_with_rmap_valid.
-
-      split.
-    - symmetry.
-      apply access_map_pointwise_eq_equiv.
-      unfold s'.
-      apply perm_of_rmap_of_mem_with_rmap_exact.
-      exact Hcover.
-
-    - apply resource_map_auth_full_update.
-      apply rmap_of_mem_with_rmap_valid.
-  Qed.
-  *)
-
-
+  (*
   Lemma resource_map_auth_increase γ s s' :
     ✓ s' ->
     s ≼ s' ->
@@ -1496,7 +1429,7 @@ Section conc_heap.
       rewrite -Hδ.
       by apply cmra_valid_validN. }
     iModIntro. iFrame.
-  Qed.
+  Qed. *)
 
   Lemma coherent_access_map_equiv (m : mem) (σ : rmap) :
     coherent m σ -> mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m).
@@ -1628,13 +1561,10 @@ Section conc_heap.
     end.
 
   Definition access_at_nonempty (m : mem) (loc : address) : Prop :=
-    access_at m loc Cur = Some Nonempty /\
-      access_at m loc Max = Some Nonempty.
+    access_at m loc Cur = Some Nonempty /\ access_at m loc Max = Some Nonempty.
 
   Definition access_at_1 (m : Mem.mem) (l : address) : forall k : perm_kind, option permission :=
-    fun k =>
-      let '(b, ofs) := l in
-      (Mem.mem_access m) # b ofs k.
+    fun k => let '(b, ofs) := l in (Mem.mem_access m) # b ofs k.
 
   Definition nonEmptyRangeCur (m : Mem.mem) (l: Values.block * Z) : Prop :=
     forall (i : Z), (0 <= i < Z.of_nat (size_chunk_nat Mptr))%Z ->
@@ -1647,11 +1577,10 @@ Section conc_heap.
          ((Mem_load_unchecked Mptr m l.1 l.2 = (Vptrofs Ptrofs.zero) /\
             lockRes tp l = Some (empty_map, empty_map)) \/
             (Mem_load_unchecked Mptr m l.1 l.2 = (Vptrofs Ptrofs.one))) /\
-         (forall i  (cnti : containsThread tp i)
-            (Hp : permMapLt (getThreadR cnti).1 (getMaxPerm m)), nonEmptyRangeCur (restrPermMap Hp) l)).
+      (forall i  (cnti : containsThread tp i) (Hp : permMapLt (getThreadR cnti).1 (getMaxPerm m)),
+          nonEmptyRangeCur (restrPermMap Hp) l)).
 
-  Lemma storebytes_contents_eq :
-    forall m m' b ofs bytes b0,
+  Lemma storebytes_contents_eq : forall m m' b ofs bytes b0,
       Mem.storebytes m b ofs bytes = Some m' ->
       (Mem.mem_contents m') # b0 =
         if peq b0 b
@@ -1659,7 +1588,6 @@ Section conc_heap.
         else (Mem.mem_contents m) # b0.
   Proof.
     intros m m' b ofs bytes b0 H.
-    Transparent Mem.storebytes.
     unfold Mem.storebytes in H.
     destruct (Mem.range_perm_dec m b ofs (ofs + length bytes) Cur Writable) as [RP|NRP];
       try discriminate.
@@ -1703,10 +1631,10 @@ Section conc_heap.
         destruct H; try done; try lia.
   Qed.
 
-  Lemma setPermBlock_sets_range
-    (b : Values.block) (ofs : Z) (pmap0 : access_map) (n : nat) :
-    forall i : Z, (0 <= i < Z.of_nat n)%Z ->
-             (setPermBlock (Some Nonempty) b ofs pmap0 n) # b (ofs + i)%Z = Some Nonempty.
+  Lemma setPermBlock_sets_range (b : Values.block) (ofs : Z) (pmap0 : access_map) (n : nat) :
+    forall i : Z,
+      (0 <= i < Z.of_nat n)%Z ->
+      (setPermBlock (Some Nonempty) b ofs pmap0 n) # b (ofs + i)%Z = Some Nonempty.
   Proof.
     induction n as [|n IH]; intros i Hi.
     - simpl in Hi; lia.
@@ -1719,8 +1647,7 @@ Section conc_heap.
 
   Lemma free_preserves_cur_nonempty :
     forall m m1 b lo hi (l: address),
-      Mem.free m b lo hi = Some m1 ->
-      (Mem.mem_access m) # (l.1) l.2 Cur = Some Nonempty ->
+      Mem.free m b lo hi = Some m1 -> (Mem.mem_access m) # (l.1) l.2 Cur = Some Nonempty ->
       (Mem.mem_access m1) # (l.1) l.2 Cur = Some Nonempty.
   Proof.
     intros m m1 b lo hi l Hfree Hacc.
@@ -1747,7 +1674,6 @@ Section conc_heap.
         destruct (zlt l.2 hi) eqn:Hzlt; simpl; auto.
         lia.
     - rewrite (Mem.free_result _ _ _ _ _ Hfree).
-      unfold Mem.unchecked_free; simpl.
       rewrite PMap.gso; auto.
   Qed.
 
@@ -1767,8 +1693,7 @@ Section conc_heap.
   Qed.
 
   Lemma mem_step_preserves_nonempty_range :
-    forall m m',
-      mem_step m m' ->
+    forall m m', mem_step m m' ->
       forall l : address,
         (forall i : Z,
             (0 <= i < size_chunk_nat Mptr)%Z ->
@@ -1806,10 +1731,9 @@ Section conc_heap.
 
   Lemma mem_step_preserves_lock_bytes :
     forall m m' (l : address),
-      mem_step m m' ->
-      nonEmptyRangeCur m l ->
-      Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m)  # (l.1))
-      = Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m') # (l.1)).
+      mem_step m m' -> nonEmptyRangeCur m l ->
+      Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m)  # (l.1)) =
+        Mem.getN (size_chunk_nat Mptr) l.2 ((Mem.mem_contents m') # (l.1)).
   Proof.
     intros m m' l Hstep HNone.
     revert l HNone.
@@ -1850,7 +1774,6 @@ Section conc_heap.
       + rewrite Hcontents.
         if_tac; try done.
     - set (n := size_chunk_nat Mptr).
-      Transparent Mem.alloc.
       pose proof H as Hal.
       rewrite /Mem.alloc in H.
       injection H as Hxy.
@@ -1874,11 +1797,10 @@ Section conc_heap.
       rewrite <- Hcontra in Hperm.
       unfold Plt in Hperm. lia.
     - set (n := size_chunk_nat Mptr).
-      Transparent Mem.free_list.
       pose proof H as Hfl.
       apply free_list_contents in Hfl.
       by rewrite Hfl.
-  Qed. 
+  Qed.
 
   Lemma Mem_unchecked_restrPermMap :
     forall (m: Mem.mem) (p: access_map) (Hlt : permMapLt p (getMaxPerm m)) l,
@@ -1887,14 +1809,13 @@ Section conc_heap.
   
 End conc_heap.
 
-
 Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
 
 Theorem dry_safety `{!VSTGpreS unit Σ} `{!inG Σ (gmap_view.gmap_viewR address unitR)}
-    `{!inG Σ (gmap_view.gmap_viewR address (laterO (iPropO Σ)))} sch n : exists b c_init,
-    Genv.find_symbol (globalenv prog) (Ctypes.prog_main prog) = Some b /\
-    cl_initial_core (globalenv prog) (Vptr b Ptrofs.zero) [] = Some c_init /\
-    HybridMachineSig.HybridCoarseMachine.csafe
+  `{!inG Σ (gmap_view.gmap_viewR address (laterO (iPropO Σ)))} sch n :
+  exists b c_init, Genv.find_symbol (globalenv prog) (Ctypes.prog_main prog) = Some b /\
+                cl_initial_core (globalenv prog) (Vptr b Ptrofs.zero) [] = Some c_init /\
+     HybridMachineSig.HybridCoarseMachine.csafe
        (ThreadPool:= threadPool.OrdinalPool.OrdinalThreadPool(Sem:=ClightSem ge))
      (sch, [],
       DryHybridMachine.initial_machine(Sem := Sem) (getCurPerm (proj1_sig init_mem))
@@ -2341,6 +2262,5 @@ Proof.
       change m' with (HybridMachineSig.diluteMem m').
       eapply HybridMachineSig.start_step; eauto.
 Admitted.
-
 
 End Safety.
