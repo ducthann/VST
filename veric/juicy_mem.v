@@ -1144,8 +1144,11 @@ Section mpred.
     - by eapply cmra_valid_included.
     - destruct (plt k.1 (nextblock m)); first done.
       rewrite Hnext // in Hk; inv Hk.
-    - exists dq'. repeat split; auto.
-  Admitted.
+    - exists dq'.
+      split; first exact Hdq'.
+      split; first exact Hmono.
+      exact H.
+  Qed.
 
   (* basic memory operations on mems + rmaps *)
   (*
