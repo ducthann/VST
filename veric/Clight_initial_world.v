@@ -244,6 +244,48 @@ Proof.
   destruct a as (?, [|]); simpl; auto.
 Qed.
 
+Definition block_bounds_cover (m : Mem.mem') (block_bounds : block -> Z * nat) : Prop :=
+  forall b ofs p, access_at m (b, ofs) Cur = Some p ->
+                  let '(lo, n) := block_bounds b in (lo <= ofs <= lo + Z.of_nat n)%Z.
+
+Lemma block_bounds_cover_init_mem :
+  forall (prog : Clight.program) m (Hnorepet : list_norepet (prog_defs_names prog)) (Hm : Genv.init_mem prog = Some m),
+    block_bounds_cover m (block_bounds prog).
+Proof.
+  intros prog m Hnorepet Hm b ofs p Haccess.
+  assert (Hperm : Mem.perm m b ofs Cur p).
+  { unfold Mem.perm; rewrite /access_at /= in Haccess.
+    rewrite Haccess; apply perm_refl.
+  }
+  assert (Hb : (b < nextblock m)%positive).
+  {
+    pose proof Hperm as Hvalid_block.
+    apply Mem.perm_valid_block in Hvalid_block.
+    apply Hvalid_block.
+  }
+  eapply init_mem_all in Hb as (id & g & Hin & Hsym); eauto.
+  pose proof (prog_defmap_norepet _ _ _ Hnorepet Hin) as Hdef.
+  apply Genv.find_def_symbol in Hdef as (b' & Hsym' & Hdef).
+  assert (b' = b) as ->.
+  { rewrite Hsym' in Hsym; inv Hsym; done. }
+  pose proof (Genv.init_mem_characterization_gen prog Hm b Hdef) as Hinit.
+  apply find_symbol_globalenv in Hsym as (k & g' & Hnth_idx); last done.
+  pose proof Hnth_idx as Hnth_in.
+  apply nth_error_In in Hnth_in.
+  assert (g' = g) as Hg.
+  { eapply list_norepet_In_In; eauto. }
+  subst g'.
+  erewrite block_bounds_nth by exact Hnth_idx.
+  destruct g as [fd | v].
+  - destruct Hinit as (_ & Hall).
+    specialize (Hall ofs Cur p Hperm) as [-> ->].
+    simpl; lia.
+  - destruct Hinit as (_ & Hall & _ & _).
+    specialize (Hall ofs Cur p Hperm) as [Hlo Hhi].
+    simpl.
+    rewrite Z2Nat.id; try lia.
+Qed.
+
 Lemma initialize_mem' :
   forall (prog: program) G m
       (Hnorepet : list_norepet (prog_defs_names prog))
@@ -277,20 +319,96 @@ Proof.
     + destruct (find_id id G) eqn: Hfind; last done.
       eapply match_fdecs_exists_Gfun in Hfind as (? & Hin' & ?); last done.
       eapply list_norepet_In_In in Hin; eauto; done. }
-  rewrite initialize_mem; last done. rewrite initial_mem_initial_core //. rewrite -init_funspecs_matchfunspecs. by iIntros ">($ & $ & $)".
-  - intros ? Hb.
+  assert
+    (Hfun_access :
+       forall b,
+         (b < nextblock m)%positive ->
+         match funspec_of_loc (Genv.globalenv prog) G (b, 0) with
+         | Some _ =>
+             access_at m (b, 0) Cur = Some Nonempty
+         | None => True
+         end).
+  {
+    intros ? Hb.
     eapply init_mem_all in Hb as (id & g & Hin & Hb); eauto.
-    apply find_symbol_globalenv in Hb as (? & g' & ?); last done.
-    erewrite block_bounds_nth by done.
-    destruct g'; try done; simpl; lia.
-  - rewrite /funspec_of_loc /=.
-    intros ?? Hfind; destruct (Genv.invert_symbol _ _) eqn: Hb; try done.
+    pose proof
+      (prog_defmap_norepet _ _ _ Hnorepet Hin)
+      as Hdef.
+    apply Genv.find_def_symbol in Hdef
+      as (b' & Hb' & Hdef).
+    assert (b' = b) as ->.
+    { rewrite Hb' in Hb; inv Hb; done. }
+    apply Genv.init_mem_characterization_gen in Hm.
+    specialize (Hm b _ Hdef).
+    rewrite /funspec_of_loc /=.
+    erewrite Genv.find_invert_symbol by done.
+    destruct g.
+    - apply In_prog_funct in Hin.
+      assert (In id (map fst (prog_funct prog))) as Hin'.
+      {
+        rewrite in_map_iff.
+        eexists (_, _); eauto.
+      }
+      rewrite match_ids // in_map_iff in Hin'.
+      destruct Hin' as ((?, ?) & ? & ?); simpl in *; subst.
+      erewrite find_id_i by done.
+      destruct Hm as (Hperm & Hmax).
+      apply perm_mem_access in Hperm
+        as (? & Hperm & Haccess).
+      destruct (Hmax _ _ _
+        (access_perm _ _ _ _ _ Haccess)); subst; done.
+    - destruct (find_id id G) eqn:Hfind; last done.
+      eapply match_fdecs_exists_Gfun in Hfind
+        as (? & Hin' & ?); last done.
+      eapply list_norepet_In_In in Hin; eauto; done.
+  }
+  assert
+    (Hfun_bounds : forall b f,
+        funspec_of_loc (Genv.globalenv prog) G (b, 0) = Some f ->
+        block_bounds prog b = (0, 0%nat)).
+  {
+    rewrite /funspec_of_loc /=.
+    intros ?? Hfind.
+    destruct (Genv.invert_symbol _ _) eqn:Hb; try done.
     apply Genv.invert_find_symbol in Hb.
-    apply find_symbol_globalenv in Hb as (? & g' & Hnth); last done.
+    apply find_symbol_globalenv in Hb
+        as (? & g' & Hnth); last done.
     erewrite block_bounds_nth by done.
     apply nth_error_In in Hnth.
-    eapply match_fdecs_exists_Gfun in Hfind as (? & Hin & ?); last done.
+    eapply match_fdecs_exists_Gfun in Hfind
+        as (? & Hin & ?); last done.
     eapply list_norepet_In_In in Hnth; eauto; subst; done.
+  }
+  assert
+    (Hzero_bounds :
+      forall b,
+        (b < nextblock m)%positive ->
+        (block_bounds prog b).1 <= 0 <=
+          (block_bounds prog b).1 +
+            Z.of_nat (block_bounds prog b).2).
+  { intros ? Hb.
+    eapply init_mem_all in Hb as (id & g & Hin & Hb); eauto.
+    apply find_symbol_globalenv in Hb
+        as (? & g' & Hnth); last done.
+    erewrite block_bounds_nth by done.
+    destruct g'; try done; simpl; lia.
+  }
+  pose proof
+    (block_bounds_cover_init_mem prog m Hnorepet Hm)
+    as Hcover.
+  rewrite /block_bounds_cover  in Hcover.
+  iIntros "(Hmem & Hf)".
+  iMod (initialize_mem m (block_bounds prog) (Genv.globalenv prog) G Hfun_bounds
+         with "[$Hmem $Hf]") as "(Hσ & Hf & Hinflate)"; try done.
+  intros.
+  destruct (access_at m (b, ofs) Cur) eqn:Hacc; last done.
+  specialize (Hcover b ofs p Hacc).
+  rewrite H1 in Hcover.
+  exact Hcover.
+  iPoseProof (initial_mem_initial_core m (block_bounds prog) (Genv.globalenv prog)
+                G Hfun_access Hzero_bounds with "Hinflate") as "(Hinflate & Hcore)".
+  iPoseProof (init_funspecs_matchfunspecs with "Hf") as "Hmatchfunspecs".
+  iFrame; done.
 Qed.
 
 Lemma initial_core_funassert :

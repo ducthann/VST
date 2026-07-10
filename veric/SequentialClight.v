@@ -46,7 +46,12 @@ Proof.
   iMod (ext_alloc z) as (?) "(? & ?)".
   iIntros "!>" (?); iExists (GenHeapGS _ _ _ _ γh γm), (FunspecG _ _ γf), _.
   rewrite /state_interp /mem_auth /funspec_auth /=; iFrame.
-  iSplit; [|done]. iPureIntro. apply empty_coherent.
+  iSplit; [|done].
+  iPureIntro.
+  apply empty_coherent.
+  intros [b ofs].
+  apply nextblock_access_empty.
+  rewrite Mem.nextblock_empty. lia.
 Qed.
 
 Global Instance stepN_absorbing {PROP : bi} `{!BiFUpd PROP} n E1 E2 (P : PROP) `{!Absorbing P}: Absorbing (|={E1}[E2]▷=>^n P).

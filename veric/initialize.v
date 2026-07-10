@@ -1281,23 +1281,63 @@ Proof.
   destruct g.
 * (* Gfun case *)
   simpl.
-  iIntros "Hmem"; iApply IHvl.
   simpl in Hinit.
-  destruct (alloc m0 0 1) eqn: Halloc.
+  destruct (Mem.alloc m0 0 1) eqn:Halloc.
+  assert (Hfun : exists fs, funspec_of_loc gev (G0 ++ G) (Mem.nextblock m0, 0%Z) = Some fs).
+  { assert (Hin_i : In i (map fst G)).
+    { apply H1'. simpl; auto. }
+    apply in_map_iff in Hin_i.
+    destruct Hin_i as [[j fs] [Hij Hinfs]].
+    simpl in Hij; subst j.
+    exists fs.
+    rewrite /funspec_of_loc /=.
+    erewrite Genv.find_invert_symbol by exact FS.
+    erewrite find_id_i; eauto.
+    apply in_or_app; auto.
+  }
+  destruct Hfun as [fs Hfun].
+  iIntros "Hmem".
+  iApply IHvl.
   rewrite /inflate_initial_mem.
-  erewrite nextblock_drop, nextblock_alloc by eassumption.
-  replace (Pos.to_nat (Pos.succ _) - 1)%nat with (S (Pos.to_nat (nextblock m0) - 1))%nat by lia.
+  erewrite Mem.nextblock_drop, Mem.nextblock_alloc by eassumption.
+  replace (Pos.to_nat (Pos.succ _) - 1)%nat with (S (Pos.to_nat (Mem.nextblock m0) - 1))%nat
+          by lia.
   rewrite seq_S big_sepL_app /= -Nat.sub_succ_l /=; last lia.
-  iDestruct "Hmem" as "(Hmem & Hnew & _)"; iPoseProof (affine with "Hnew") as "_".
-  { destruct (block_bounds _).
-    apply big_sepL_affine; intros.
+  iDestruct "Hmem" as "(Hmem & Hnew & _)".
+  pose proof (Mem.alloc_result _ _ _ _ _ Halloc) as Hb.
+  assert (Hfun1 : exists fs : funspec, funspec_of_loc gev G (Mem.nextblock m0, 0%Z) = Some fs).
+  { assert (Hin_i : In i (map fst G)).
+    { apply H1'; simpl; auto. }
+    rewrite in_map_iff in Hin_i.
+    destruct Hin_i as [[i' fs1] [Hi Hinfs]].
+    simpl in Hi.
+    subst i'.
+    exists fs1.
+    rewrite /funspec_of_loc /=.
+    erewrite Genv.find_invert_symbol by exact FS.
+    erewrite find_id_i; eauto.
+    rewrite map_app in NRG.
+    apply list_norepet_app in NRG as [_ [NRG_G _]]; auto.
+  }
+  destruct Hfun as [fs1 Hfun].
+  iPoseProof (affine with "Hnew") as "_".
+  { destruct (block_bounds _) as [lo hi].
+    apply big_sepL_affine.
+    intros k o Ho.
     rewrite /inflate_loc.
     rewrite Nat.sub_0_r Pos2Nat.id.
     erewrite drop_perm_access by eassumption.
-    if_tac; first by destruct (funspec_of_loc _ _ _); apply _.
-    eapply alloc_dry_unchanged_on in H2 as [Ha _]; last done.
-    rewrite -Ha nextblock_access_empty //; last lia.
-    apply _. }
+    if_tac.
+    - replace (lo + Z.of_nat o)%Z with 0%Z.
+      2: { destruct H0 as [_ [? ?]]; lia. }
+      destruct Hfun1 as (? & Hfun1).
+      rewrite Hfun1.
+      apply _.
+    - eapply alloc_dry_unchanged_on
+        in H0 as [Ha _]; last done.
+      rewrite -Ha nextblock_access_empty //; last lia.
+      apply _.
+  }
   iApply (big_sepL_mono with "Hmem").
   intros ?? (-> & ?)%lookup_seq.
   rewrite /block_bounds /=.

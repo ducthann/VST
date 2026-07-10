@@ -186,7 +186,7 @@ Definition inflate_loc loc :=
   | Some Readable => loc ↦{#Ers} VAL (contents_at m loc)
   | Some Nonempty => match funspec_of_loc loc with
                      | Some f => func_at f loc
-                     | _ => mapsto_no loc Share.bot
+                     | _ => mapsto_no loc Share.Lsh
                      end
   | _ => mapsto_no loc Share.bot
   end.
@@ -201,7 +201,7 @@ Definition res_of_loc (loc : address) : sharedR (leibnizO resource) :=
   | Some Readable => (shared.YES(V := leibnizO resource) (DfracOwn (Share Ers)) readable_Ers (to_agree (VAL (contents_at m loc))))
   | Some Nonempty => match funspec_of_loc loc with
                      | Some _ => (shared.YES(V := leibnizO resource) (DfracBoth (Share Share.bot)) I (to_agree FUN))
-                     | _ => (shared.NO (Share Share.bot) bot_unreadable)
+                    | _ => (shared.NO (Share Share.Lsh) Lsh_nonreadable)
                      end
   | _ => (shared.NO (Share Share.bot) bot_unreadable)
   end.
@@ -997,34 +997,51 @@ Proof.
   apply Lsh_bot_neq.
 Qed.
 
-Lemma rmap_of_loc_coherent : forall m F (ge : Genv.t (fundef F) type) G loc, coherent_loc m loc (resR_to_resource (Some (res_of_loc m ge G loc))).
+Lemma rmap_of_loc_coherent : forall m F (ge : Genv.t (fundef F) type) G loc,
+    coherent_loc m loc (resR_to_resource (Some (res_of_loc m ge G loc))).
 Proof.
   intros; rewrite /res_of_loc.
-  destruct (access_at m loc Cur) eqn: Hloc; last apply coherent_bot.
-  destruct p; try (destruct (funspec_of_loc _ _ _) as [[]|]; last apply coherent_bot); rewrite /= elem_of_to_agree.
-  - split.
-    + unfold contents_cohere; simpl.
-      by inversion 1.
+  destruct (access_at m loc Cur) eqn: Hloc.
+  2 : { apply coherent_bot. exact Hloc. }
+  destruct p.
+  - rewrite /= elem_of_to_agree.
+    split.
+    + unfold contents_cohere; simpl. by inversion 1.
     + rewrite /access_cohere Hloc /=.
-      rewrite /perm_of_sh !if_true //; auto.
-      constructor.
-  - split.
-    + unfold contents_cohere; simpl.
-      by inversion 1.
-    + rewrite /access_cohere Hloc /= perm_of_Ews.
-      constructor.
-  - split.
-    + unfold contents_cohere; simpl.
-      by inversion 1.
-    + rewrite /access_cohere Hloc /= perm_of_Ers.
-      constructor.
-  - split.
-    + done.
-    + rewrite /access_cohere Hloc /=.
-      constructor.
-Qed.
+      rewrite /perm_of_sh !if_true //.
+      apply writable_writable0, writable_share_top.
+  - destruct (@funspec_of_loc F ge G loc) as [[]|] eqn:Hfs.
+    + rewrite /= elem_of_to_agree.
+      split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere Hloc /= perm_of_Ews //.
+    + rewrite /= elem_of_to_agree /=.
+      split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere /= Hloc perm_of_Ews //.
+  - destruct (@funspec_of_loc F ge G loc) as [[]|] eqn:Hfs.
+    + rewrite /= elem_of_to_agree.
+      split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere Hloc /= perm_of_Ers //.
+    + rewrite /= elem_of_to_agree /=.
+      split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere /= Hloc perm_of_Ers //.
+  - destruct (@funspec_of_loc F ge G loc) as [[]|] eqn:Hfs.
+    + rewrite /= elem_of_to_agree.
+      split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere Hloc //.
+    + split.
+      * rewrite /contents_cohere /=. by inversion 1.
+      * rewrite /access_cohere /= Hloc if_false //.
+        apply Lsh_bot_neq.
+  Qed.
 
-Lemma rmap_of_mem_coherent : forall m block_bounds {F} ge G loc, (✓ @rmap_of_mem m block_bounds F ge G)%stdpp ->
+(*
+Lemma rmap_of_mem_coherent : forall m block_bounds {F} ge G loc,
+    (✓ @rmap_of_mem m block_bounds F ge G)%stdpp ->
   coherent_loc m loc (resource_at (@rmap_of_mem m block_bounds F ge G) loc).
 Proof.
   intros; rewrite /resource_at.
@@ -1036,6 +1053,46 @@ Proof.
   destruct (zle z o); simpl; last apply coherent_bot.
   destruct (zle o (z + n)); last apply coherent_bot; simpl.
   apply rmap_of_loc_coherent.
+Qed.
+*)
+
+Lemma rmap_of_mem_coherent :
+  forall m block_bounds {F} ge G loc,
+    (forall b lo n ofs,
+        block_bounds b = (lo, n) ->
+        access_at m (b, ofs) Cur <> None ->
+        lo <= ofs <= lo + Z.of_nat n) ->
+    (✓ @rmap_of_mem m block_bounds F ge G)%stdpp ->
+    coherent_loc m loc
+      (resource_at (@rmap_of_mem m block_bounds F ge G) loc).
+Proof.
+  intros m block_bounds F ge G loc Hbounds_access Hvalid.
+  rewrite /resource_at.
+  specialize (Hvalid loc).
+  erewrite resR_to_resource_eq; [| done | apply lookup_of_mem].
+  rewrite lookup_of_mem in Hvalid.
+  destruct loc as [b o].
+  destruct (block_bounds b) as [z n] eqn:Hbounds.
+  rewrite Hbounds /=.
+  destruct (plt b (nextblock m)).
+  - destruct (zle z o); simpl.
+    + destruct (zle o (z + Z.of_nat n)); simpl.
+      * apply rmap_of_loc_coherent.
+      * apply coherent_bot.
+        destruct (access_at m (b, o) Cur) eqn:Hacc; auto.
+        exfalso.
+        assert (access_at m (b, o) Cur <> None) as Hacc_ne.
+        { rewrite Hacc. discriminate. }
+        specialize (Hbounds_access b z n o Hbounds Hacc_ne). lia.
+    + apply coherent_bot.
+      destruct (access_at m (b, o) Cur) eqn:Hacc; auto.
+      exfalso.
+      assert (access_at m (b, o) Cur <> None) as Hacc_ne.
+      { rewrite Hacc. discriminate. }
+      specialize (Hbounds_access b z n o Hbounds Hacc_ne). lia.
+  - apply coherent_bot.
+    apply nextblock_access_empty.
+    rewrite /Plt in n0. lia.
 Qed.
 
 Lemma rmap_of_loc_valid : forall m {F} ge G loc, (✓ (@res_of_loc m F ge G loc))%stdpp.
@@ -1304,11 +1361,22 @@ Proof.
   rewrite /inflate_loc.
   destruct (funspec_of_loc _ _ _).
   - rewrite Hm //.
-  - replace (DfracOwn (Share share_top)) with (ε ⋅ DfracOwn (Share share_top)) by rewrite left_id //.
+  - replace (DfracOwn (Share share_top)) with (ε ⋅ DfracOwn (Share share_top))
+      by rewrite left_id //.
     replace (DfracOwn (Share Ews)) with (ε ⋅ DfracOwn (Share Ews)) by rewrite left_id //.
     replace (DfracOwn (Share Ers)) with (ε ⋅ DfracOwn (Share Ers)) by rewrite left_id //.
     destruct (access_at _ _ _); last done.
-    destruct p; last done; iDestruct (mapsto_split_no with "H") as "($ & _)"; simpl; auto; (apply bot_unreadable || apply readable_Ers).
+    destruct p;
+      try iDestruct (mapsto_split_no with "H") as "($ & _)";
+      simpl; auto;
+      try (apply bot_unreadable ||
+             apply readable_Ers ||
+               apply Lsh_nonreadable).
+    iDestruct (mapsto_no_split _ (Share.bot) (Share.Lsh) _ _ (Share.Lsh) with "H") as "($ & _)".
+    rewrite share_op_bot //.
+    Unshelve.
+    + apply (@unreadable_bot _ share_instance).
+    + apply Lsh_nonreadable.
 Qed.
 
 Lemma rmap_of_mem_nextblock : ∀ m block_bounds {F} (ge : Genv.t (fundef F) type) G loc,
@@ -1321,8 +1389,15 @@ Proof.
   destruct (block_bounds _); inv Hlookup; done.
 Qed.
 
+(* Pointwise equality is the relevant notion for CompCert access maps. *)
+
 Lemma initialize_mem : forall m block_bounds {F} (ge : Genv.t (fundef F) type) G
   (Hfun_bounds : forall b f, funspec_of_loc ge G (b, 0) = Some f -> block_bounds b = (0, 0%nat))
+  (Hbounds_access :
+    forall b lo n ofs,
+      block_bounds b = (lo, n) ->
+      access_at m (b, ofs) Cur <> None ->
+      lo <= ofs <= lo + Z.of_nat n)
   (Hm : forall b, (b < nextblock m)%positive ->
         match funspec_of_loc ge G (b, 0) with
         | Some _ => access_at m (b, 0) Cur = Some Nonempty

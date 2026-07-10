@@ -99,25 +99,52 @@ Lemma valid_pointer_dry:
   forall b ofs d m, mem_auth m ∗ valid_pointer' (Vptr b ofs) d ⊢
          ⌜Mem.valid_pointer m b (Ptrofs.unsigned ofs + d) = true⌝.
 Proof.
-intros.
-iIntros "[Hm >H]".
-iAssert ⌜∃ dq r, ✓ dq ∧ dq ≠ ε ∧ coherent_loc m (b, Ptrofs.unsigned ofs + d)%Z (dq, r)⌝ with "[-]" as %(dq & r & Hdq & ? & H).
-{ iDestruct "H" as "[(% & % & H) | (% & % & H)]"; [iDestruct (mapsto_lookup with "Hm H") as %(? & ? & ? & ?) |
-    iDestruct (mapsto_no_lookup with "Hm H") as %(? & ? & ?)]; iPureIntro.
-  - eexists _, _; split; first done; split; last done.
-    intros ->; contradiction bot_unreadable.
-  - eexists (DfracOwn (Share sh)), _; split; first done; split; last done.
-    intros [=]; done. }
-iPureIntro.
-rewrite Mem.valid_pointer_nonempty_perm /Mem.perm.
-destruct H as (_ & H).
-rewrite /access_cohere /access_at in H.
-destruct (Maps.PMap.get _ _ _ _); try constructor.
-destruct (perm_of_res_cases dq r) as [(? & -> & Hperm) | (? & Hperm)]; setoid_rewrite Hperm in H; clear Hperm.
-- destruct (perm_of_dfrac dq) eqn: Hp; first done.
-  apply perm_of_dfrac_None in Hp as [-> | ->]; done.
-- rewrite !if_false // in H.
-  intros ->; done.
+  intros.
+  iIntros "[Hm >H]".
+  iAssert (⌜Mem.perm_order'' (access_at m (b, Ptrofs.unsigned ofs + d)%Z Cur) (Some Nonempty)⌝)%I
+    with "[-]" as %Hperm.
+  {
+    iDestruct "H" as "[(%dq & %v & H) | (%sh & %r & H)]".
+    - iDestruct (mapsto_lookup with "Hm H") as
+        %(Hvalid & Hread & _ & (dq' & Hvalid' & Hmono & (_ & Hacc))).
+      iPureIntro.
+      rewrite /access_cohere in Hacc.
+      rewrite Hacc.
+      eapply perm_order''_trans.
+      + eapply (perm_of_res_mono' (dq, Some v) (dq', Some v)); eauto.
+        split; auto.
+      + destruct dq as [[sh|]|], v; simpl in *; try constructor.
+        * rewrite /perm_of_sh.
+          repeat if_tac; try constructor.
+          subst; contradiction bot_unreadable.
+        * if_tac; try constructor.
+          subst; contradiction bot_unreadable.
+        * if_tac; try constructor.
+          subst; contradiction bot_unreadable.
+        * contradiction.
+        * contradiction.
+        * contradiction.
+        * if_tac; try constructor.
+          unfold Mem.perm_order' in H.
+          destruct (perm_of_sh' s) as [p|] eqn:Hp; simpl in *; try contradiction.
+          eapply perm_order_trans; try apply H. constructor.
+    - Check mapsto_no_lookup.
+      iDestruct "Hm" as (σ Hcoh) "Hm".
+      iDestruct (mapsto_no_lookup with "Hm H") as %(s & Hvalid_s & Hlookup & Hmono); iPureIntro.
+      specialize (Hcoh (b, Ptrofs.unsigned ofs + d)%Z) as (_ & Hloc).
+      rewrite /resource_at Hlookup in Hloc.
+      destruct Hloc as (_ & Hacc).
+      rewrite /access_cohere in Hacc.
+      rewrite Hacc.
+      eapply perm_order''_trans.
+      + eapply (perm_of_res_mono' (DfracOwn (Share sh), None) (resR_to_resource (Some s))).
+        * destruct s; simpl in *; auto.
+          by destruct Hvalid_s as [? _].
+        * split; auto.
+      + simpl; if_tac; try constructor.
+        exfalso; by apply r. }
+  iPureIntro.
+  rewrite Mem.valid_pointer_nonempty_perm /Mem.perm //.
 Qed.
 
 Lemma weak_valid_pointer_dry:

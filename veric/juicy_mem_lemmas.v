@@ -23,6 +23,7 @@ Qed.
 
 (* core load and coherence properties *)
 
+(*
 Lemma core_load_coherent: forall ch v b ofs bl m,
   mem_auth m ∗ core_load' ch (b, ofs) v bl ⊢
   ⌜length bl = size_chunk_nat ch ∧ (align_chunk ch | ofs)%Z ∧ forall i, i < length bl -> exists sh, perm_order' (perm_of_dfrac sh) Readable ∧ coherent_loc m (b, ofs + Z.of_nat i)%Z (sh, Some (VAL (nthbyte i bl)))⌝.
@@ -44,6 +45,47 @@ Proof.
   rewrite Nat2Z.inj_succ /Z.succ (Z.add_comm _ 1) Z.add_assoc.
   rewrite /nthbyte Z2Nat.inj_add; eauto; lia.
 Qed.
+*)
+
+(* Exact coherence belongs to the authoritative resource above the
+   load fragment, so expose sh' with sh ≼ sh'. *)
+Lemma core_load_coherent: forall ch v b ofs bl m,
+  mem_auth m ∗ core_load' ch (b, ofs) v bl ⊢
+  ⌜length bl = size_chunk_nat ch ∧
+    (align_chunk ch | ofs)%Z ∧
+    forall i, i < length bl ->
+      exists sh sh',
+        perm_order' (perm_of_dfrac sh) Readable ∧
+        ✓ sh' ∧ sh ≼ sh' ∧
+        coherent_loc m (b, ofs + Z.of_nat i)%Z
+          (sh', Some (VAL (nthbyte i bl)))⌝.
+Proof.
+  intros; unfold core_load'.
+  iIntros "(Hm & >((%H1 & _ & %H2) & H))".
+  rewrite {1}H1; iSplit; first done; iSplit; first done.
+  clear H1 H2; iInduction bl as [|?] "IH" forall (ofs); simpl in *.
+  { iPureIntro; lia. }
+
+  iDestruct "H" as "((%sh & %Hsh & H) & rest)".
+  iDestruct (mapsto_lookup with "Hm H") as %(_ & _ & _ & Hauth).
+  destruct Hauth as (sh' & Hvalid' & Hmono & Hcoh).
+  iDestruct ("IH" with "Hm [rest]") as %Hrest.
+  {
+    iApply (big_sepL_mono with "rest"); intros.
+    apply bi.exist_mono; intros.
+    rewrite /adr_add /= Nat2Z.inj_succ /Z.succ
+            (Z.add_comm _ 1) Z.add_assoc //.
+  }
+  iPureIntro; intros.
+  destruct i.
+  - destruct Hcoh as (Hcontents & Haccess).
+    exists sh, sh'. repeat split; eauto.
+  - destruct (Hrest i) as (sh0 & sh0' & Hperm0 & Hmono0 & Hcoh0); first lia.
+    exists sh0, sh0'. split; first done. split; first done.
+    rewrite Nat2Z.inj_succ /Z.succ (Z.add_comm _ 1) Z.add_assoc.
+    rewrite /nthbyte Z2Nat.inj_add; try lia.
+    exact Hcoh0.
+Qed.
 
 Lemma getN_lookup : forall n z m i, (getN n z m !! i)%stdpp = if lt_dec i n then Some (Maps.ZMap.get (z + Z.of_nat i)%Z m) else None.
 Proof.
@@ -63,7 +105,8 @@ Proof.
   apply list_eq; intros.
   rewrite getN_lookup -Hlen.
   destruct (lt_dec i (length bl)).
-  - destruct (H i) as (? & ? & Hi & _); first lia.
+  - destruct (H i) as (sh & sh' & Hsh & Hv & Hmono & Hcoh); first lia.
+    destruct Hcoh as (Hi & _).
     rewrite /contents_cohere /contents_at /= in Hi.
     rewrite (Hi _ eq_refl).
     apply lookup_lt_is_Some_2 in l as [? Hbl].
@@ -85,11 +128,21 @@ Proof.
   split; auto.
   intros z Hz.
   rewrite size_chunk_conv -Hlen in Hz.
-  destruct (H (Z.to_nat (z - ofs))) as (? & Hsh & _ & Hloc); first lia.
-  rewrite Z2Nat.id /access_cohere in Hloc; last lia.
-  rewrite Zplus_minus in Hloc.
-  rewrite perm_access; eapply perm_order''_trans; eauto; simpl.
-  destruct x as [[|]|]; done.
+  destruct (H (Z.to_nat (z - ofs))) as
+    (sh & sh' & Hsh & Hvalid' & Hmono & Hloc); first lia.
+  destruct Hloc as (_ & Haccess).
+  rewrite Z2Nat.id /access_cohere in Haccess; last lia.
+  rewrite Zplus_minus in Haccess.
+  rewrite perm_access Haccess.
+  eapply perm_order''_trans.
+  - eapply (perm_of_res_mono'
+              (sh, Some (VAL (nthbyte (z - ofs) bl)))
+              (sh', Some (VAL (nthbyte (z - ofs) bl)))).
+    + exact Hvalid'.
+    + split; auto.
+  - destruct sh; simpl in *; auto.
+    unfold perm_order' in Hsh.
+    destruct s; simpl in *; exact Hsh.
 Qed.
 
 Lemma core_load_load': forall ch b ofs v m,
@@ -105,9 +158,12 @@ Proof.
   iDestruct "H" as "((% & <- & %) & H)"; subst; done.
 Qed.
 
+(*
 Lemma mapsto_coherent: forall ch v sh b ofs m,
   mem_auth m ∗ address_mapsto ch v sh (b, ofs) ⊢
-  ⌜∃ bl, length bl = size_chunk_nat ch ∧ decode_val ch bl = v ∧ (align_chunk ch | ofs)%Z ∧ forall i, 0 <= i < size_chunk_nat ch -> coherent_loc m (b, ofs + Z.of_nat i)%Z (DfracOwn (Share sh), Some (VAL (nthbyte i bl)))⌝.
+  ⌜∃ bl, length bl = size_chunk_nat ch ∧ decode_val ch bl = v ∧ (align_chunk ch | ofs)%Z ∧
+           forall i, 0 <= i < size_chunk_nat ch ->
+        coherent_loc m (b, ofs + Z.of_nat i)%Z (DfracOwn (Share sh), Some (VAL (nthbyte i bl)))⌝.
 Proof.
   intros; unfold address_mapsto.
   iIntros "[Hm H]".
@@ -121,6 +177,37 @@ Proof.
   rewrite Hi in Hcoh; rewrite /nthbyte Nat2Z.id (nth_lookup_Some _ _ _ _ Hi).
   apply Hcoh; lia.
 Qed.
+*)
+
+(* Exact coherence applies to the authoritative resource above the
+   address_mapsto fragment, so expose sh' rather than claiming coherence
+   for DfracOwn (Share sh) itself. *)
+
+Lemma mapsto_coherent: forall ch v sh b ofs m,
+  mem_auth m ∗ address_mapsto ch v sh (b, ofs) ⊢
+  ⌜∃ bl, length bl = size_chunk_nat ch ∧ decode_val ch bl = v ∧ (align_chunk ch | ofs)%Z ∧
+      forall i, 0 <= i < size_chunk_nat ch ->
+        exists sh',
+          ✓ sh' ∧
+          DfracOwn (Share sh) ≼ sh' ∧
+          coherent_loc m (b, ofs + Z.of_nat i)%Z
+            (sh', Some (VAL (nthbyte i bl)))⌝.
+Proof.
+  intros; unfold address_mapsto.
+  iIntros "[Hm H]".
+  iDestruct "H" as (bl (? & ? & ?)) "H".
+  iExists bl; do 3 (iSplit; first done).
+  rewrite -(big_opL_fmap VAL (fun i v => mapsto (adr_add (b, ofs) i) (DfracOwn (Share sh)) v)).
+  iDestruct (mapsto_lookup_big with "Hm H") as %Hcoh.
+  iPureIntro.
+  rewrite -H; intros i Hi.
+  specialize (Hcoh i (VAL (nthbyte i bl))).
+  apply Hcoh.
+  rewrite list_lookup_fmap.
+  destruct (bl !! i)%stdpp as [x|] eqn:Hix.
+  - rewrite /= /nthbyte Nat2Z.id (nth_lookup_Some _ _ _ _ Hix) //.
+  - apply lookup_ge_None in Hix; lia.
+Qed.
 
 Lemma mapsto_valid_access_wr: forall ch v sh (wsh: writable0_share sh) b ofs m,
   mem_auth m ∗ address_mapsto ch v sh (b, ofs) ⊢
@@ -130,12 +217,18 @@ Proof.
   split; auto.
   intros z Hz.
   rewrite size_chunk_conv -Hlen in Hz.
-  destruct (Hcoh (Z.to_nat (z - ofs))) as (_ & Hloc); first lia.
-  rewrite Z2Nat.id /access_cohere in Hloc; last lia.
-  rewrite Zplus_minus in Hloc.
-  rewrite perm_access; eapply perm_order''_trans; eauto; simpl.
-  rewrite /perm_of_sh if_true; last done.
-  if_tac; constructor.
+  destruct (Hcoh (Z.to_nat (z - ofs))) as (dq' & Hvalid' & Hmono & Hloc); first lia.
+  destruct Hloc as (_ & Haccess).
+  rewrite Z2Nat.id /access_cohere in Haccess; last lia.
+  rewrite Zplus_minus in Haccess.
+  rewrite perm_access Haccess.
+  eapply perm_order''_trans.
+  - eapply (perm_of_res_mono' (DfracOwn (Share sh),Some (VAL (nthbyte (Z.to_nat (z - ofs)) bl)))
+              (dq', Some (VAL (nthbyte (Z.to_nat (z - ofs)) bl)))).
+    + exact Hvalid'.
+    + split; auto.
+  - rewrite /= /perm_of_sh if_true //.
+    if_tac; constructor.
 Qed.
 
 
@@ -413,8 +506,21 @@ Proof.
   rewrite /VALspec /adr_add /=.
   iDestruct "H" as (?) "H".
   replace (l.2 + Z.to_nat (a - l.2)) with a by lia.
-  iDestruct (mapsto_lookup with "Hm H") as %(? & ? & _ & _ & Hacc); iPureIntro.
-  rewrite /access_cohere /access_at /= H // in Hacc.
+  iDestruct (mapsto_lookup with "Hm H") as
+    %(_ & _ & _ & (dq' & Hvalid' & Hmono & Hcoh)); iPureIntro.
+  destruct Hcoh as (_ & Hacc).
+  rewrite /access_cohere /access_at /= in Hacc.
+  rewrite /perm Hacc.
+  change (perm_order''
+            (match dq' with
+             | DfracOwn (Share _) | _ => perm_of_dfrac dq'
+             end)
+            (Some p)).
+  eapply perm_order''_trans.
+  - eapply (perm_of_res_mono' (DfracOwn (Share sh), Some (VAL v)) (dq', Some (VAL v))).
+    + apply Hvalid'.
+    + split; auto.
+  - rewrite /= H; apply perm_order''_refl.
 Qed.
 
 Lemma VALspec_range_can_free: forall m n l,
