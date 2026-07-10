@@ -176,7 +176,8 @@ End semax_prog_with_rmap.
 
 (* up *)
 Existing Instance shared.shared_equiv.
-Lemma coherent_equiv m σ1 σ2 : ✓ (σ1 : resource_map.rmapUR _ _ _) → σ1 ≡ σ2 → coherent m σ1 ↔ coherent m σ2.
+Lemma coherent_equiv m σ1 σ2 :
+  ✓ (σ1 : resource_map.rmapUR _ _ _) → σ1 ≡ σ2 → coherent m σ1 ↔ coherent m σ2.
 Proof.
   intros Hv H; rewrite /coherent.
   apply Morphisms_Prop.all_iff_morphism; intros l.
@@ -188,20 +189,9 @@ Qed.
 
 Definition can_store_at (p : access_map) (l : positive * Z) : Prop :=
   match (p # (fst l)) (snd l) with
-  | Some q => perm_order q Writable   (* or just: perm_order Writable q *)
+  | Some q => perm_order q Writable
   | None   => False
   end.
-
-Lemma writable_at_equiv (p : access_map) (l : positive * Z) :
-  (match (p # (fst l)) (snd l) with
-   | Some q => perm_order q Writable
-   | None   => False
-   end) <->
-    Mem.perm_order'' ((p # (fst l)) (snd l)) (Some Writable).
-Proof.
-  unfold Mem.perm_order''.
-  destruct ((p # (fst l)) (snd l)) as [q|]; cbn; split; auto.
-Qed.
 
 Definition contents_at (m : mem) (l : positive * Z) : memval :=
   ZMap.get (snd l) ((Mem.mem_contents m) # (fst l)).
@@ -236,9 +226,8 @@ Proof.
                           Maps.PMap.get b (Mem.mem_access m) ofs Cur).
   { rewrite /getCurPerm. intros. by rewrite Maps.PMap.gmap. }
   specialize (Heq1 b ofs (restrPermMap Hlt)).
-  rewrite -Heq1.
   specialize (Heq b).
-  by rewrite Heq.
+  rewrite -Heq1 Heq //.
 Qed.
 
 Lemma readable_dfrac_perm_order m p dq
@@ -289,9 +278,7 @@ Proof.
 Qed.
 
 Lemma permMapLt_trans (p q r : access_map): permMapLt p q -> permMapLt q r -> permMapLt p r.
-Proof.
-  intros Hpq Hqr b ofs.
-  eapply mem_lemmas.po_trans; eauto.
+Proof. intros Hpq Hqr b ofs; eapply mem_lemmas.po_trans; eauto.
 Qed.
 
 Lemma can_store_at_getCurPerm_of_perm_order' (m : Mem.mem) (b : Values.block) (ofs : Z):
@@ -299,8 +286,7 @@ Lemma can_store_at_getCurPerm_of_perm_order' (m : Mem.mem) (b : Values.block) (o
   can_store_at (getCurPerm m) (b,ofs).
 Proof.
   rewrite /Mem.perm_order' /can_store_at /getCurPerm /=.
-  intros H.
-  rewrite PMap.gmap.
+  intros H; rewrite PMap.gmap.
   destruct ((Mem.mem_access m) # b ofs Cur); done.
 Qed.
   
@@ -326,36 +312,8 @@ Proof.
    - left; rewrite /contents_at PMap.gso //=.
 Qed.
 
-Lemma storebytes_contents_or_canstore_cur1 m (m' : Mem.mem) b ofs bytes
-  (Hst1 : Mem.storebytes m b ofs bytes = Some m')
-  (Hf : forall ofs0 : Z, (ofs <= ofs0 < ofs + Z.of_nat (length bytes))%Z ->
-      Mem.perm_order' ((Mem.mem_access m) # b ofs0 Cur) Writable):
-  forall loc, contents_at m' loc = contents_at m loc \/ can_store_at (getCurPerm m) loc.
-Proof.
-  intros [b0 ofs0].
-  Transparent Mem.storebytes.
-  unfold Mem.storebytes in Hst1.
-  destruct (Mem.range_perm_dec m b ofs (ofs + length bytes) Cur Writable)
-    as [Hrp | Hnrp].
-  2: discriminate.
-  inversion Hst1; subst m'; clear Hst1.
-  destruct (peq b0 b) as [-> | Hbneq].
-  - destruct (classic (ofs <= ofs0 < ofs + Z.of_nat (length bytes))%Z) as [Hin | Hout].
-    + right.
-      apply can_store_at_getCurPerm_of_perm_order'.
-      by apply Hf.
-    + left.
-      rewrite /contents_at /=.
-      rewrite PMap.gss.
-      rewrite Mem.setN_outside; auto.
-      lia.
-   - left.
-     rewrite /contents_at /=.
-     rewrite PMap.gso //=.
-Qed.
-
-Lemma free_contents : forall m b lo hi m', Mem.free m b lo hi = Some m' ->
-    Mem.mem_contents m' = Mem.mem_contents m.
+Lemma free_contents : forall m b lo hi m',
+    Mem.free m b lo hi = Some m' -> Mem.mem_contents m' = Mem.mem_contents m.
 Proof.
   intros m b lo hi m' H.
   Transparent Mem.free.
@@ -371,18 +329,15 @@ Lemma free_list_contents :
 Proof.
   intros m l.
   revert m.
-  induction l as [| [[b lo] hi] tl IH]; intros.
-  - simpl in H. inversion H; subst. reflexivity.
-  - simpl in H.
-    destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
-    specialize (IH m1 m').
-    apply IH in H.
-    apply free_contents in Hfree.
-    by rewrite <- Hfree.
+  induction l as [| [[b lo] hi] tl IH]; intros; simpl in H; first inv H; auto.
+  destruct (Mem.free m b lo hi) as [m1|] eqn:Hfree; try discriminate.
+  specialize (IH m1 m').
+  apply IH in H.
+  apply free_contents in Hfree.
+  rewrite -Hfree //.
 Qed.
 
-Lemma mem_contents_restrPermMap {p m}
-  (Hlt : permMapLt p (getMaxPerm m)) :
+Lemma mem_contents_restrPermMap {p m} (Hlt : permMapLt p (getMaxPerm m)) :
   Mem.mem_contents (restrPermMap Hlt) = Mem.mem_contents m.
 Proof. reflexivity. Qed.
 
@@ -450,8 +405,7 @@ Lemma free_list_preserve_disjoint_and_lt :
     permMapLt a (getMaxPerm m) ->
     permMapsDisjoint (getCurPerm m) a ->
     Mem.free_list m l = Some m' ->
-    permMapsDisjoint (getCurPerm m') a /\
-      permMapLt a (getMaxPerm m').
+    permMapsDisjoint (getCurPerm m') a /\ permMapLt a (getMaxPerm m').
 Proof.
   intros m l m' a Hlt Hdis Hfl.
   generalize dependent m'.
@@ -465,7 +419,6 @@ Proof.
       as [Hdis1 Hlt1].
     eapply IH; eauto.
 Qed.
-
 
 Lemma mem_step_preserve_disjoint_and_lt :
   forall (mi mi' : mem) (a : access_map),
@@ -507,8 +460,7 @@ Proof.
         exists pu.
         simpl.
         assert (Hcur: (getCurPerm m') # b ofs = (getCurPerm m) # b ofs).
-        {
-          rewrite /getCurPerm !PMap.gmap.
+        { rewrite /getCurPerm !PMap.gmap.
           inv H; simpl.
           rewrite PMap.gso //.
         }
@@ -594,40 +546,22 @@ Qed.
       + done.
   Qed.
 
-  Lemma free_list_preserves_other_cur
-    (q : access_map) :
+  Lemma free_list_preserves_other_cur (q : access_map) :
     forall (l : list (Values.block * Z * Z)) (m m' : mem),
-      permMapLt q (getCurPerm m) ->
-      permMapsDisjoint (getCurPerm m) q ->
+      permMapLt q (getCurPerm m) -> permMapsDisjoint (getCurPerm m) q ->
       Mem.free_list m l = Some m' ->
-      permMapLt q (getCurPerm m') /\
-        permMapsDisjoint (getCurPerm m') q.
+      permMapLt q (getCurPerm m') /\ permMapsDisjoint (getCurPerm m') q.
   Proof.
-    induction l as [| [[b lo] hi] l IH];
-      intros m m' Hq Hdisj Hfree.
-    - simpl in Hfree.
-      inversion Hfree; subst.
-      split; assumption.
-    - simpl in Hfree.
-      destruct (Mem.free m b lo hi) as [m1 |] eqn:Hfree1;
-        try discriminate.
-
-      pose proof
-        (free_preserves_other_cur
-           q m m1 b lo hi Hq Hdisj Hfree1)
-        as [Hq1 Hdisj1].
-
+    induction l as [| [[b lo] hi] l IH]; intros m m' Hq Hdisj Hfree; simpl in Hfree.
+    - inv Hfree; split; assumption.
+    - destruct (Mem.free m b lo hi) as [m1 |] eqn:Hfree1; try discriminate.
+      pose proof (free_preserves_other_cur q m m1 b lo hi Hq Hdisj Hfree1) as (Hq1 & Hdisj1).
       eapply IH; eauto.
   Qed.
 
-  Lemma permMapLt_free_list_other
-    (p q : access_map)
-    (m m' : mem)
-    (Hlt : permMapLt p (getMaxPerm m))
-    (l : list (Values.block * Z * Z)) :
-    permMapLt q p ->
-    permMapsDisjoint p q ->
-    Mem.free_list (restrPermMap Hlt) l = Some m' ->
+  Lemma permMapLt_free_list_other (p q : access_map) (m m' : mem)
+    (Hlt : permMapLt p (getMaxPerm m)) (l : list (Values.block * Z * Z)) :
+    permMapLt q p -> permMapsDisjoint p q -> Mem.free_list (restrPermMap Hlt) l = Some m' ->
     permMapLt q (getCurPerm m').
   Proof.
     intros Hqp Hdisj Hfree.
@@ -639,7 +573,7 @@ Qed.
       intros.
       specialize (Heq b).
       specialize (Hqp b ofs).
-      by rewrite Heq.
+      rewrite Heq //.
     - unfold permMapsDisjoint in Hdisj |- *.
       intros.
       specialize (Hdisj b ofs).
@@ -647,8 +581,7 @@ Qed.
       pose proof (mem_equiv.getCur_restr _ _ Hlt) as Heq.
       rewrite /mem_equiv.access_map_equiv in Heq.
       specialize (Heq b).
-      rewrite Heq.
-      exists pu. done.
+      rewrite Heq; eexists; done.
   Qed.
 
   (*
@@ -659,18 +592,13 @@ Qed.
 *)
   Lemma access_map_equiv_permMapLt (p q : access_map) :
     mem_equiv.access_map_equiv p q -> permMapLt p q.
-  Proof.
-    intros Heq b ofs.
-    rewrite (Heq b).
-    apply po_refl.
-  Qed.
+  Proof. intros Heq b ofs; rewrite (Heq b); apply po_refl. Qed.
 
   Lemma coherent_mem_step_other_aux (m m' : mem) (p : access_map) (σ : rmap)
     (Hp : permMapLt p (getMaxPerm m))
     (Hσ : permMapLt (perm_of_rmap σ) (getMaxPerm m))
     (Hσ' : permMapLt (perm_of_rmap σ) (getMaxPerm m')) :
-    coherent (restrPermMap Hσ) σ ->
-    mem_step (restrPermMap Hp) m' ->
+    coherent (restrPermMap Hσ) σ -> mem_step (restrPermMap Hp) m' ->
     permMapsDisjoint p (perm_of_rmap σ) ->
     coherent (restrPermMap Hσ') σ.
   Proof.
@@ -691,7 +619,8 @@ Qed.
         intros b ofs.
         specialize (Hcur b).
         rewrite Hcur.
-        apply (Hother b ofs). }
+        apply (Hother b ofs).
+    }
     destruct Hmid as (Hother'' & Hσ'').
     have Hchr'' : coherent (restrPermMap Hσ'') σ.
     { eapply (IHHstep1 p Hother m0 Hp Hσ Hchr eq_refl Hσ''); eauto. }
@@ -784,14 +713,12 @@ Qed.
               rewrite /juicy_mem.contents_at mem_contents_restrPermMap in H1.
               rewrite Hcnt.
               rewrite PMap.gso //.
-           ** rewrite /access_cohere.
-              rewrite access_at_restrPermMap_Cur.
+           ** rewrite /access_cohere access_at_restrPermMap_Cur.
               rewrite /coherent in Hchr.
               destruct Hchr as (? & ?).
               rewrite /coherent_loc in H2.
               destruct H2 as (? & ?).
-              rewrite /access_cohere in H3.
-              by rewrite access_at_restrPermMap_Cur in H3.
+              rewrite /access_cohere access_at_restrPermMap_Cur // in H3.
        - (* Mem.storebytes  *)
          pose proof H as Hst.
          pose proof H as Hst1.
@@ -869,17 +796,12 @@ Qed.
              }
              assert (¬ ∃ pu : option permission,
                     perm_union ((perm_of_rmap σ) # (loc.1) loc.2) (p # (loc.1) loc.2) = Some pu).
-             { apply (perm_order_clash
-                        ((perm_of_rmap σ) # (loc.1) loc.2) (p # (loc.1) loc.2)); auto. }
-             rewrite perm_union_comm in H.
-             done.
+             { apply (perm_order_clash ((perm_of_rmap σ) # (loc.1) loc.2) (p # (loc.1) loc.2)); auto. }
+             rewrite perm_union_comm // in H.
   Qed.
 
-Lemma permMapLt_decay_disjoint
-    (pmap : access_map) (m m' : mem)
-    (Hdecay : decay m m')
-    (Hltp : permMapLt pmap (getMaxPerm m))
-    (Hdisj : permMapsDisjoint (getCurPerm m) pmap) :
+Lemma permMapLt_decay_disjoint (pmap : access_map) (m m' : mem) (Hdecay : decay m m')
+  (Hltp : permMapLt pmap (getMaxPerm m)) (Hdisj : permMapsDisjoint (getCurPerm m) pmap) :
   permMapLt pmap (getMaxPerm m').
 Proof.
   intros b ofs.
@@ -889,16 +811,12 @@ Proof.
     destruct Hold as [Hfree | Hsame].
     + (* The step freed this location. *)
       assert (Hpnone : pmap # b ofs = None).
-      {
-        specialize (Hdisj b ofs) as [pu Hunion].
+      { specialize (Hdisj b ofs) as [pu Hunion].
         rewrite getCurPerm_correct in Hunion.
         unfold permission_at in Hunion.
-
         destruct (Hfree Cur) as [Hfree_cur _].
         rewrite Hfree_cur in Hunion.
-
-        destruct (pmap # b ofs) as [p |] eqn:Hp;
-          last reflexivity.
+        destruct (pmap # b ofs) as [p |] eqn:Hp; last auto.
         destruct p; simpl in Hunion; discriminate.
       }
       rewrite Hpnone.
@@ -909,7 +827,7 @@ Proof.
       rewrite getMaxPerm_correct in Hltp |- *.
       unfold permission_at in Hltp |- *.
       rewrite Hsame in Hltp.
-      rewrite getMaxPerm_correct. done.
+      rewrite getMaxPerm_correct //.
   - (* σ0 has no permission on an initially invalid block. *)
     assert (Hpnone : pmap # b ofs = None).
     { eapply permMapLt_invalid_block; eauto. }
@@ -1246,12 +1164,9 @@ Section conc_heap.
     ⊢ |==> ∃ HL : lockGS Σ, ∀ heapGS0 : heapGS Σ,
         @lock_state Σ heapGS0 HL m (∅ : gset address).
   Proof.
-    iMod (own_alloc
-            (A := gmap_view.gmap_viewR address (laterO (iPropO Σ)))
-            (gmap_view.gmap_view_auth
-               (dfrac.DfracOwn 1)
-               (∅ : gmap address (laterO (iPropO Σ)))))
-      as (γ) "Hauth".
+    iMod (own_alloc (A := gmap_view.gmap_viewR address (laterO (iPropO Σ)))
+            (gmap_view.gmap_view_auth (dfrac.DfracOwn 1)
+               (∅ : gmap address (laterO (iPropO Σ))))) as (γ) "Hauth".
     { apply gmap_view.gmap_view_auth_valid. }
     iModIntro.
     iExists (LockGS Σ InGlock γ).
@@ -1259,10 +1174,9 @@ Section conc_heap.
     unfold lock_state, semax_conc_pred.lock_state.
     iExists (∅ : gmap address mpred).
     rewrite fmap_empty big_sepM_empty /=.
-    iFrame "Hauth".
-    iPureIntro.
-    split; auto.
-    unfold lock_addresses_disjoint; set_solver.
+    iFrame.
+    iPureIntro; split; auto.
+    rewrite /lock_addresses_disjoint; set_solver.
   Qed.
 
   Definition gen_heap_meta_auth (HG : gen_heapGS share address resource Σ) : iProp Σ :=
@@ -1294,15 +1208,9 @@ Section conc_heap.
     iMod (locks_init Mem.empty) as (HL) "Hlocks".
     iModIntro.
     iIntros (Hinv).
-    pose (HG :=
-            {| gen_heap_inG := VSTGpreS_heap;
-              gen_heap_name := γh;
-              gen_meta_name := γmeta |}).
+    pose (HG := {| gen_heap_inG := VSTGpreS_heap; gen_heap_name := γh; gen_meta_name := γmeta |}).
     pose (FS := FunspecG _ _ γf).
-    pose (HGS :=
-            ({| heapGS_invGS := Hinv;
-               heapGS_gen_heapGS := HG;
-               heapGS_funspecGS := FS |} : heapGS Σ)).
+    pose (HGS := ({| heapGS_invGS := Hinv; heapGS_gen_heapGS := HG; heapGS_funspecGS := FS |} : heapGS Σ)).
     iSpecialize ("Hlocks" $! HGS).
     iExists HG, FS, ES, HL.
     rewrite /gen_heap_meta_auth /=.
@@ -1310,7 +1218,6 @@ Section conc_heap.
     iPureIntro.
     split; auto.
     apply empty_coherent.
-    intros [b ofs].
     rewrite /access_at //.
   Qed.
 
@@ -1322,15 +1229,11 @@ Section conc_heap.
   Proof.
     intros Hstep Hdisj.
     rewrite /frag_mem_auth.
-    iIntros "(%Hinv & Hfrag)".
-    destruct Hinv as [Hcoh Hperm].
-    iSplit.
-    - iPureIntro.
-      split.
-      + eapply coherent_mem_step_other_aux; eauto.
-      + intro b; extensionality ofs. 
-        rewrite getCurPerm_correct restrPermMap_Cur //.
-    - iFrame.
+    iIntros "((%Hcoh & %Hperm) & Hfrag)".
+    iSplit; iFrame.
+    iPureIntro; split.
+    - eapply coherent_mem_step_other_aux; eauto.
+    - intro b; extensionality ofs; rewrite getCurPerm_correct restrPermMap_Cur //.
   Qed.
 
   Lemma coherent_perm_of_rmap m σ :
@@ -1340,52 +1243,10 @@ Section conc_heap.
     specialize (Hcoh (b, ofs)).
     rewrite /coherent_loc /access_cohere in Hcoh.
     destruct Hcoh as (_ & _ & ?).
-    rewrite perm_of_rmap_lookup.
     rewrite /access_at /= in H.
-    rewrite /getCurPerm PMap.gmap //.
-    rewrite H.
+    rewrite perm_of_rmap_lookup /getCurPerm PMap.gmap // H.
     apply po_refl.
   Qed.
-
-  (*
-
-  Definition mem_coherent_le (a b : mem) : Prop :=
-    Ple (Mem.nextblock a) (Mem.nextblock b) /\
-      (forall k, juicy_mem.contents_at b k = juicy_mem.contents_at a k) /\
-      (forall k, Mem.perm_order'' (access_at b k Cur) (access_at a k Cur)). *)
-
-  (*
-  Lemma coherent_mono (a b : mem) (s : rmap) :
-    mem_coherent_le a b -> coherent a s -> coherent b s.
-  Proof.
-    rewrite /coherent.
-    intros (Hnext & (Hcnt & Hperm)) Hcoh loc.
-    specialize (Hcoh loc).
-    destruct Hcoh as (Hval & Hcnt_a & Hacc_a).
-    split.
-    - intros Hge.
-      apply Hval.
-      rewrite /Ple in Hnext.
-      lia.
-    - split.
-      + intros v Hv.
-        rewrite Hcnt.
-        apply (Hcnt_a v Hv).
-      + unfold access_cohere in Hacc_a |- * .
-
-        eapply mem_lemmas.po_trans; eauto.
-  Qed.
-
-  Lemma frag_mem_auth_mono q (a b : mem) (s : rmap) :
-    mem_coherent_le a b -> frag_mem_auth q a s ⊢ frag_mem_auth q b s.
-  Proof.
-    intros Hab.
-    rewrite /frag_mem_auth.
-    iIntros "(%Hcoh & Hauth)".
-    iSplit; auto.
-    iPureIntro.
-    eapply coherent_mono; eauto.
- Qed. *)
 
   Lemma coherent_perm_of_rmap_max m σ :
     coherent m σ -> permMapLt (perm_of_rmap σ) (getMaxPerm m).
@@ -1461,33 +1322,15 @@ Section conc_heap.
   Proof.
     intros Heqv.
     destruct Heqv as [Hcur Hmax Hcnt Hnb].
-    rewrite /access_at.
-    rewrite <- ! getCurPerm_access_at.
     rewrite /mem_equiv.Cur_equiv /mem_equiv.access_map_equiv in Hcur.
+    rewrite /access_at - !getCurPerm_access_at.
     specialize (Hcur loc.1).
-    by rewrite Hcur.
+    rewrite Hcur //.
   Qed.
-(*
-  Lemma access_at_restrPermMap_Cur p m loc (Hlt : permMapLt p (getMaxPerm m)):
-    access_at (restrPermMap Hlt) loc Cur = p # (loc.1) loc.2 .
-  Proof.
-    destruct loc as [b ofs].
-    assert (Hacc: forall m b ofs, access_at m (b,ofs) Cur = (getCurPerm m) # b ofs).
-    { rewrite /getCurPerm /access_at /=. intros; by rewrite Maps.PMap.gmap. }
-    rewrite Hacc.
-    pose proof (mem_equiv.getCur_restr p m Hlt) as Heq.
-    specialize (Heq b).
-    by rewrite Heq.
-  Qed.
-*)
+
   Lemma access_at_cur_getCurPerm m b ofs :
     access_at m (b, ofs) Cur = (getCurPerm m) # b ofs.
-  Proof.
-    unfold access_at, getCurPerm.
-    simpl.
-    rewrite PMap.gmap.
-    reflexivity.
-  Qed.
+  Proof. rewrite /access_at /getCurPerm /= PMap.gmap //. Qed.
 
   Lemma access_at_restrPermMap_perm_res m s
     (Hlt : permMapLt (perm_of_rmap s) (getMaxPerm m)) b ofs :
@@ -1498,26 +1341,22 @@ Section conc_heap.
     replace ((b, ofs).2) with ofs by auto.
     change ((Mem.mem_access (restrPermMap Hlt)) # b ofs Cur)
       with (permission_at (restrPermMap Hlt) b ofs Cur).
-    by rewrite restrPermMap_Cur perm_of_rmap_lookup.
+    rewrite restrPermMap_Cur perm_of_rmap_lookup //.
   Qed.
 
   Lemma coherent_restrPermMap m (s : rmap) (Hlt : permMapLt (perm_of_rmap s) (getMaxPerm m)) :
     coherent m s -> coherent (restrPermMap Hlt) s.
   Proof.
-    intros Hcoh.
     unfold coherent in *.
-    intros [b ofs].
-    destruct (Hcoh (b, ofs)) as [Hnb Hloc].
+    intros Hcoh (b & ofs).
+    destruct (Hcoh (b, ofs)) as (Hnb & Hloc).
     split.
-    - intros Hge.
-      apply Hnb; auto.
+    - intros Hge; apply Hnb; auto.
     - unfold coherent_loc in *.
-      destruct Hloc as [Hcontents Haccess].
+      destruct Hloc as (Hcontents & Haccess).
       split.
       + unfold contents_cohere in *.
         intros v Hv.
-        unfold contents_at in *.
-        simpl.
         by apply Hcontents.
       + unfold access_cohere.
         rewrite access_at_restrPermMap_perm_res //.
@@ -1538,10 +1377,8 @@ Section conc_heap.
       unfold access_cohere in Hperm.
       eapply juicy_mem.perm_order''_trans.
       - apply getCur_Max.
-      - unfold access_at in Hperm; simpl.
-        unfold getCurPerm.
-        rewrite PMap.gmap Hperm.
-        apply po_refl.
+      - rewrite /access_at /= in Hperm.
+        rewrite PMap.gmap Hperm; apply po_refl.
     }
     exists Hlt.
     by apply coherent_restrPermMap.
@@ -1565,9 +1402,7 @@ Section conc_heap.
         intros v Hv.
         by apply Hcontents1.
       + unfold access_cohere in *.
-        rewrite -Haccess1 /access_at restrPermMap_Cur_eq.
-        rewrite perm_of_rmap_lookup.
-        exact Haccess.
+        rewrite -Haccess1 /access_at restrPermMap_Cur_eq perm_of_rmap_lookup //.
   Qed.
 
   Lemma frag_state_interp_1_to_state_interp_restr m σ z
@@ -1575,12 +1410,8 @@ Section conc_heap.
     frag_state_interp 1 m σ z -∗ state_interp (restrPermMap Hlt) z.
   Proof.
     rewrite /frag_state_interp /frag_mem_auth /state_interp /mem_auth.
-    iIntros "((%Hinv & Hauth) & Hext)".
-    destruct Hinv as [Hcoh Heq].
-    iSplitL "Hauth"; iFrame.
-    iPureIntro.
-    split; auto.
-    apply coherent_restrPermMap; auto.
+    iIntros "(((%Hcoh & %Heq) & Hauth) & Hext)".
+    iFrame; iPureIntro; split; auto; apply coherent_restrPermMap; auto.
   Qed.
 (*
   Lemma coherent_to_exact_rmap
@@ -2300,80 +2131,6 @@ Section conc_heap.
     specialize (Hmax b ofs).
     by rewrite -Heq in Hmax.
   Qed.
-
-  (*
-  Definition thread_safe max (tp : dtp) i g :=
-    ∃ cnti : containsThread tp i,
-    match getThreadC cnti with
-    | Krun c | Kblocked c => jsafe_perm g ⊤ tt c ((getThreadR cnti).1, max)
-    | Kresume c v =>
-      ∀ c',
-        (* [v] is not used here. The problem is probably coming from
-           the definition of JuicyMachine.resume_thread'. *)
-        ⌜cl_after_external None c = Some c'⌝ →
-        jsafe_perm g ⊤ tt c' ((getThreadR cnti).1, max)
-    | Kinit v1 v2 =>
-      ∃ q_new,
-      ⌜cl_initial_core ge v1 (v2 :: nil) = Some q_new⌝ ∧
-      jsafe_perm g ⊤ tt q_new ((getThreadR cnti).1, max)
-    end%I.
-
-  Definition thread_safe max (tp : dtp) i g :=threads_safe max (tp : dtp) (gs : gmap nat gname) :=
-    [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), ∃ g, ⌜gs !! i = Some g⌝ ∧ thread_safe max tp i g.
-  *)
-
-
-  (*
-    Definition thread_safe (tp : dtp) i :=
-    ∃ cnti : containsThread tp i,
-      match getThreadC cnti with
-      | Krun c | Kblocked c => jsafe_perm ⊤ tt c ((getThreadR cnti).1)
-      | Kresume c v =>
-          ∀ c',
-            (* [v] is not used here. The problem is probably coming from
-           the definition of JuicyMachine.resume_thread'. *)
-            ⌜cl_after_external None c = Some c'⌝ →
-            jsafe_perm ⊤ tt c' ((getThreadR cnti).1)
-      | Kinit v1 v2 =>
-          ∃ q_new,
-    ⌜cl_initial_core ge v1 (v2 :: nil) = Some q_new⌝ ∧
-      jsafe_perm ⊤ tt q_new ((getThreadR cnti).1)
-  end%I.
-
-   Definition threads_safe (tp : dtp) :=
-    [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), thread_safe tp i.
-   *)
-
-  (*
-thread i has a safety proof, or
-thread i owns a fraction of frag_state_interp.
-
-   *)
-
-(*
-  Definition thread_safe (tp : dtp) (i : nat) : iProp Σ :=
-  ∃ cnti : containsThread tp i,
-    match getThreadC cnti with
-    | Krun c | Kblocked c =>
-        jsafe_frag 1 ⊤ () c
-
-    | Kresume c _ =>
-        ∀ c',
-          ⌜cl_after_external None c = Some c'⌝ →
-          jsafe_frag 1 ⊤ () c'
-
-    | Kinit v1 v2 =>
-        ∃ c',
-          ⌜cl_initial_core ge v1 [v2] = Some c'⌝ ∧
-          jsafe_frag 1 ⊤ () c'
-    end.
-
-Definition threads_safe (tp : dtp) : iProp Σ :=
-  [∗ list] i ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)),
-    thread_safe tp i.
-
- *)
-
   
   Definition thread_safe (tp : dtp) i (q : Qp):=
     ∃ cnti : containsThread tp i,
@@ -2723,153 +2480,6 @@ Proof.
   iFrame.
 Qed.
 
-Lemma corestep_invariant_sub (tp : dtp) (m m' : mem) (i : nat)
-  (cnti : containsThread tp i)
-  (p : access_map) (s c' : CC_core)
-  (Hinv : invariant tp)
-  (Hcompat : mem_compatible tp m)
-  (Hlt : permMapLt p (getMaxPerm m))
-  (Hsub : permMapLt p (getThreadR cnti).1)
-  (Hstep : corestep (cl_core_sem ge) s (restrPermMap Hlt) c' m'):
-  invariant
-    (updThread cnti (Krun c')
-       (getCurPerm m', (getThreadR cnti).2)).
-Proof.
-  Check (cl_core_sem ge) .
-  assert (Hstep' :
-           corestep semSem s (restrPermMap Hlt) c' m').
-  { change (corestep (cl_core_sem ge) s (restrPermMap Hlt) c' m'); auto. }
-  pose proof (msem_decay semSem s (restrPermMap Hlt) c' m' Hstep') as Hdecay.
-  assert (Hmax : forall p0, permMapLt p0 (getMaxPerm m) ->
-             permMapLt p0 (getMaxPerm (restrPermMap Hlt))).
-  { intros p0 Hp b ofs.
-    specialize (Hp b ofs).
-    by rewrite restr_Max_eq. }
-  assert (Hdisj_sub :
-           forall p0, permMapsDisjoint (getThreadR cnti).1 p0 ->
-             permMapsDisjoint (getCurPerm (restrPermMap Hlt)) p0).
-  {
-    intros p0 Hd b ofs.
-    specialize (Hd b ofs).
-    specialize (Hsub b ofs).
-    rewrite getCurPerm_correct.
-    rewrite restrPermMap_Cur.
-    rewrite perm_union_comm in Hd |- *.
-    pose proof (perm_union_lower (p0 # b ofs)  (((getThreadR cnti).1) # b ofs) (p # b ofs)).
-    rewrite perm_union_comm.
-    apply H; auto. 
-  }
-  assert (Hcoh_sub :
-           forall p0, permMapCoherence (getThreadR cnti).1 p0 ->
-                 permMapCoherence (getCurPerm (restrPermMap Hlt)) p0).
-  { intros p0 Hcoh b ofs.
-    rewrite getCurPerm_correct.
-    rewrite restrPermMap_Cur.
-    eapply perm_coh_lower; eauto.
-    apply po_refl.
-  }
-  eapply ThreadPoolWF.updThread_inv; eauto.
-  - intros j cntj Hneq.
-    destruct (DryHybridMachine.no_race_thr _ Hinv _ _ cnti cntj Hneq) as (Hdata &  Hlocks).
-    split; auto.
-    eapply CoreLanguageDry.decay_disjoint; eauto.
-    apply Hmax.
-    pose proof (DryHybridMachine.compat_th _ _ Hcompat cntj).
-    apply H.
-  - intros j cntj _.
-    simpl.
-    destruct (thread_data_lock_coh tp Hinv i cnti) as (H & _).
-    apply H.
-  - simpl.
-    intros j cntj _.
-    eapply CoreLanguageDry.decay_coherence; eauto.
-    + apply Hmax.
-      pose proof (DryHybridMachine.compat_th _ _ Hcompat cntj).
-      apply H.
-    + apply Hcoh_sub.
-      destruct (thread_data_lock_coh tp Hinv j cntj) as (H & _).
-      apply H.
-  - simpl; intros laddr pmap0 Hres.
-    destruct (DryHybridMachine.no_race _ Hinv _ laddr cnti _ Hres) as (Hdata & Hlocks).
-    destruct (DryHybridMachine.compat_lp _ _ Hcompat laddr _ Hres) as (Hlt_data & Hlt_lock).
-    split.
-    + apply permMapsDisjoint_comm.
-      eapply CoreLanguageDry.decay_disjoint; eauto.
-    + apply permMapsDisjoint_comm; auto.
-  - simpl; intros laddr pmap0 Hres.
-    destruct (DryHybridMachine.compat_lp _ _ Hcompat laddr _ Hres) as (Hlt_data & Hlt_lock).
-    split.
-    + eapply (DryHybridMachine.thread_data_lock_coh _ Hinv _ cnti); eauto.
-    + eapply CoreLanguageDry.decay_coherence; eauto.
-      apply Hcoh_sub.
-      apply (DryHybridMachine.locks_data_lock_coh _ Hinv laddr _ Hres).
-  - simpl.
-    eapply CoreLanguageDry.decay_coherence; eauto.
-    + apply Hmax.
-      apply (DryHybridMachine.compat_th _ _ Hcompat cnti).
-    + apply Hcoh_sub.
-      apply (DryHybridMachine.thread_data_lock_coh _ Hinv _ cnti).
-Qed.
-
-Lemma corestep_compatible_sub (tp : dtp) (m m' : mem) (i : nat) (cnti : containsThread tp i)
-  (p : access_map) (s c' : CC_core) (Hinv : invariant tp)
-  (Hcompat : mem_compatible tp m) (Hlt : permMapLt p (getMaxPerm m))
-  (Hsub : permMapLt p (getThreadR cnti).1)
-  (Hstep : corestep (cl_core_sem ge) s (restrPermMap Hlt) c' m'):
-    mem_compatible (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m'.
-Proof.
-  set (tp0 := updThread cnti (Krun s) (p, (getThreadR cnti).2)).
-  assert (cnti0 : containsThread tp0 i).
-  { subst tp0; eapply cntUpdate; eauto. }
-  assert (Hinv0 : invariant tp0).
-  { subst tp0; eapply ThreadPoolWF.invariant_decr; eauto.
-    intros; apply po_refl. }
-  assert (Hcompat0 : mem_compatible tp0 m).
-  { subst tp0.
-    constructor.
-    - intros.
-      assert (cnt_old : containsThread tp tid).
-      { eapply cntUpdate'; eauto. }
-      destruct (eq_nat_dec i tid); subst.
-      + split.
-        * replace cnt with cnti0 by apply proof_irrelevance.
-          rewrite gssThreadRes //.
-        * replace cnt with cnti0 by apply proof_irrelevance.
-          rewrite gssThreadRes.
-          apply (proj2 (DryHybridMachine.compat_th _ _ Hcompat cnti)).
-      + erewrite @gsoThreadRes with (cntj := cnt_old); auto.
-        apply (Hcompat tid cnt_old).
-    - intros laddr pmaps Hres.
-      rewrite gsoThreadLPool in Hres.
-      eapply DryHybridMachine.compat_lp; eauto.
-    - intros laddr rmap Hres.
-      rewrite gsoThreadLPool in Hres.
-      eapply DryHybridMachine.lockRes_blocks; eauto.
-  }
-
-  pose proof Hstep as Hev.
-  apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hev as (ev & Hev).
-  assert (Hrestr0: restrPermMap (proj1(DryHybridMachine.compat_th _ _ Hcompat0 cnti0)) =
-        restrPermMap Hlt).
-  { eapply restrPermMap_irr; eauto.
-    subst tp0; rewrite gssThreadRes //. }  
-  assert (Hev0 : ev_step semSem s
-                   (restrPermMap(proj1 (DryHybridMachine.compat_th _ _ Hcompat0 cnti0))) ev c' m').
-  { rewrite Hrestr0 //. }
-  (* UP *)
-  assert (Hcompat1 : mem_compatible
-                       (updThread cnti0 (Krun c') (getCurPerm m', (getThreadR cnti0).2)) m').
-  { eapply
-      (CoreLanguageDry.corestep_compatible
-         (Sem := Sem)); eauto.
-    - subst tp0; rewrite gssThreadCode; auto.
-    - simpl; done. }
-  unfold tp0 in cnti0, Hcompat1.
-  rewrite gssThreadRes /= in Hcompat1.
-  rewrite OrdinalPool.updThread_twice // in Hcompat1.
-Qed.
-
-
 End conc_heap.
 
 
@@ -2921,18 +2531,15 @@ End conc_heap.
     iDestruct "S" as "([(%Hcoh & %Haceq) Hmem] & Hext)".
     iAssert (@threads_safe HHfrag HL tp qs (`init_mem)) with "[Hsafe Hmem]" as "Hsafe".
     { subst tp.
-      rewrite /frag_state_interp.
-      unfold threads_safe, thread_safe; simpl.
+      rewrite /frag_state_interp /threads_safe /thread_safe /frag_mem_auth /=.
       iSplit; auto.
       assert (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm (`init_mem))).
       { apply (coherent_perm_of_rmap_max (`init_mem) σ Hcoh). }
       iExists 1%Qp, σ, _, Hlt.
       repeat iSplit; auto.
       iSplitL "Hsafe".
-      - unshelve iExists _; first done.
-        iApply (jsafe_jsafe_frag with "Hsafe").
-      - rewrite /frag_mem_auth.
-        iSplit; auto.
+      - unshelve iExists _; first done; iApply (jsafe_jsafe_frag with "Hsafe").
+      - iSplit; auto.
         iPureIntro.
         apply coherent_restrPermMap with (Hlt := Hlt) in Hcoh.
         split; auto.
@@ -2955,7 +2562,8 @@ End conc_heap.
     simpl; destruct (lt_dec i (pos.n (OrdinalPool.num_threads tp))).
     2 : {
       Local Opaque lock_state.
-      iApply step_fupd_intro; try done. iNext.
+      iApply step_fupd_intro; try done.
+      iNext.
       iAssert (|={⊤}[∅]▷=>^n ∀ U'',
              ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
       { rewrite step_fupdN_plain_forall //.
@@ -2974,8 +2582,7 @@ End conc_heap.
     rewrite {2}/threads_safe.
     iPoseProof (big_sepL_lookup_acc_impl i i with "[$Hsafe]") as "Hsafe".
     apply lookup_seq; eauto.
-    iDestruct "Hsafe" as
-      "((% & %σ1 & % & % & (% & %Heq1) & ((% & Hsafei) &  Hfragi)) & Hsafe)".
+    iDestruct "Hsafe" as "((% & %σ1 & % & % & (% & %Heq1) & ((% & Hsafei) &  Hfragi)) & Hsafe)".
     replace cnti0 with cnti by apply ProofIrrelevance.proof_irrelevance.
     clear cnti0.
     destruct (getThreadC cnti) eqn: Hi.
@@ -2989,11 +2596,9 @@ End conc_heap.
         { iApply "Hsafe".
           + iIntros "!>" (????) "H"; iApply "H".
           + iExists q, σ1 , cnti, Hlt.
-            iSplit; auto.
-            iSplitL "Hsafei"; iFrame.
+            iSplit; auto; iFrame.
             rewrite /thread_safe.
-            iExists cnti.
-            rewrite Hi //. }
+            iExists cnti; rewrite Hi //. }
         iAssert (|={⊤}[∅]▷=>^n ∀ U'',
             ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
         { rewrite step_fupdN_plain_forall //.
@@ -3016,12 +2621,9 @@ End conc_heap.
                    with "[%] [%] [%] [%] locks Hext [Hsafe Hfragi Hsafei]"); try done.
           - intros j cntj.
             destruct (eq_dec j i) as [-> | Hneq].
-            + rewrite (gssThreadCC cnti (Kblocked s) cntj).
-              simpl.
-              rewrite Hat_ext //.
+            + rewrite (gssThreadCC cnti (Kblocked s) cntj) /= Hat_ext //.
             + pose proof (cntUpdateC' (Kblocked s) cnti cntj) as cntj0.
-              rewrite -gsoThreadCC.
-              by apply Htp_wf. done.
+              rewrite -gsoThreadCC //; by apply Htp_wf.
           - by apply ThreadPoolWF.updThreadC_invariant.
           - by apply StepLemmas.updThreadC_compatible.
           - iApply "Hsafe".
@@ -3036,35 +2638,31 @@ End conc_heap.
                 replace (0 + k) with k by lia.
                 assert (Hneq' : i <> k) by lia.
                 iDestruct "Hsafe_y" as (cntyk) "Hsafe_y".
-                set (cntyk' := cntUpdateC (Kblocked s) cnti cntyk).
-                iExists cntyk'.
+                iExists (cntUpdateC (Kblocked s) cnti cntyk).
                 rewrite -(gsoThreadCC Hneq') //.
             + iExists q, σ1, (cntUpdateC (Kblocked s) cnti cnti), Hlt.
               iSplit; auto.
-              * destruct H.
-                iSplit; auto.
+              * destruct H; iSplit; auto.
                 rewrite (gThreadCR cnti cnti (Kblocked s) (cntUpdateC (Kblocked s) cnti cnti)) //.
-              * iFrame.
-                rewrite /thread_safe /frag_mem_auth.
-                iExists (cntUpdateC (Kblocked s) cnti cnti).
-                by rewrite gssThreadCC.
+              * iFrame; iExists (cntUpdateC (Kblocked s) cnti cnti); rewrite gssThreadCC //.
         }
         iApply (step_fupdN_mono with "H"); iPureIntro; intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe with (tr := []); simpl;
-          rewrite seq.cats0; last apply Hsafe.
+        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe
+          with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
         eapply HybridMachineSig.suspend_step; eauto.
       + (* corestep: HybridMachineSig.thread_step *)
         rewrite jsafe_frag_unfold /jsafe_frag_pre.
         iAssert (⌜coherent (restrPermMap Hlt) σ1⌝) with "[Hfragi]" as "%Hcoh".
         { by iDestruct "Hfragi" as "((? & ?) & ?)". }
-        (* UP *)
         iMod "Hsafei" as "Hsafei".
         iDestruct ("Hsafei" $! (restrPermMap Hlt) σ1
                     with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
-        iDestruct "Hhalt" as (? Hhalt') "?"; done.
+        { iDestruct "Hhalt" as (? Hhalt') "?"; done. }
+        2 : { iDestruct "Hext" as (???? Hext) "?". simpl in Hext; congruence. }
+        (* HStep *)
+ 
         assert (Hrestr: restrPermMap Hlt0 = restrPermMap Hlt).
         { etransitivity; try apply restrPermMap_idem; apply restr_proof_irr. } 
-        (* HStep *)
         iMod "Hstep" as (???) "(%Hstep & S & Hsafei)".
         rewrite Hrestr in Hstep.
         clear Hrestr Hlt0.
@@ -3086,9 +2684,15 @@ End conc_heap.
         iSpecialize ("IH" $! _ _ (updThread cnti (Krun c')
                                     (getCurPerm m', (getThreadR cnti).2)) m' n ls qs
                       with "[%] [%] [%] [%] locks Hext [Hsafe Hsafei Hfragi]"); try done.
-        * admit.
-        * admit.
-        * admit.
+        * (* threads_wellformed *)
+          intros j cntj.
+          destruct (eq_dec j i); first by subst; rewrite gssThreadCode.
+          pose proof (cntUpdate' _ _ cnti cntj).
+          rewrite gsoThreadCode //; apply Htp_wf.
+        * (* invariant *)
+          eapply (CoreLanguageDry.corestep_invariant(Sem := Sem)); try done.
+        * (* locks_coherent *)
+          admit.
         * iApply "Hsafe".
           ** iIntros "!>" (k y (-> & ?)%lookup_seq Hneq) "Hy".
              iDestruct "Hy" as (q0 σ0 cnty Hltσ0) "((% & %Hqy) & Hsafe_y & Hfrag_y)".
@@ -3155,755 +2759,23 @@ End conc_heap.
           rewrite Hmem in Hstep'.
           instantiate (1 := x).
           by change (ev_step (Clight_evsem.CLC_evsem ge) s (restrPermMap Hlt) x c' m').
-        * congruence.
-          eexact Hstep'.
-          
-          simpl.
-            with (c := s)
-                 (m1 := restrPermMap (proj1 (Hcompat i cnti)))
-                 (c' := c')
-                 (ev := _); eauto.
-          
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-        (* UP *)
-        apply coherent_restrPermMap_of_coherent in Hcoh.
-        destruct Hcoh as (Hlt2 & Hcoh).
-        iMod "Hsafei" as "Hsafei".
-        Print frag_mem_auth.
-        Search coherent permMapLt.
-        iDestruct ("Hsafei" $! (restrPermMap Hlt) σ1
-                    with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
-        iDestruct "Hhalt" as (? Hhalt') "?"; done.
-        2 : { iDestruct "Hext" as (???? Hext) "?". simpl in Hext. congruence. }
-        assert (Hlt0 = Hlt2) by apply ProofIrrelevance.proof_irrelevance.
-        subst Hlt0. 
-        (* HStep *)
-        iMod "Hstep" as (???) "(%Hstep & S & Hsafei)".
-        (* Does we need getThreadR cnti = perm_of_rmap σ *)
-        assert (Hrestr : restrPermMap Hlt2 = restrPermMap Hlt).
-        { etransitivity; try apply restrPermMap_idem; apply restr_proof_irr. }
-        assert (Hmemstep : mem_step (restrPermMap Hlt) m').
-        { rewrite <- Hrestr.
-          eapply (CLC_corestep_mem _ _ (restrPermMap Hlt2)); eauto. }
-        iApply step_fupd_intro; try done.
-        iNext.
-        iDestruct "S" as "(Hfragi & Hext)".
-        iSpecialize ("IH" $! _ _ (updThread cnti (Krun c')
-                (getCurPerm m', (getThreadR cnti).2)) m' n ls qs
-            with "[%] [%] [%] [%] locks Hext [Hsafe Hsafei Hfragi]"); try done.
-        * intros j cntj.
-          destruct (eq_dec j i); first by subst; rewrite gssThreadCode.
-          pose proof (cntUpdate' _ _ cnti cntj).
-          rewrite gsoThreadCode //; apply Htp_wf.
-        * eapply corestep_invariant_sub with (p := perm_of_rmap σ1) (m := m) (s := s); eauto.
-          instantiate (1 := Hlt).
-          by rewrite Hrestr in Hstep.
-        * rewrite Hrestr in Hstep; eapply corestep_compatible_sub; eauto.
-        * admit.
-        * iApply "Hsafe".
-          ** iIntros "!>" (k y (-> & ?)%lookup_seq Hneq) "Hy".
-             iDestruct "Hy" as (q0 σ0 cnty Hltσ0) "((% & %Hqy) & Hsafe_y & Hfrag_y)".
-             replace (0 + k) with k in * by lia.
-             assert (Hneq' : i <> k) by lia.
-             set (cnty' :=
-                    @cntUpdate _ _ _ i (0 + k) tp
-                      (Krun c')
-                      (getCurPerm m', (getThreadR cnti).2)
-                      cnti cnty).
-             iExists q0, σ0, cnty'.
-             assert (Hlt0' : permMapLt (perm_of_rmap σ0) (getThreadR cnty').1).
-             { subst cnty'.
-               erewrite gsoThreadRes; eauto. }
-             pose proof ((no_race_thr _ Hinvariant) _ _ cnti cnty Hneq') as Hthread_disj2.
-             assert (Hrmap_disj : permMapsDisjoint (perm_of_rmap σ1) (perm_of_rmap σ0)).
-             { unfold permMapsDisjoint in *.
-               intros b ofs.
-               rewrite /permMapsDisjoint2 in Hthread_disj2.
-               eapply perm_union_lower_2.
-               - eapply ((proj1 Hthread_disj2) b ofs).
-               - apply (Hlt1 b ofs).
-               - apply (Hqy b ofs). }
-             assert (Hdecay : decay (restrPermMap Hlt) m').
-             { rewrite Hrestr in Hstep.
-               apply (@msem_decay CC_core (CLC_memsem ge) s (restrPermMap Hlt) c' m' Hstep). }
-             assert (Hpres : permMapLt (perm_of_rmap σ0) (getMaxPerm m')).
-             { eapply (permMapLt_decay_disjoint _ (restrPermMap Hlt)); eauto.
-               + by rewrite restr_Max_eq.
-               + unfold permMapsDisjoint in *.
-                 intros b ofs.
-                 rewrite getCurPerm_correct.
-                 rewrite (restrPermMap_Cur Hlt b ofs).
-                 apply (Hrmap_disj b ofs).
-             }
-             iExists Hpres.
-             iSplit; auto.
-             iSplitL "Hsafe_y".
-             ++ iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
-                iExists cnty'.
-                rewrite gsoThreadCode; auto.
-             ++ iApply (frag_mem_auth_corestep_other
-                    q0 m m' (perm_of_rmap σ1)  σ0 Hlt Hltσ0 Hpres Hmemstep Hrmap_disj); auto.
-         ** iDestruct "Hfragi" as "(% & Hauth)".
-            assert (Hσcur : permMapLt (perm_of_rmap σ') (getCurPerm m')).
-            { by apply coherent_perm_of_rmap. }
-            assert (Hlt0 : permMapLt (perm_of_rmap σ') (getMaxPerm m')).
-            { etransitivity; eauto.
-              apply cur_lt_max. }
-            iExists q, σ', _, Hlt0.
-            repeat iSplit; auto.
-            rewrite gssThreadRes; auto.
-            iSplitR "Hauth".
-            { iExists _; rewrite gssThreadCode; auto. }
-            iFrame.
-            iSplit; auto.
-            iPureIntro.
-            apply coherent_restrPermMap; auto.
-        * iApply (step_fupdN_mono with "IH").
-          iPureIntro; intros Hsafe.
-          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last exact Hsafe.
-          rewrite /HybridMachineSig.MachStep /=.
-          change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
-          change m' with (HybridMachineSig.diluteMem m') at 3.
-          eapply HybridMachineSig.thread_step; first done.
-          eapply step_dry
-            with (c := s)
-                 (m1 := restrPermMap (proj1 (Hcompat i cnti)))
-                 (c' := c')
-                 (ev := _); eauto.
-          (* Do we actually need p = (getThreadR cnti).1 ? *)
-          Check (Hcompat i cnti).
-          Print perm_of_rmap.
-          Check frag_mem_auth.
-
-       
-            done.
-            
-
-            
-            pose (cnti0 :=
-                    cntUpdate
-                      (Krun c')
-                      (getCurPerm m', (getThreadR cnti).2)
-                      cnti cnti).
-            
-
-            "(Hauth & %Hcoh')".
-
-           (* UP *)
-                iApply (frag_mem_auth_corestep_other
-                          q0 m m' σ1 σ0 Hlt Hmemstep).
-
-               Check frag_mem_auth_corestep_other.
-                Check coherent_mem_step_other.
-
-             
-             iSplit.
-             { iPureIntro.
-               destruct Hqy as [Hq0 Hlt0].
-               split; first exact Hq0. done. }
-             iSplitL "Hsafe_y".
-             ++ admit.
-             ++ destruct Hqy as [_ Hσ_thread].
-                assert (Hthread_max : permMapLt (getThreadR cnty).1 (getMaxPerm m)).
-                { rewrite /HybridMachineSig.mem_compatible /= in Hcompat.
-                  destruct Hcompat.
-                  apply compat_th0. }
-                assert ( Hlt2 : permMapLt (perm_of_rmap σ0) (getMaxPerm m)).
-                { subst cnty'.
-                  etransitivity; eauto.
-                  erewrite gsoThreadRes; eauto. }
-                iDestruct "Hfrag_y" as "(%Hcoh0 & Hauth0)".
-                iApply (frag_mem_auth_corestep_other
-                          q0 m m' σ1 σ0 Hlt Hmemstep).
-                -- rewrite /other_lt_and_disjoint.
-                   assert (permMapLt (perm_of_rmap σ0) (perm_of_rmap σ1)).
-                   { admit. (* It's not true *) }
-                   Search permMapsDisjoint.
-                   pose proof ((no_race_thr _ Hinvariant) _ _ cnti cnty Hneq') as Hthread_disj2.
-                   assert (Hrmap_disj : permMapsDisjoint (perm_of_rmap σ1) (perm_of_rmap σ0)).
-                   { unfold permMapsDisjoint in *.
-                     intros b ofs.
-                     rewrite /permMapsDisjoint2 in Hthread_disj2.
-                     eapply perm_union_lower_2.
-                     - eapply ((proj1 Hthread_disj2) b ofs).
-                     - apply (Hlt1 b ofs).
-                     - apply (Hσ_thread b ofs).
-                   }
-                   repeat split; auto.
-                   assert (Hdecay : decay (restrPermMap Hlt) m').
-                   { apply (@msem_decay CC_core (CLC_memsem ge) s
-                                   (restrPermMap Hlt) c' m' Hstep). }
-                   assert (Hpres : permMapLt (perm_of_rmap σ0) (getMaxPerm m')).
-                   { eapply permMapLt_decay_disjoint; eauto.
-                     + rewrite restr_Max_eq. apply Hlt2.
-                     + unfold permMapsDisjoint in *.
-                       intros b ofs.
-                       rewrite getCurPerm_correct.
-                       rewrite (restrPermMap_Cur Hlt b ofs).
-                       apply (Hrmap_disj b ofs).
-                   }
-                   assert (Hσ0_m' :
-                            permMapLt (perm_of_rmap σ0) (getCurPerm m')).
-                   { intros b ofs.
-                     specialize (Hlt2 b ofs).
-                     Search decay restrPermMap. 
-                     specialize (Hthread_m' b ofs).
-
-                     unfold Mem.perm_order'' in *.
-                     unfold Mem.perm_order' in *.
-
-                     destruct ((perm_of_rmap σ0) # b ofs) as [pσ |] eqn:Eσ;
-                       destruct ((getThreadR cnty).1 # b ofs) as [pt |] eqn:Et;
-                       destruct ((getCurPerm m') # b ofs) as [pm |] eqn:Em;
-                       simpl in *; try contradiction; auto.
-
-                     eapply Mem.perm_order_trans.
-                     - exact Hthread_m'.
-                     - exact Hσ0_thread.
-                   }
-                   Search "permMapLt" "trans".
-                   eapply permMapLt_trans.
-    - exact Hqy.2.
-    - exact Hthread_m'.
-    }
-
-                   
-                   done.
-                -- rewrite /frag_mem_auth.
-                  by iSplit; try iPureIntro.
-            ** 
-                iApply (frag_mem_auth_corestep_other q0 m m' σ1 σ0 Hlt with "[Hauth0]"); eauto.
-                unfold other_lt_and_disjoint.
-                repeat split; auto.
-                rewrite /HybridMachineSig.mem_compatible /= in Hcompat.
-                destruct Hcompat.
-             
-
-             
-             iApply (frag_mem_auth_corestep_other
-                          q0 m m' σ1 σ0
-                          _
-                         with "Hfrag_y").
-
-
-
-
-
-
-        
-        Check updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2).
-        
-        iApply step_fupd_intro; first done; iNext.
-        set (tp' := updThread cnti (Krun c') (getThreadR cnti)).
-        assert (Htp_wf' : threads_wellformed tp').
-        { subst tp'.
-          unfold threads_wellformed in *.
-          intros j cntj'.
-          destruct (Nat.eq_dec j 0) as [-> | Hneq]; try done.
-          rewrite gsoThreadCode //; eapply Htp_wf.
-        }
-
-        iSpecialize ("IH" $! _ _ (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m' σ' _ with "[%] [%] [%] [%] locks S [Hsafe]"); try done.
-        * admit.
-        * admit.
-        * admit.
-        * iApply "Hsafe".
-          ** iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & % & Hsafe)".
-             iExists q.
-             iSplit; auto.
-             apply lookup_insert_Some in H1.
-             destruct H1 as [? | ?]; try done.
-             2 : {
-               Search "∅" Some.
-
-               admit. (* easy *) }
-             destruct H1 as (? & ?).
-             subst.
-             rewrite lookup_insert.
-             iSplit; auto.
-             rewrite /thread_safe.
-             iExists (cntUpdate _ _ cnti cnti0).
-             
-             rewrite gsoThreadCode // gsoThreadRes //.
-             rewrite gsoThreadCode.
-             iExists (cntUpdate _ _ cnti cnti0).
-        
-        
-        Search jsafe_frag .
-        
-        
-        iSpecialize ("IH" $! sch tr tp' m' n ls with
-                      "[] [] [] [] locks S [Hsafe]"); try done.
-        subst tp'.
-        
-        iSpecialize ("IH" $! sch tr tp' m' n ls with
-                      "[] [] [] [] locks S [Hsafe Hsafei]").
-        unfold thread_safe.
-        iExists _.
-        rewrite getThreadC_updThread_same.
-        simpl.
-        exact "Hsafei".
-
-        
-        iSpecialize ("IH" $! _ _ (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m' (<[i := (g, getCurPerm m')]> perms) _ with "[%] [%] [%] [%] [%] locks S [Hsafe Hsafei]").
-        iDestruct ("H" with "[$S]") as "S".
-
-
-
-
-
-
-
-
-      
-    
-    Check big_sepL_lookup_acc _ (seq 0 (pos.n (OrdinalPool.num_threads tp))) i i .
-    iDestruct (big_sepL_lookup_acc _ (seq 0 (pos.n (OrdinalPool.num_threads tp))) i i
-                with "Hsafe") as "[Hsafe_i Hsafe_close]".
-    { rewrite lookup_seq; try lia. }
-    
-    Check big_sepL2_lookup_acc.
-    Check big_sepL2_lookup_acc _ (seq 0 (pos.n (OrdinalPool.num_threads tp))) [1%Qp] i i 1%Qp.
-    iDestruct (big_sepL2_lookup_acc _ (seq 0 (pos.n (OrdinalPool.num_threads tp))) [1%Qp] i i 1%Qp
-                with "Hsafe") as "[Hsafe_i Hsafe_close]".
-    { rewrite lookup_seq; try lia. }
-    { destruct i; simpl; try done.
-      replicate (pos.n (OrdinalPool.num_threads tp)) 1%Qp.
-    
-    
-    iDestruct (big_sepL2_lookup with "Hsafe") as "Hsafe"; auto.
-    iPoseProof (big_sepL_lookup_acc_impl with "[$Hsafe]") as "Hsafe".
-    apply lookup_seq; eauto.
-    iDestruct "Hsafe" as "((% & %Hgi & % & Hsafei) & Hsafe)".
-    destruct (getThreadC cnti) eqn: Hi.
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    iAssert (threads_safe (*(getMaxPerm (`init_mem)) *) tp (fst <$> perms)) with "[Hsafe]" as "Hsafe".
-    { rewrite /threads_safe /=.
-      iSplit; last done.
-      iExists γ0; iSplit; first done.
-      unshelve iExists _; first done; simpl.
-      iApply (jsafe_jsafe_perm with "Hsafe").
-    }
-
-
-
-    
-    iPoseProof (thread_conc_state_interp O with "S") as "S".
-
-
-
-    
-    iDestruct "Hsafe" as "(Hjsafe & Hmatch)".
-
-    
-    Print state_interp.
-    Print frag_state_interp.
-    Print mem_auth.
-    
-    
-    iMod (init_conc_VST_frag
-            ()
-            _ _ _
-            Mem.empty
-            (∅ : rmap)
-            tt
-            Hcoh_empty) as "H".
-    iSpecialize ("H" $! Hinv).
-    iDestruct "H" as (HG FS ES GM HL γm) "(Hstate & Hfunspec & Hext & Hγm)".
-    set (HHfrag :=
-           Build_VSTGS _ _
-             ({| heapGS_invGS := Hinv;
-                heapGS_gen_heapGS := HG;
-                heapGS_funspecGS := FS |} : heapGS Σ)
-             ES).
-    destruct (spr HHfrag HL) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
-    iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as "(S & Hsafe)".
-    unfold state_interp in Hsafe.
-    iMod (Hsafe with "H") as "(S & Hsafe)".
-
-
-
-
-
-    
-
-    
-    iMod (@init_conc_VST _ _ VSTGpreS0 _ (`init_mem) tt) as "H".
-    iDestruct ("H" $! Hinv) as (?? HE ????) "(H & ? & locks & ? & ?)".
-    set (HC := ConcVSTGS _ _ (ConcHeapGS _ _ _ _) HE _).
-    destruct (spr (thread_VSTGS γ0) _) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
-    iMod (Hsafe with "H") as "(S & Hsafe)".
-    iAssert (|={⊤}[∅]▷=>^n ⌜HybridMachineSig.HybridCoarseMachine.csafe
-               (ThreadPool:= threadPool.OrdinalPool.OrdinalThreadPool(Sem:=ClightSem ge))
-               (sch, [],
-                 DryHybridMachine.initial_machine(Sem := Sem) (getCurPerm (proj1_sig init_mem))
-                   q) (proj1_sig init_mem) n⌝) with "[S Hsafe locks]" as "Hdry".
-    2: { iApply step_fupd_intro; first done.
-         iNext; iApply (step_fupdN_mono with "Hdry").
-         iPureIntro. intros.
-         eexists. eexists. split; first done; split; first apply Hinit; done.
-    }
-    
-    clear Hinit Hsafe.
-    rewrite bi.and_elim_l.
-    set (tp := initial_machine _ _).
-    assert (invariant tp) as Hinvariant by apply ThreadPoolWF.initial_invariant0.
-    assert (HybridMachineSig.mem_compatible tp (`init_mem)) as Hcompat
-        by apply ThreadPoolWF.initial_mem_compatible.
-    assert (threads_wellformed tp) as Htp_wf by done.
-    iPoseProof (thread_conc_state_interp O with "S") as "S".
-    set (perms := {[0 := (γ0, getCurPerm (`init_mem))]}).
-    iAssert (threads_safe (*(getMaxPerm (`init_mem)) *) tp (fst <$> perms)) with "[Hsafe]" as "Hsafe".
-    { rewrite /threads_safe /=.
-      iSplit; last done.
-      iExists γ0; iSplit; first done.
-      unshelve iExists _; first done; simpl.
-      iApply (jsafe_jsafe_perm with "Hsafe").
-    }
-    assert (locks_coherent tp (`init_mem) ∅) as Hlocks by done.
-    forget (proj1_sig init_mem) as m.
-    forget (@nil Events.machine_event) as tr.
-    assert (forall i r, snd <$> (perms !! i) = Some r <-> ∃ cnti : containsThread tp i, (getThreadR cnti).1 = r)
-      as Hperms.
-    { intros [|] ?; rewrite /perms /tp /= /OrdinalPool.containsThread /=.
-      * rewrite lookup_insert /=.
-        split; [by inversion 1; exists eq_refl | by intros (? & <-)].
-      * rewrite lookup_insert_ne // lookup_empty.
-        split; first done.
-        intros (? & ?); done.
-    }
-    clearbody perms tp.
-    set (ls := ∅) in Hlocks |- *.
-    clearbody ls.
-    clear dependent b x q.
-    iLöb as "IH" forall (sch tr tp m perms n ls Htp_wf Hinvariant Hcompat Hlocks Hperms).
-    destruct n as [|n].
-    { iPureIntro. constructor. }
-    destruct sch as [|i sch].
-    { iApply step_fupdN_intro; first done; iPureIntro. constructor; done. }
-    simpl; destruct (lt_dec i (pos.n (OrdinalPool.num_threads tp))).
-    2: {
-      Local Opaque lock_state.
-      iApply step_fupd_intro; try done. iNext.
-      iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
-      { rewrite step_fupdN_plain_forall //.
-        iIntros.
-        iApply ("IH" with "[%] [%] [%] [%] [%]  locks S Hsafe"); done.
-      }
-      iApply (step_fupdN_mono with "H"); iPureIntro.
-      intros Hsafe.
-      eapply HybridMachineSig.HybridCoarseMachine.AngelSafe
-           with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
-      eapply HybridMachineSig.schedfail; eauto.
-      rewrite /containsThread /= /OrdinalPool.containsThread.
-      intros ?.
-      pose proof (@ssrnat.leP (S i) (pos.n (OrdinalPool.num_threads tp))) as Hle; inv Hle;
-           [lia | congruence].
-    }
-    rewrite {2}/threads_safe.
-    iPoseProof (big_sepL_lookup_acc_impl with "[$Hsafe]") as "Hsafe".
-    apply lookup_seq; eauto.
-    iDestruct "Hsafe" as "((% & %Hgi & % & Hsafei) & Hsafe)".
-    destruct (getThreadC cnti) eqn: Hi.
-    - (* Krun *)
-      destruct (cl_halted s) eqn: Hhalt; [|destruct (cl_at_external s) eqn: Hat_ext].
-      + (* halted *)
-        assert (HybridMachineSig.halted_thread cnti Int.zero) as Hhalt'.
-        { econstructor; eauto. hnf; rewrite Hhalt //. }
-        iApply step_fupd_intro; first done; iNext.
-        iAssert (threads_safe (*(getMaxPerm m)*) tp (fst <$> perms))
-          with "[Hsafei Hsafe]" as "Hsafe".
-        { iApply "Hsafe".
-          * iIntros "!>" (????) "H"; iApply "H".
-          * iFrame "%"; iExists cnti; rewrite Hi //. }
-        iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, tp) m n⌝) with "[-]" as "H".
-        { rewrite step_fupdN_plain_forall //.
-          iIntros; iApply ("IH" with "[%] [%] [%] [%] [%] locks S Hsafe"); done.
-        }
-        iApply (step_fupdN_mono with "H"); iPureIntro.
-        intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
-        eapply HybridMachineSig.halted_step; eauto.
-      + (* HybridMachineSig.suspend_step *)
-        assert (HybridMachineSig.suspend_thread m cnti (updThreadC cnti (Kblocked s))) as Hsuspend.
-        { eapply (HybridMachineSig.SuspendThread _ _ _ _ _ _ _ _ Hcompat); done. }
-        iApply step_fupd_intro; first done; iNext.
-        iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr, (updThreadC cnti (Kblocked s))) m n⌝) with "[-]" as "H".
-        { rewrite step_fupdN_plain_forall //.
-          iIntros.
-          iApply ("IH" with "[%] [%] [%] [%] [%] locks S [Hsafe Hsafei]"); try done.
-          + intros j cntj.
-            destruct (eq_dec j i).
-            * subst; rewrite gssThreadCC Hat_ext //.
-            * pose proof (cntUpdateC' _ cnti cntj) as cntj0.
-              rewrite -gsoThreadCC //; apply Htp_wf.
-          + by apply ThreadPoolWF.updThreadC_invariant.
-          + by apply StepLemmas.updThreadC_compatible.
-          + iApply "Hsafe".
-            * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & $ & % & Hsafe)".
-              iExists (cntUpdateC _ _ _); rewrite -gsoThreadCC // gThreadCR //.
-            * iFrame "%"; iExists (cntUpdateC _ _ _); rewrite gssThreadCC gThreadCR.
-              by iApply "Hsafei".
-        }
-        iApply (step_fupdN_mono with "H"); iPureIntro; intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
-        eapply HybridMachineSig.suspend_step; eauto.
-      + (* corestep: HybridMachineSig.thread_step *)
-        edestruct Hperms as [_ Hpermi].
-        spec Hpermi; first by exists cnti.
-        rewrite !lookup_fmap in Hgi Hpermi.
-        destruct (perms !! (0 + i)) as [(?, p)|] eqn: Hpi; inv Hgi; inv Hpermi.
-        iDestruct (conc_state_interp_lookup1 with "S") as "(% & S & H)"; first done.
-        rewrite jsafe_perm_unfold /jsafe_perm_pre.
-        iMod ("Hsafei" with "[%] S") as "[Hhalt | [Hstep | Hext]]".
-        { apply mem_equiv.getCur_restr. (*
-          split; [apply mem_equiv.getCur_restr | apply restr_Max_eq]. *) }
-        { iDestruct "Hhalt" as (? Hhalt') "?"; done. }
-        2: { iDestruct "Hext" as (??? Hext) "?". simpl in Hext; congruence. }
-        (* HStep *)
-        iMod "Hstep" as (?? Hstep) "(S & Hsafei)".
-        assert (corestep (cl_core_sem ge) s (restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1) c' m') as Hstep'.
-        { by erewrite restrPermMap_irr. }
-        iApply step_fupd_intro; first done; iNext.
-        apply (ev_step_ax2 (Clight_evsem.CLC_evsem ge)) in Hstep' as (? & Hstep').
-        assert (mem_compatible (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m') as Hcompat'
-          by by eapply (CoreLanguageDry.corestep_compatible(Sem := Sem)).
-        iDestruct ("H" with "[$S]") as "S".
-        { iPureIntro; split; last done. split.
-          * by eapply CLC_corestep_mem.
-          * split.
-            - intros ???? Hj.
-              specialize (Hperms j); rewrite Hj /= in Hperms.
-              edestruct Hperms as [(cntj & <-) _]; first done.
-              inv Hcompat'.
-              unshelve exploit compat_th0.
-              2: by eapply cntUpdate.
-              rewrite gsoThreadRes //.
-              by intros (? & ?).
-            - split.
-              + intros j g0 p _ Hj.
-                have Hj_snd : snd <$> perms !! j = Some p by rewrite Hj /=.
-                have [cntj Hrj] := (proj1 (Hperms j p) Hj_snd).
-                have Hj_lt : permMapLt (getThreadR cntj).1 (getMaxPerm m) :=
-                  (ssrfun.pair_of_and (Hcompat j cntj)).1.
-                by rewrite Hrj in Hj_lt.
-              + inv Hinvariant.
-                unfold permMapsDisjoint_at; intros.
-                rewrite Hpi.
-                destruct (perms !! j) as [(?,?)|] eqn: Hj; last done.
-                specialize (Hperms j); rewrite Hj /= in Hperms.
-                edestruct Hperms as [(cntj & <-) _]; first done.
-                by apply no_race_thr0.
-        }
-        iAssert (lock_state γl m' ls) with "[locks]" as "locks". admit.
-        iSpecialize ("IH" $! _ _ (updThread cnti (Krun c') (getCurPerm m', (getThreadR cnti).2)) m' (<[i := (g, getCurPerm m')]> perms) _ with "[%] [%] [%] [%] [%] locks S [Hsafe Hsafei]").
-        * intros j cntj.
-          destruct (eq_dec j i); first by subst; rewrite gssThreadCode.
-          pose proof (cntUpdate' _ _ cnti cntj).
-          rewrite gsoThreadCode //; apply Htp_wf.
-        * eapply (CoreLanguageDry.corestep_invariant(Sem := Sem)); try done.
-          by eapply ev_step_ax1.
-        * apply Hcompat'.
-        * admit. (* intros ??; rewrite gsoThreadLPool.
-          intros.
-          rewrite /locks_coherent in Hlocks.
-          pose proof Hlocks as Hlocks1.
-          specialize (Hlocks l0).
-          pose proof H1 as Hl0.
-          assert (Hm: Mem_load_unchecked Mptr m l0.1 l0.2 =
-                        Mem_load_unchecked Mptr (restrPermMap Hp) l0.1 l0.2) by done.
-          rewrite Hm in Hlocks.
-          apply Hlocks in Hl0.
-          destruct Hl0 as (? & Hl1 & Hn).
-          split; try apply Hl1; try done.
-          split; intros.
-          split; intros.
-          ** eapply Hl1; try done.
-             rewrite /Mem_unchecked in H2 |- *.
-             rewrite <- H2.
-             do 2 f_equal.
-             eapply mem_step_preserves_lock_bytes; eauto.
-             apply CLC_corestep_mem in Hstep; auto.
-          ** apply Hl1 in H2.
-             rewrite /Mem_unchecked in H2 |- *.
-             rewrite <- H2.
-             do 2 f_equal.
-             symmetry.
-             eapply mem_step_preserves_lock_bytes.
-             apply CLC_corestep_mem in Hstep; auto.
-             exact Hn.
-          ** specialize (Hlocks1 l0).
-             destruct (decide (i0 = i)); subst.
-             ++ assert (HsameR : (getThreadR cnti0).1 = getCurPerm m').
-                { by rewrite gssThreadRes. }
-                assert (Hpcur : permMapLt (getCurPerm m') (getMaxPerm m')).
-                { by rewrite <- HsameR. }
-                replace (restrPermMap Hp0) with (restrPermMap Hpcur).
-                2 : { eapply restrPermMap_irr'; auto. }
-                rewrite restrPermMap_eq.
-                rewrite /nonEmptyRangeCur in Hn |- *.
-                eapply (mem_step_preserves_nonempty_range (restrPermMap Hp)).
-                by apply CLC_corestep_mem in Hstep; auto. exact Hn.
-             ++ assert (Hres0 : ∃ cntj : containsThread tp i0, getThreadR cnti0 = getThreadR cntj).
-                { eexists. apply gsoThreadRes; done. }
-                destruct Hres0 as [cntj Hres0].
-                assert (Hpj : permMapLt (getThreadR cntj).1 (getMaxPerm m)) by apply Hcompat.
-                specialize (Hlocks1 i0 cntj Hpj H0).
-                destruct Hlocks1 as (_ & _ & Hne).
-                assert (Hperm : (getThreadR cnti0).1 = (getThreadR cntj).1).
-                { by rewrite Hres0. }
-                pose proof Hp0 as Hp0'.
-                rewrite Hperm in Hp0'.
-                rewrite /nonEmptyRangeCur in Hne |- *.
-                intros.
-                specialize (Hne i1 H2).
-                rewrite <- Hperm in Hp0'.
-                assert (Heq_restr : restrPermMap Hp0 = restrPermMap Hp0').
-                { apply restr_proof_irr. }
-                rewrite restrPermMap_Cur_eq in Hne.
-                rewrite restrPermMap_Cur_eq.
-                by rewrite Hperm. *)
-        * intros j r.
-          destruct (decide (i = j)).
-          { subst; rewrite lookup_insert; setoid_rewrite (gssThreadRes cnti); split.
-            - inversion 1; by exists (OrdinalPool.cntUpdate _ _ cnti cnti).
-            - by intros (? & <-). }
-          { rewrite lookup_insert_ne // Hperms.
-            setoid_rewrite (gsoThreadRes cnti); last done.
-            split; intros (? & ?); eauto. }
-        * iApply "Hsafe".
-          ** iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & % & Hsafe)".
-             rewrite lookup_fmap in H2.
-             rewrite lookup_fmap lookup_insert_ne //; iExists _; iSplit; first done.
-             iExists (cntUpdate _ _ cnti cnti0).
-             rewrite gsoThreadCode // gsoThreadRes //.
-          ** rewrite lookup_fmap lookup_insert /=; iExists _; iSplit; first done.
-             iExists (cntUpdate _ _ cnti cnti).
-             rewrite gssThreadCode gssThreadRes //.
-        * iApply (step_fupdN_mono with "IH").
-          iPureIntro; intros.
-          eapply HybridMachineSig.HybridCoarseMachine.CoreSafe; last done.
-          rewrite /HybridMachineSig.MachStep /=.
-          change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
-          change m' with (HybridMachineSig.diluteMem m') at 3.
-          eapply HybridMachineSig.thread_step; first done.
-          by eapply step_dry.
     - (* Kblocked: HybridMachineSig.sync_step *)
       pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi.
-      edestruct Hperms as [_ Hpermi].
-      spec Hpermi; first by exists cnti.
-      rewrite !lookup_fmap in Hgi Hpermi.
-      destruct (perms !! (0 + i)) as [(?, p)|] eqn: Hpi; inv Hgi; inv Hpermi.
-      iDestruct (conc_state_interp_lookup2 with "S") as "(% & S & H)"; first done.
-      rewrite jsafe_perm_unfold /jsafe_perm_pre.
-      iMod ("Hsafei" with "[%] S") as "[Hhalt | [Hstep | Hext]]".
-      { apply mem_equiv.getCur_restr. }
+      rewrite jsafe_frag_unfold /jsafe_frag_pre.
+      iAssert (⌜coherent (restrPermMap Hlt) σ1⌝) with "[Hfragi]" as "%Hcoh".
+      { by iDestruct "Hfragi" as "((? & ?) & ?)". }
+      iMod "Hsafei" as "Hsafei".
+      iDestruct ("Hsafei" $! (restrPermMap Hlt) σ1
+                  with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
       { iDestruct "Hhalt" as (? Hhalt') "?"; destruct s; done. }
-      { iMod "Hstep" as (?? Hstep) "?".
-        apply cl_corestep_not_at_external in Hstep; done.
-      }
+      { iMod "Hstep" as (??? Hstep) "?".
+        apply cl_corestep_not_at_external in Hstep; done. }
       (* cl_at_external s = Some (e, args) *)
-      iDestruct "Hext" as (??? Hat_ext) "(S & Hpre & Hpost)".
+      iDestruct "Hext" as (???? Hat_ext) "(S & Hpre & Hpost)".
       simpl in Hat_ext.
-      iAssert (|={⊤}[∅]▷=> ∃ (tp' : t(ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev perms',
-                ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-                 locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev /\
-                  (∀ (i0 : nat) (r : access_map), snd <$> perms' !! i0 = Some r
-                    ↔ ∃ cnti0 : OrdinalPool.containsThread tp' i0,
-                      (OrdinalPool.getThreadR cnti0).1 = r)⌝ ∧
-                  threads_safe (* (getMaxPerm m') *)
-                    tp' (fst <$> (* <[i:=(g, getCurPerm m')]> *) perms') ∗
-                    (conc_mem_auth m (delete i perms) -∗ conc_mem_auth m' (delete i perms')) ∗
 
-                    (∃ (p : access_map) (Hlt : permMapLt p (getMaxPerm m')),
-                     ⌜(perms' !! i = Some (g, p))⌝ ∧ 
-                       thread_state_interp g (restrPermMap Hlt) (* z'  state_interp (restrPermMap Hlt) *) tt) ∗
-                    lock_state γl m' ls  (* ∗ lock_set ls*) )
-        with "[Hpost Hsafe locks Hpre S]" as "Hsafe".
-      2 : {
-        iMod "Hsafe".
-        iIntros "!> !>".
-        iMod "Hsafe" as (???? (? & ? & ? & ? & ? & ?)) "(Hsafe & SC & S1 & locks1)".
-        iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
-        { rewrite step_fupdN_plain_forall //.
-          iIntros.
-          iSpecialize ("SC" with "H"). 
-          replace (0 + i) with i; auto.
-          assert (snd <$> perms !! i = Some (OrdinalPool.getThreadR cnti).1).
-          { by rewrite Hpi. }
-          iDestruct "S1" as (??) "(% & S1)".
-          assert (Hperms'i : snd <$> perms' !! i = Some p).
-          { by rewrite H7. }
-          destruct (proj1 (H5 i p) Hperms'i) as [cnti' Hcnti'].
-          iDestruct (thread_state_interp_conc_state_interp_delete_insert_restr
-                      with "[$S1 $SC]") as "SC".
-          subst.
-          (* iDestruct (lock_state_empty_mem_irrel m m' with "locks1") as "locks1". *)
-          iApply ("IH" with "[%] [%] [%] [%] [%] locks1 SC"); try done.
-          intros i0 r.
-          replace (<[i := (g, (OrdinalPool.getThreadR cnti').1)]> perms') with perms'.
-          - apply H5.
-          - symmetry; by apply insert_id.
-          - rewrite (insert_id perms' i (g, (OrdinalPool.getThreadR cnti').1)); auto.
-        }
-        iApply (step_fupdN_mono with "H"); iPureIntro.
-        intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
-        eapply HybridMachineSig.sync_step; eauto.
-      }
-      
-      (* consider each of the concurrency functions *)
-      clear Hwfi.
-      destruct s as [|f ? k|]; try done; simpl in Hat_ext.
-      destruct f as [|ext argsty retty cc]; try done.
-      destruct (ef_inline ext); inv Hat_ext.
-      destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
-      + (* acquire *)
-        iApply (acquire_safe with "Hsafe Hpost locks").
-      + (* release *)
-      + (* makelock *)
-      + (* freelock *)
-      + (* spawn *) *)
       admit.
+
     - (* Kresume: HybridMachineSig.resume_step *)
       pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
       destruct s; try done.
@@ -3912,7 +2784,8 @@ End conc_heap.
       { unfold cl_at_external in *; destruct (ef_inline e) eqn: Hinline; try done.
         eapply (HybridMachineSig.ResumeThread _ _ _ _ _ _ _ _ _ Hcompat); try done; simpl; by rewrite ?Hinline. }
       iApply step_fupd_intro; first done; iNext.
-      iSpecialize ("IH" $! _ _ (updThreadC cnti (Krun (Returnstate Vundef c))) with "[%] [%] [%] [%] [%] [$] [S] [Hsafei Hsafe]").
+      iSpecialize ("IH" $! _ _ (updThreadC cnti (Krun (Returnstate Vundef c)))
+                    with "[%] [%] [%] [%] locks Hext [Hsafe Hsafei Hfragi]").
       + intros j cntj.
         destruct (eq_dec j i).
         * subst; rewrite gssThreadCC //.
@@ -3921,64 +2794,47 @@ End conc_heap.
       + by apply ThreadPoolWF.updThreadC_invariant.
       + by apply StepLemmas.updThreadC_compatible.
       + rewrite /locks_coherent in Hlocks |- *.
-        intros. 
-        rewrite gsoThreadCLPool.
-        destruct (eq_nat_dec i i0) as [<- | Hneq].
-        * assert (HsameR : (getThreadR cnti).1 = (getThreadR cnti0).1).
-          { erewrite <- gThreadCR; eauto. }
-          pose proof Hp as Hp'.
-          rewrite <- HsameR in Hp'.
-          specialize (Hlocks l1 i cnti Hp' H1).
-          destruct Hlocks as (? & ? & ?).
-          replace (restrPermMap Hp) with (restrPermMap Hp').
-          2 : { eapply restr_proof_irr'; done. }
-          split; try done.
-        * (* Up *)
-          by apply Hlocks.
-      + intros.
-        instantiate (1 := perms).
-        split.
-        ++ intros.
-           destruct (eq_dec i0 i) as [-> | Hneq].
-           * apply (proj1 (Hperms i r) H1).
-           * apply (proj1 (Hperms i0 r) H1).
-       ++ intros.
-          set tp' := OrdinalPool.updThreadC cnti (Krun (Returnstate Vundef c)).
-          destruct (eq_dec i0 i) as [-> | Hneq].
-           * apply (proj2 (Hperms i r)).
-             case: H1 => cntj Hcntj.
-             exists cnti.
-             by have ->: cnti = cntj by apply proof_irrelevance.
-           * apply (proj2 (Hperms i0 r)).
-             case: H1 => cntj Hcntj.
-             have cnti0 : OrdinalPool.containsThread tp i0 by auto.
-             exists cnti0.
-             by have ->: cnti0 = cntj by apply proof_irrelevance.
-      + done.
+        intros. admit.
       + iApply "Hsafe".
-        * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & % & Hsafe)".
-          iExists g0.
+        * iIntros "!>" (?? (-> & ?)%lookup_seq ?)
+            "(%q0 & %σ0 & (%cnty & %Hltσ0 & (%Hqs & %Hqy) & Hsafe_y & Hfrag_y))".
+          assert (Hik : i <> 0 + k) by lia.
+          Check OrdinalPool.cntUpdateC (Krun (Returnstate Vundef c)) cnti cnty.
+          pose (cnty' := OrdinalPool.cntUpdateC (Krun (Returnstate Vundef c)) cnti cnty).
+          pose proof (@OrdinalPool.gThreadCR _ _ i (0 + k) tp cnti cnty
+                        (Krun (Returnstate Vundef c)) cnty') as HR.
+          iExists q0, σ0, cnty', Hltσ0.
           iSplit; auto.
-          iDestruct "Hsafe" as (cntk) "Hthr".
-          rewrite /thread_safe.
-          erewrite gsoThreadCC; eauto.
-        * iExists g.
-          iSplit; auto.
-          rewrite /thread_safe.
-          assert (cnti' : containsThread (updThreadC cnti (Krun (Returnstate Vundef c))) i); try done.
-          iExists cnti'.
-          rewrite gssThreadCC.
-          have -> : (getThreadR cnti').1 = (getThreadR cnti).1.
+          ** iPureIntro.
+             split; eauto.
+             pose proof (f_equal (fun r => r.1) HR) as HR1.
+             rewrite HR1 //.
+          ** iFrame.
+             rewrite /thread_safe.
+             iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
+             assert (cnty0' : containsThread (updThreadC cnti (Krun (Returnstate Vundef c))) (0 + k)); try done.
+             iExists cnty0'.
+             have -> : (getThreadC cnty0' = getThreadC cnty0).
+             { by symmetry; apply gsoThreadCC. }
+             iFrame.
+        * assert (cnti' : containsThread (updThreadC cnti (Krun (Returnstate Vundef c))) i); try done.
+          iExists q, σ1, cnti', Hlt.
+          iSplit; try iPureIntro.
+          split; auto.
+          have -> : (getThreadR cnti').1 = (getThreadR cnti).1; try done.
           { rewrite /getThreadR /=.
             have <- : fintype.Ordinal cnti = fintype.Ordinal cnti'.
-            { f_equal; apply proof_irrelevance. }
-            reflexivity.
+            { f_equal; apply proof_irrelevance. } 
+            done.
           }
+          iFrame.
+          iExists cnti'.
+          rewrite gssThreadCC.
           by iApply ("Hsafei" $! (Returnstate Vundef c)).
       + iApply (step_fupdN_mono with "IH"); iPureIntro; intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.CoreSafe with (tr := []); simpl; rewrite seq.cats0; last apply Hsafe.
         change (i :: sch) with (HybridMachineSig.yield (i :: sch)) at 2.
-        eapply HybridMachineSig.resume_step; eauto. 
+        eapply HybridMachineSig.resume_step; eauto.
     - (* Kinit: HybridMachineSig.start_step *)
       iDestruct "Hsafei" as (? Hinit) "Hsafei".
       set (m' := restrPermMap (ssrfun.pair_of_and (Hcompat i cnti)).1).
@@ -3986,174 +2842,64 @@ End conc_heap.
       assert (HybridMachineSig.start_thread m cnti tp' m').
       { econstructor; done. }
       iApply step_fupd_intro; first done; iNext.
-      iSpecialize ("IH" $! _ _ tp' m' with "[%] [%] [%] [%] [%] [$] [S] [Hsafei Hsafe]").
-      + intros j cntj.
+      iSpecialize ("IH" $! _ _ tp' m' with "[%] [%] [%] [%] locks Hext [Hsafe Hsafei Hfragi]").
+      + (* threads_wellformed tp' *)
+        intros j cntj.
         destruct (eq_dec j i).
         * subst; rewrite gssThreadCode //.
         * pose proof (cntUpdate' _ _ cnti cntj).
           rewrite gsoThreadCode //; apply Htp_wf.
-      + by eapply (CoreLanguageDry.initial_core_invariant(Sem := Sem)).
-      + eapply InternalSteps.start_compatible; try done.
-      + (* Up: locks_coherent *)
-        rewrite /locks_coherent in Hlocks |- *.
-        intros.
-        assert (Hlockeq : lockRes tp' l0 = lockRes tp l0).
-        { by rewrite /tp' gsoThreadLPool. }
-        assert (Hm : Mem_unchecked Mptr m' l0.1 l0.2 = Mem_unchecked Mptr m l0.1 l0.2) by done.
-        destruct (eq_nat_dec i i0) as [<- | Hneq].
-        * specialize (Hlocks l0 i cnti (ssrfun.pair_of_and (Hcompat i cnti)).1 H1).
-          destruct Hlocks as (Hn & Hmem & Hnone).
-          split; try by rewrite Hlockeq.
-          split.
-          ** split.
-             intros.
-             apply Hmem. by rewrite <- Hm.
-             intros.
-             apply Hmem. by rewrite Hlockeq in H2.
-          ** rewrite /nonEmptyRangeCur in Hnone |- *.
-             intros.
-             specialize (Hnone i0 H2).
-             rewrite restrPermMap_Cur_eq.
-             rewrite restrPermMap_Cur_eq in Hnone.
-             assert (Hget :
-                      getThreadR cnti0 = HybridMachineSig.add_block Hcompat cnti m').
-             { eapply gssThreadRes. }
-             rewrite Hget.
-             unfold HybridMachineSig.add_block.
-             simpl.
-             rewrite /m'.
-             simpl.
-             pose proof (mem_equiv.getCur_restr ((getThreadR cnti).1) m
-                           (ssrfun.pair_of_and (Hcompat i cnti)).1) as Hcur.
-             unfold mem_equiv.access_map_equiv in Hcur.
-             by rewrite (Hcur (l0.1)).
-        * assert (cnti0_old : containsThread tp i0).
-          { subst tp'; eapply cntUpdate'; eauto. }
-          assert (Hr_eq : (getThreadR cnti0).1 = (getThreadR cnti0_old).1).
-          { subst tp'; rewrite gsoThreadRes; auto. }
-          assert (Hp0 : permMapLt (getThreadR cnti0_old).1 (getMaxPerm m)).
-          { replace ((getThreadR cnti0_old).1) with ((getThreadR cnti0).1). 
-            subst m'.
-            by rewrite restr_Max_eq in Hp.
-          }
-          specialize (Hlocks l0 i0 cnti0_old Hp0 H1).
-          destruct Hlocks as (Hn & Hmem & Hnone).
-          split; try by rewrite Hlockeq.
-          split.
-          ** split; rewrite Hlockeq.
-             intros.
-             apply Hmem. by rewrite <- Hm.
-             intros.
-             by apply Hmem.
-          ** rewrite /nonEmptyRangeCur in Hnone |- *.
-             intros.
-             specialize (Hnone i1 H2).
-             rewrite restrPermMap_Cur_eq in Hnone.
-             rewrite restrPermMap_Cur_eq.
-             by rewrite Hr_eq.
-      + intros.
-        instantiate (1 := <[i := (g, getCurPerm m')]> perms).
-        split.
-        ++ intros.
-           destruct (eq_dec i0 i) as [-> | Hneq].
-           * rewrite lookup_insert /= in H1.
-             inv H1.
-             exists (OrdinalPool.cntUpdate (Sem := Sem) (Krun q_new)
-                      (HybridMachineSig.add_block Hcompat cnti m') cnti cnti).
-             rewrite /tp' /m' OrdinalPool.gssThreadRes //.
-           * rewrite lookup_insert_ne // in H1.
-             have [cntj Hcntj] :
-               exists cntj : OrdinalPool.containsThread tp i0, (OrdinalPool.getThreadR cntj).1 = r.
-             { exact (proj1 (Hperms i0 r) H1). }
-             exists (OrdinalPool.cntUpdate (Sem := Sem) (Krun q_new)
-                      (HybridMachineSig.add_block Hcompat cnti m') cnti cntj).
-             by rewrite OrdinalPool.gsoThreadRes.
-        ++ intros.
-           destruct (eq_dec i0 i) as [-> | Hneq].
-           * rewrite lookup_insert /=.
-             f_equal.
-             rewrite /tp' in H1.
-             destruct H1 as (cntj & <-).
-             by rewrite OrdinalPool.gssThreadRes.
-           * rewrite lookup_insert_ne //.
-             destruct H1 as (cntj & Hcntj).
-             set (cnt0 := OrdinalPool.cntUpdate' (Sem := Sem) (i := 0 + i) (j := i0) (tp := tp)
-                            (c := Krun q_new)
-                            (p := HybridMachineSig.add_block Hcompat cnti m') (cnti := cnti) cntj).
-             apply (proj2 (Hperms i0 r)).
-             exists cnt0.
-             simpl.
-             have Hres : OrdinalPool.getThreadR cntj = OrdinalPool.getThreadR cnt0.
-             { eapply OrdinalPool.gsoThreadRes. lia. }
-             have Hr0 : (OrdinalPool.getThreadR cnt0).1 = r; auto.
-             { apply (f_equal fst) in Hres; by rewrite <- Hres. }
-      + iDestruct "S" as "(S & ?)".
-        iFrame.
-        rewrite /m'.
-        change (0 + i) with i in *.
-        have Hsnd : snd <$> perms !! i = Some (getThreadR cnti).1.
-        { apply (Hperms i (getThreadR cnti).1); by eexists. }
-        have Hlookup : perms !! i = Some (g, (getThreadR cnti).1).
-        { destruct (perms !! i) as [[g' r']|] eqn:Hp; simpl in *; try discriminate.
-          f_equal.
-          have Hg' : g' = g.
-          { move: Hgi.
-            rewrite lookup_fmap Hp /=.
-            intros; by inv Hgi.
-          }
-          have Hr' : r' = (OrdinalPool.getThreadR cnti).1.
-          { exact (Some_inj _ _ Hsnd). }
-          by subst.
-        }
-        iDestruct (conc_mem_auth_lookup1 with "[$S]") as "H"; eauto.
-        iDestruct "H" as (Hp) "[Hth Hk]".
-        iApply ("Hk" $! (restrPermMap Hp)).
-        iFrame.
-        iPureIntro.
-        repeat split.
-        * apply semantics_lemmas.mem_step_refl.
-        * intros ???? Hj.
-          rewrite restr_Max_eq.
-          specialize (Hperms j); rewrite Hj /= in Hperms.
-          edestruct Hperms as [(cntj & <-) _]; first done.
-          by destruct (Hcompat j cntj).
-        * intros j g0 p _ Hj.
-          have Hj_snd : snd <$> perms !! j = Some p by rewrite Hj /=.
-          have [cntj Hcntj] := (proj1 (Hperms j p) Hj_snd).
-          have Hj_lt : permMapLt (getThreadR cntj).1 (getMaxPerm m) :=
-                  (ssrfun.pair_of_and (Hcompat j cntj)).1.
-          by subst.
-        * inv Hinvariant.
-          unfold permMapsDisjoint_at; intros.
-          rewrite Hlookup.
-          destruct (perms !! j) as [(?,?)|] eqn: Hj; last done.
-          specialize (Hperms j); rewrite Hj /= in Hperms.
-          edestruct Hperms as [(cntj & <-) _]; first done; by apply no_race_thr0.
+      + (* invariant tp' *)
+        by eapply (CoreLanguageDry.initial_core_invariant(Sem := Sem)).
+      + (* mem_compatible tp' m' *)
+        eapply InternalSteps.start_compatible; try done.
+      + admit.
       + iApply "Hsafe".
-        * iIntros "!>" (?? (-> & ?)%lookup_seq ?) "(% & Hsafe)".
-          iExists g0.
-          iDestruct "Hsafe" as "(% & Hthr)".
-          change (0 + k) with k in *.
-          iSplit; auto.
-          iPureIntro.
-          rewrite lookup_fmap lookup_insert_ne //.
-          by rewrite lookup_fmap in H3.
-          iDestruct "Hthr" as (cntk) "Hthr".
-          iExists (OrdinalPool.cntUpdate (Sem:=Sem) (Krun q_new)
-                   (HybridMachineSig.add_block Hcompat cnti m') cnti cntk).
-          rewrite gsoThreadCode // gsoThreadRes //.
-        * rewrite lookup_fmap lookup_insert /= /thread_safe.
-          iExists g.
-          iSplit; auto.
-          iExists (OrdinalPool.cntUpdate (Sem:=Sem) (Krun q_new)
-                     (HybridMachineSig.add_block Hcompat cnti m') cnti cnti).
-          rewrite gssThreadCode // gssThreadRes // /m'.
-          iApply (jsafe_perm_equiv with "Hsafei").
-          set Hlt:=proj1 (Hcompat i cnti).
-          eapply Equivalence_Symmetric; eauto.
-          eapply mem_equiv.getCur_restr.
-          (* Unshelve
-             9 : { exact mem_equiv.access_map_equiv_Equivalence. *) 
+        * iIntros "!>" (?? (-> & ?)%lookup_seq ?)
+            "(%q0 & %σ0 & (%cnty & %Hltσ0 & (%Hqs & %Hqy) & Hsafe_y & Hfrag_y))".
+          have Hik : i <> 0 + k by lia.
+          subst tp'.
+          have Hltσ0' : permMapLt (perm_of_rmap σ0) (getMaxPerm m').
+          { rewrite /m' restr_Max_eq //. }
+          assert (cnty' : containsThread (updThread cnti (Krun q_new)
+                        (HybridMachineSig.add_block Hcompat cnti m')) (0 + k)).
+          { by eapply cntUpdate. }
+          iExists q0, σ0, cnty', Hltσ0'.
+          iSplit.
+          ** iPureIntro.
+             split; eauto.
+             rewrite gsoThreadRes //.
+          ** rewrite (restrPermMap_idem Hltσ0') (restr_proof_irr (permMapLt_restr Hltσ0') Hltσ0).
+             iFrame.
+             rewrite /thread_safe.
+             iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
+             assert (cnty0' : containsThread (updThread cnti (Krun q_new)
+                       (HybridMachineSig.add_block Hcompat cnti m')) (0 + k)); try done.
+             iExists cnty0'.
+             have -> : (getThreadC cnty0' = getThreadC cnty0); try iFrame.
+             { by apply gsoThreadCode. }
+        * have Hlt' : permMapLt (perm_of_rmap σ1) (getMaxPerm m').
+          { rewrite /m' restr_Max_eq //. }
+          assert (cnti' : containsThread tp' i); try done.
+          iExists q, σ1, cnti', Hlt'.
+          iSplit.
+          ** iPureIntro.
+             split; auto.
+             subst tp'.
+             rewrite gssThreadRes.
+             rewrite /HybridMachineSig.add_block /=.
+             subst m'.
+             pose proof (mem_equiv.getCur_restr (getThreadR cnti).1 m
+                  (ssrfun.pair_of_and (Hcompat i cnti)).1) as Hcur.
+             unfold mem_equiv.access_map_equiv in *.
+             intros b.
+             rewrite Heq1 Hcur //.
+          ** subst tp'.
+             rewrite /thread_safe.
+             rewrite (restrPermMap_idem Hlt') (restr_proof_irr (permMapLt_restr Hlt') Hlt).
+             iFrame.
+             iExists cnti'.
+             rewrite gssThreadCode //.
       + iApply (step_fupdN_mono with "IH"); iPureIntro; intros Hsafe.
         eapply HybridMachineSig.HybridCoarseMachine.CoreSafe with (tr := []); simpl;
           rewrite seq.cats0; last apply Hsafe.
@@ -4161,5 +2907,6 @@ End conc_heap.
         change m' with (HybridMachineSig.diluteMem m').
         eapply HybridMachineSig.start_step; eauto.
   Admitted.
+
 
 End Safety.
