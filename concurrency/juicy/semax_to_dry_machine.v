@@ -1860,6 +1860,20 @@ Section conc_heap.
       rewrite -Hload //.
   Qed.
 
+  Lemma coherent_perm_of_rmap_eq (m : mem) (σ1 σ2 : rmap)
+    (Hcoh1 : coherent m σ1) (Hcoh2 : coherent m σ2) :
+    mem_equiv.access_map_equiv (perm_of_rmap σ1) (perm_of_rmap σ2).
+  Proof.
+    unfold mem_equiv.access_map_equiv.
+    intros b; extensionality ofs.
+    unfold coherent in Hcoh1.
+    destruct (Hcoh1 (b, ofs)) as (_ & _ & H1).
+    destruct (Hcoh2 (b, ofs)) as (_ & _ & H2).
+    unfold access_cohere in H1, H2.
+    rewrite H1 in H2.
+    rewrite !perm_of_rmap_lookup //.
+  Qed.
+
   (* *)
 
   Lemma lock_inv_in_lock_state m ls sh l R :
@@ -2718,8 +2732,8 @@ Qed.
       }
       iDestruct "HafterPost" as (c' σ2) "(%Hafter & Hfrag & Hjsafe)".
       iDestruct "Hfrag" as "(((%Hcoh2 & %Hacc2) & Hauth2) & Hext2)".
-      assert (perm_of_rmap σ2 = perm_of_rmap σ') as Hperm_eq.
-      { admit. (* provable *) }
+      assert (mem_equiv.access_map_equiv (perm_of_rmap σ2) (perm_of_rmap σ')) as Hperm_eq.
+      { eapply coherent_perm_of_rmap_eq; eauto. }
       rewrite /frag_state_interp /frag_mem_auth.
       set (l1' := (l1.1, Ptrofs.intval (Ptrofs.repr l1.2))).
       set (tp' := updLockSet (updThread cnti (Kresume c Vundef) (perm_of_rmap σ', (getThreadR cnti).2)) l1' (empty_map, empty_map)).
@@ -2774,9 +2788,7 @@ Qed.
         - exact Hq.
         - subst tp'.
           assert (Hcnt : cnti' = cnti) by apply proof_irrelevance.
-          rewrite Hcnt /= eqtype.eq_refl //.
-          rewrite Hperm_eq. done.
-      }
+          rewrite Hcnt /= eqtype.eq_refl //. }
       iSpecialize ("Hsafe" $! Ψ).
       iAssert ([∗ list] k0 ↦ y ∈ seq 0 (pos.n (OrdinalPool.num_threads tp)), Ψ k0 y)%I
         with "[Hsafe Hii]" as "HallSafe".
