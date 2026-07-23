@@ -2201,14 +2201,194 @@ Qed.
     - repeat if_tac; intros; try inv H2; auto.
     - repeat if_tac; intros; try constructor; try contradiction.
   Qed.
+
+  Local Notation sresR := (@shared.sharedR share share_instance(leibnizO resource)).
+
+  Lemma permjoin_resR_NO_YES_from_valid (dq0 : dfrac) (rdq0 : readable_dfrac dq0)
+    (v0 : agree (leibnizO resource)) (shL : shareO) (rshL : ¬ shared.readable_share' shL)
+    (Hv : ✓ Some ((shared.YES dq0 rdq0 v0 : sresR) ⋅ (shared.NO shL rshL : sresR))) :
+    permjoin_def.permjoin (perm_of_res (resR_to_resource (Some (shared.NO shL rshL))))
+    (perm_of_res (resR_to_resource (Some (shared.YES dq0 rdq0 v0))))
+    (perm_of_res (resR_to_resource
+                    (Some ((shared.YES dq0 rdq0 v0 : sresR) ⋅ (shared.NO shL rshL: sresR))))).
+  Proof.
+    apply permjoin_def.permjoin_comm.
+    pose proof (shared.shared_op_alt _ (shared.YES dq0 rdq0 v0) (shared.NO shL rshL)) as Hop.
+    simpl in Hop.
+    destruct (shared.readable_dfrac_dec (dq0 ⋅ DfracOwn shL)) as [rsh | Hnread] eqn:Hdec.
+    - destruct Hop as (v & Hval & Hop).
+      inv Hval.
+      rewrite Hop.
+      cbn [resR_to_resource shared.dfrac_of shared.val_of option_map].
+      destruct (resource_map.elem_of_agree v) as (x1 & Hmem) eqn:Helem.
+      rewrite Helem.
+      destruct x1; rewrite /perm_of_res.
+      + assert (Hproj : proj1_sig (exist (fun x => x ∈ agree_car v) (VAL v0) Hmem) = VAL v0) by done.
+        rewrite Hproj.
+        destruct shL as [shL |].
+        * destruct (eq_dec shL Share.bot) as [Hbot | Hnbot].
+          ++ clear Hdec Hop Hv rsh rdq0 rshL Helem Hproj Hmem.
+             subst.
+             assert (Hs : forall s, s ⋅ Share Share.bot = s).
+             { replace (Share Share.bot) with (ε : share_car) by done;
+                 apply ucmra_unit_right_id_L. }
+             destruct dq0 as [s | s]; simpl; rewrite Hs; destruct s; constructor.
+          ++ destruct dq0 as [sh0 | sh0]; destruct sh0 as [sh0 |];
+               cbn in rdq0, rsh |- *; try contradiction.
+             assert (HpermL : perm_of_sh shL = Some Nonempty).
+             { unfold perm_of_sh.
+               repeat if_tac; try done; subst; exfalso; apply rshL.
+               - change (readable_share Share.top).
+                 apply writable0_readable; auto.
+               - apply writable0_readable in H; done.
+             }
+             ** destruct (DfracOwn (Share sh0) ⋅ DfracOwn (Share shL)); destruct s; simpl;
+                  try inv rsh.
+                pose proof (shared.dfrac_of_op' _ (shared.YES (DfracOwn (Share sh0)) rdq0 v )
+                              (shared.NO (Share shL) rshL)) as Hfrac.
+                rewrite Hop /= in Hfrac.
+                assert (Hsh1 : Share sh0 ⋅ Share shL = Share sh).
+                { destruct (Share sh0 ⋅ Share shL) as [|] eqn:Hsum;
+                    inv Hfrac; rewrite Hsum // in H0. }
+                assert (Hjoin : sepalg.join sh0 shL sh).
+                { pose proof ((proj1 (share_op_join (Share sh0) (Share shL) sh)) Hsh1) as Hop1.
+                  destruct Hop1 as (x1' & y1' & Hx1' & Hy1' & Hop1).
+                  inv Hx1'.
+                  apply share_op_is_join; auto. }
+                pose proof (join_permjoin_sh sh0 shL sh Hjoin) as Hp.
+                rewrite HpermL // in Hp.
+                exfalso.
+                pose proof (shared.dfrac_of_op' _ (shared.YES (DfracOwn (Share sh0)) rdq0 v)
+                        (shared.NO (Share shL) rshL)) as Hfrac.
+                rewrite Hop /= dfrac_op_own in Hfrac.
+                destruct (Share sh0 ⋅ Share shL); inv Hfrac.
+             ** destruct (Mem.perm_order'_dec (perm_of_sh sh0) Readable) as [Hr0 | Hnr0].
+                *** assert (Hr0' : readable_share sh0).
+                    { apply (proj1 (perm_of_sh_readable_iff sh0)); auto. }
+                    assert (HnrL : ~ readable_share shL).
+                    { intro HrL.
+                      apply rshL.
+                      apply (proj2 (readable_share'_perm_of_sh'_iff (Share shL))).
+                      apply (proj2 (perm_of_sh_readable_iff shL)); auto.
+                    }
+                    destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hsh.
+                    +++ assert (Hjoin : sepalg.join sh0 shL sh1).
+                        { pose proof ((proj1 (share_op_join (Share sh0) (Share shL) sh1)) Hsh)
+                            as Hj.
+                          destruct Hj as (? & ? & Hsx & Hsy & ?).
+                          inv Hsx.
+                          apply share_op_is_join; auto.
+                        }
+                        assert (Hr1 : readable_share sh1).
+                        { eapply shares.join_readable1; eauto. }
+                        assert (Hp1 : Mem.perm_order' (perm_of_sh sh1) Readable).
+                        { apply (proj2 (perm_of_sh_readable_iff sh1)); auto. }
+                        destruct (Mem.perm_order'_dec (perm_of_sh sh1) Readable) as [Hp1' | Hnp1].
+                        2 :{ contradiction. }
+                        unfold perm_of_sh.
+                        repeat if_tac; subst; try contradiction.
+                        --- exfalso.
+                            apply Hnbot.
+                            apply join_top_l in Hjoin; auto.
+                        --- assert (Hw1 : writable0_share sh1).
+                            { eapply join_writable01; eauto. }
+                            simpl.
+                            rewrite Hsh; simpl.
+                            if_tac; try contradiction.
+                            unfold perm_of_sh.
+                            if_tac; try contradiction.
+                            if_tac; try constructor.
+                        --- assert (Hnw1 : ~ writable0_share sh1).
+                            { eapply join_readable_unreadable; eauto. }
+                            simpl.
+                            rewrite Hsh.
+                            simpl.
+                            if_tac; try contradiction.
+                            unfold perm_of_sh.
+                            if_tac; try contradiction.
+                            if_tac; try constructor.
+                            if_tac; try contradiction.
+                    +++ exfalso.
+                        unfold readable_dfrac in rsh.
+                        simpl in rsh.
+                        pose proof rsh as rsh'.
+                        rewrite Hsh // in rsh'.
+                *** apply permjoin_RNR_unreadable_op; auto.
+                    intro Hread0.
+                    apply Hnr0.
+                    pose proof (proj1 (readable_share'_perm_of_sh'_iff (Share sh0)) Hread0) as Hp.
+                    simpl in Hp. done.
+        * simpl in *.
+          exfalso.
+          rewrite Hop in Hv.
+          rewrite Some_valid in Hv.
+          destruct dq0 as [s | s].
+          +++ destruct s as [sh |]; simpl in Hv; contradiction.
+          +++ destruct s as [sh |]; simpl in Hv; contradiction.
+      + simpl in *.
+        destruct dq0 as [s0 | s0]; simpl.
+        * destruct s0 as [sh0 |]; simpl.
+          ** destruct shL as [shL |]; try contradiction.
+             destruct (eq_dec sh0 Share.bot) as [Hbot0 | Hnbot0].
+             { subst sh0; exfalso; apply (bot_unreadable rdq0). }
+             destruct (eq_dec shL Share.bot) as [HbotL | HnbotL]; simpl.
+             *** destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
+                 if_tac; subst; try constructor.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod in rsh'. done.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod // in rsh'.
+             *** destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
+                 if_tac; subst; try constructor.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod in rsh'.
+                 pose proof (bot_unreadable). done.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod // in rsh'.
+          ** destruct shL as [shL |]; try contradiction.
+        * destruct shL as [shL |]; try contradiction.
+          if_tac; try constructor. constructor.
+      + simpl in *.
+        destruct dq0 as [s0 | s0]; simpl.
+        * destruct s0 as [sh0 |]; simpl.
+          ** destruct shL as [shL |]; try contradiction.
+             destruct (eq_dec sh0 Share.bot) as [Hbot0 | Hnbot0].
+             { subst sh0; exfalso; apply (bot_unreadable rdq0). }
+             destruct (eq_dec shL Share.bot) as [HbotL | HnbotL]; simpl.
+             *** destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
+                 if_tac; try constructor; subst.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod // in rsh'.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod // in rsh'.
+             *** destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
+                 if_tac; try constructor; subst.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod in rsh'.
+                 pose proof (bot_unreadable). done.
+                 simpl in rsh.
+                 pose proof rsh as rsh'.
+                 rewrite Hprod // in rsh'.
+          ** destruct shL as [shL |]; try contradiction.
+        * destruct shL as [shL |]; try contradiction.
+          if_tac; try constructor. constructor.
+    - destruct (shared.dfrac_error (dq0 ⋅ DfracOwn shL)) eqn:Herr.
+      + exfalso; rewrite Some_valid Hop // in Hv.
+      + exfalso; rewrite Some_valid in Hv; destruct Hop as (? & ? & ? & ? & ? & ? & ? & ?); done.
+  Qed.
   
-  Lemma perm_of_rmap_op_permMapJoin
-    (σ0R σlock : resource_map.rmapUR share address (leibnizO resource)) (Hvalid : ✓ (σ0R ⋅ σlock)) :
+  Lemma perm_of_rmap_op_permMapJoin (σ0R σlock : resource_map.rmapUR share address (leibnizO resource)) (Hvalid : ✓ (σ0R ⋅ σlock)) :
     permMapJoin (perm_of_rmap σlock) (perm_of_rmap σ0R) (perm_of_rmap (σ0R ⋅ σlock)).
   Proof.
     intros b ofs.
-    rewrite !perm_of_rmap_lookup.
-    rewrite /resource_at gmap.lookup_op.
+    rewrite !perm_of_rmap_lookup /resource_at gmap.lookup_op.
     pose proof Hvalid as Hv.
     specialize (Hv (b, ofs)).
     rewrite gmap.lookup_op in Hv.
@@ -2300,16 +2480,8 @@ Qed.
              symmetry in Hsh1.
              inv Hsh1.
              assert (Hp : perm_of_sh sh = Some Readable).
-             {
-               unfold perm_of_sh.
-               repeat match goal with
-                      | |- context [if ?d then _ else _] =>
-                          let H := fresh "Hcase" in
-                          destruct d as [H | H];
-                          simpl in *
-                      end;
-                 try contradiction;
-                 try reflexivity.
+             { unfold perm_of_sh.
+               repeat if_tac; try contradiction; try done.
              }
              assert (Hp0 : (if Mem.perm_order'_dec (perm_of_sh sh0) Readable then perm_of_sh sh0
                             else Some Readable) = Some Readable).
@@ -2381,204 +2553,11 @@ Qed.
         rewrite Some_valid in Hv.
         inv Hv.
     - (* YES / NO *)
+      apply permjoin_resR_NO_YES_from_valid; auto.
+    - (* NO / YES *)
       apply permjoin_def.permjoin_comm.
-      pose proof (shared.shared_op_alt _ (shared.YES dq0 rdq0 v0) (shared.NO shL rshL)) as Hop.
-      simpl in Hop.
-      destruct (shared.readable_dfrac_dec (dq0 ⋅ DfracOwn shL)) as [rsh | Hnread] eqn:Hdec.
-      + destruct Hop as [v [Hval Hop]].
-        inv Hval.
-        rewrite Hop.
-        cbn [resR_to_resource shared.dfrac_of shared.val_of option_map].
-        destruct (resource_map.elem_of_agree v) as [x1 Hmem] eqn:Helem.
-        rewrite Helem.
-        destruct x1; rewrite /perm_of_res.
-        * assert (Hproj : proj1_sig (exist (fun x => x ∈ agree_car v) (VAL v0) Hmem) = VAL v0) by done.
-          rewrite Hproj.
-          destruct shL as [shL |].
-          ** destruct (eq_dec shL Share.bot) as [Hbot | Hnbot].
-             ++ clear Hdec Hop Hv rsh rdq0 rshL Helem Hproj Hmem Hnone.
-                subst.
-                destruct dq0 as [s | s]; simpl.
-                *** assert (Hs : s ⋅ Share Share.bot = s).
-                    { replace (Share Share.bot) with (ε : share_car) by done.
-                      apply ucmra_unit_right_id_L. }
-                    rewrite Hs.
-                    destruct s; simpl; constructor.
-                *** assert (Hs : s ⋅ Share Share.bot = s).
-                    { replace (Share Share.bot) with (ε : share_car) by done.
-                      apply ucmra_unit_right_id_L. }
-                    rewrite Hs.
-                    repeat if_tac; constructor.
-             ++ destruct dq0 as [sh0 | sh0]; destruct sh0 as [sh0 |];
-                  cbn in rdq0, rsh |- *; try contradiction.
-                assert (HpermL : perm_of_sh shL = Some Nonempty).
-                { unfold perm_of_sh.
-                  repeat if_tac; try done; subst; exfalso.
-                  - apply rshL.
-                    change (readable_share Share.top).
-                    apply writable0_readable; auto.
-                  - apply rshL.
-                    apply writable0_readable in H; done. }
-                -- destruct (DfracOwn (Share sh0) ⋅ DfracOwn (Share shL)); destruct s; simpl;
-                     try inv rsh.
-                   pose proof (shared.dfrac_of_op' _ (shared.YES (DfracOwn (Share sh0)) rdq0 v )
-                              (shared.NO (Share shL) rshL)) as Hfrac.
-                   rewrite Hop /= in Hfrac.
-                   assert (Hsh1 : Share sh0 ⋅ Share shL = Share sh).
-                   { destruct (Share sh0 ⋅ Share shL) as [|] eqn:Hsum.
-                     - inv Hfrac; rewrite Hsum // in H0.
-                     - inv Hfrac. }
-                   assert (Hjoin : sepalg.join sh0 shL sh).
-                   { pose proof ((proj1 (share_op_join (Share sh0) (Share shL) sh)) Hsh1) as Hop1.
-                     destruct Hop1 as (x1' & y1' & Hx1' & Hy1' & Hop1).
-                     inv Hx1'.
-                     apply share_op_is_join; auto. }
-                   pose proof (join_permjoin_sh sh0 shL sh Hjoin) as Hp.
-                   rewrite HpermL in Hp; auto.
-
-                   exfalso.
-                   pose proof (shared.dfrac_of_op' _ (shared.YES (DfracOwn (Share sh0)) rdq0 v)
-                        (shared.NO (Share shL) rshL)) as Hfrac.
-                   rewrite Hop /= dfrac_op_own in Hfrac.
-                   destruct (Share sh0 ⋅ Share shL); inv Hfrac.
-                -- destruct (Mem.perm_order'_dec (perm_of_sh sh0) Readable) as [Hr0 | Hnr0].
-                   *** assert (Hr0' : readable_share sh0).
-                       { apply (proj1 (perm_of_sh_readable_iff sh0)); auto. }
-                       assert (HnrL : ~ readable_share shL).
-                       {
-                         intro HrL.
-                         apply rshL.
-                         apply (proj2 (readable_share'_perm_of_sh'_iff (Share shL))).
-                         cbn [perm_of_sh'].
-                         apply (proj2 (perm_of_sh_readable_iff shL)); auto.
-                       }
-                       destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hsh.
-                   +++ assert (Hjoin : sepalg.join sh0 shL sh1).
-                       { pose proof ((proj1 (share_op_join (Share sh0) (Share shL) sh1)) Hsh) as Hj.
-                         destruct Hj as [x Hj].
-                         destruct Hj as [y Hj].
-                         destruct Hj as [Hsx Hj].
-                         destruct Hj as [Hsy Hopxy].
-                         inversion Hsx; subst x.
-                         inversion Hsy; subst y.
-                         apply share_op_is_join; auto. }
-                       assert (Hr1 : readable_share sh1).
-                       { eapply shares.join_readable1; eauto. }
-                       assert (Hp1 : Mem.perm_order' (perm_of_sh sh1) Readable).
-                       { apply (proj2 (perm_of_sh_readable_iff sh1)); auto. }
-                       destruct (Mem.perm_order'_dec (perm_of_sh sh1) Readable) as [Hp1' | Hnp1].
-                       2 :{ contradiction. }
-                       unfold perm_of_sh.
-                       repeat if_tac; subst; try contradiction.
-                       --- exfalso.
-                           apply Hnbot.
-                           apply join_top_l in Hjoin; auto.
-                       --- assert (Hw1 : writable0_share sh1).
-                           { eapply join_writable01; eauto. }
-                           simpl.
-                           rewrite Hsh; simpl.
-                           if_tac; try contradiction.
-                           unfold perm_of_sh.
-                           if_tac; try contradiction.
-                           if_tac; try constructor.
-                       --- assert (Hnw1 : ~ writable0_share sh1).
-                           { eapply join_readable_unreadable; eauto. }
-                           simpl.
-                           rewrite Hsh.
-                           simpl.
-                           if_tac; try contradiction.
-                           unfold perm_of_sh.
-                           if_tac; try contradiction.
-                           if_tac; try constructor.
-                           if_tac; try contradiction.
-                       +++
-                         exfalso.
-                         unfold readable_dfrac in rsh.
-                         simpl in rsh.
-                         pose proof rsh as rsh'.
-                         rewrite Hsh in rsh'. done.
-                  *** apply permjoin_RNR_unreadable_op; auto.
-                      intro Hread0.
-                      apply Hnr0.
-                      pose proof (proj1 (readable_share'_perm_of_sh'_iff (Share sh0)) Hread0) as Hp.
-                      simpl in Hp. done.
-           ** simpl in *.
-              exfalso.
-              rewrite Hop in Hv.
-              rewrite Some_valid in Hv.
-              destruct dq0 as [s | s].
-              +++ destruct s as [sh |]; simpl in Hv; contradiction.
-              +++ destruct s as [sh |]; simpl in Hv; contradiction.
-         * simpl in *.
-           destruct dq0 as [s0 | s0].
-           ++ destruct s0 as [sh0 |].
-              -- destruct shL as [shL |]; try contradiction.
-                 destruct (eq_dec sh0 Share.bot) as [Hbot0 | Hnbot0].
-                 { subst sh0; exfalso; apply (bot_unreadable rdq0). }
-                 destruct (eq_dec shL Share.bot) as [HbotL | HnbotL].
-                 ** simpl.
-                   destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
-                   if_tac; subst; try constructor.
-                   simpl in rsh.
-                   pose proof rsh as rsh'.
-                   rewrite Hprod in rsh'. done.
-                   simpl in rsh.
-                   pose proof rsh as rsh'.
-                   rewrite Hprod in rsh'. done.
-                ** simpl.
-                   destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
-                   if_tac; subst; try constructor.
-                   simpl in rsh.
-                   pose proof rsh as rsh'.
-                   rewrite Hprod in rsh'.
-                   pose proof (bot_unreadable). done.
-                   simpl in rsh.
-                   pose proof rsh as rsh'.
-                   rewrite Hprod in rsh'. done.
-              -- simpl.
-                 destruct shL as [shL |]; try contradiction.
-           ++ simpl.
-              destruct shL as [shL |]; try contradiction.
-              if_tac; try constructor.
-              constructor.
-         * simpl in *.
-           destruct dq0 as [s0 | s0].
-           ++ destruct s0 as [sh0 |].
-              -- destruct shL as [shL |]; try contradiction.
-                 destruct (eq_dec sh0 Share.bot) as [Hbot0 | Hnbot0].
-                 { subst sh0; exfalso; apply (bot_unreadable rdq0). }
-                 destruct (eq_dec shL Share.bot) as [HbotL | HnbotL].
-                 ** simpl.
-                    destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
-                    if_tac; try constructor; subst.
-                    simpl in rsh.
-                    pose proof rsh as rsh'.
-                    rewrite Hprod in rsh'. done.
-                    simpl in rsh.
-                    pose proof rsh as rsh'.
-                    rewrite Hprod in rsh'. done.
-                 ** simpl.
-                    destruct (Share sh0 ⋅ Share shL) as [sh1 |] eqn:Hprod.
-                    if_tac; try constructor; subst.
-                    simpl in rsh.
-                    pose proof rsh as rsh'.
-                    rewrite Hprod in rsh'.
-                    pose proof (bot_unreadable). done.
-                    simpl in rsh.
-                    pose proof rsh as rsh'.
-                    rewrite Hprod in rsh'. done.
-              -- destruct shL as [shL |]; try contradiction.
-           ++ simpl.
-              destruct shL as [shL |]; try contradiction.
-              if_tac; try constructor.
-              constructor.
-      + destruct (shared.dfrac_error (dq0 ⋅ DfracOwn shL)) eqn:Herr.
-        * exfalso; rewrite Some_valid Hop in Hv; done.
-        * exfalso; rewrite Some_valid in Hv;
-            destruct Hop as (? & ? & ? & ? & ? & ? & ? & ?); done.          
-    - 
-      (* NO / YES *)
-      admit.
+      apply permjoin_resR_NO_YES_from_valid.
+      rewrite comm in Hv. done.
     - (* NO / NO *)
       rewrite Some_valid in Hv.
       apply shared.shared_valid in Hv as [Hdq _].
@@ -2598,8 +2577,8 @@ Qed.
           simpl in Hshop; try discriminate.
         inversion Hshop; subst.
         apply lub_bot_e in H2.
-        destruct H2. done.
-  Admitted.
+        destruct H2; done.
+  Qed.
 
   Definition other_threads_safe (tp : dtp) (qs : gmap nat Qp) (m : mem) (i : nat) :=
     ∀ (Ψ : nat → nat → iPropI Σ),
@@ -2948,8 +2927,6 @@ Qed.
           ((perm_of_rmap_op_permMapJoin σ0R σlock Hvalid) b ofs).
      }
 
-
-
      assert (Hdelta_exists :
                (exists (δ1 δ2 : delta_map),
                    bounded_maps.sub_map δ1 (getMaxPerm m).2 /\
@@ -3004,15 +2981,10 @@ Qed.
               * rewrite Hofs1 //.
            + intros Hofs1.
              transitivity ((getThreadR cnti).1 # b ofs).
-             * eapply computeMap_2
-                 with
-                 (df :=
-                    fun ofs0 =>
-                      match fmax ofs0 with
-                      | Some _ =>
-                          Some ((perm_of_rmap σ') # b ofs0)
-                      | None => None
-                      end).
+             * eapply computeMap_2 with
+                 (df := fun ofs0 => match fmax ofs0 with
+                                 | Some _ => Some ((perm_of_rmap σ') # b ofs0)
+                                 | None => None end).
                ** rewrite Maps.PTree.gmap Hb //.
                ** rewrite Hofs1 //.
              * assert (Hmax_none : (getMaxPerm m) # b ofs = None).
@@ -3034,8 +3006,7 @@ Qed.
               rewrite (none_of_lt _ Hlt_new Hmax_none) //.
         } 
         assert (Hδ1bound : bounded_maps.sub_map δ1 (getMaxPerm m).2).
-        {
-          subst δ1.
+        { subst δ1.
           unfold bounded_maps.sub_map.
           intros b fδ Hfδ.
           rewrite PTree.gmap in Hfδ.
@@ -3054,32 +3025,6 @@ Qed.
         - admit.
       }
       destruct Hdelta_exists as (δ1 & δ2 & Hsub1 & Hsub2 & Hcompute1 & Hcompute2 & Hjoin1 & Hjoin2).
-
-      iAssert (▷  ∀ (ret : option val) (m'0 : mem) (σ' : rmap) (z' : ()),
-                   ⌜Val.has_type_list [l] (sig_args (ef_sig LOCK))
-                   ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig LOCK))⌝
-                   → |={⊤}=>
-                 frag_state_interp q m'0 σ' z' -∗
-                                                  match acquire_spec with
-                                                  | mk_funspec _ _ A _ _ Q =>
-                                                      ∃ x'' : dtfr A,
-                 ⌜JMeq.JMeq x x''⌝
-                 ∧ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret
-
-               end )%I with "[]" as "Hpost1".
-      {
-        iNext.
-        iIntros (ret1 m1 z1) "%Hty %Hv".
-        iIntros "!> Hfrag". 
-        unfold acquire_spec.
-        simpl.
-        iExists (l, sh, R).
-        iSplit; auto.
-        destruct z1.
-        rewrite /PROPx /PARAMSx /GLOBALSx /LOCALx /SEPx /=.
-        iSplit; auto.
-        iFrame.
-      
       
       Admitted.
   (*
@@ -3179,58 +3124,7 @@ Qed.
                        frag_mem_auth q0 (restrPermMap Hlt') σ)%I).
 
 
-      (*
-      iAssert (threads_safe tp' qs m') with "[Hsafe]" as "?".
-      { iApply "Hsafe".
-      
-      rewrite /threads_safe.
-
-      iAssert (∃ (c' : CC_core) (σ2 : rmap),
-                  ⌜after_external (cl_core_sem ge) ret
-                    (Callstate (Ctypes.External LOCK argsty retty cc) [l] k) m'0 = 
-                    Some c'⌝ ∧ frag_state_interp q m'0 σ2 z' ∗ jsafe_frag q ⊤ z' c') as "Hpost1".
-
-
-
-      iAssert (▷  ∀ (ret : option val) (m'0 : mem) (σ' : rmap) (z' : ()),
-                   ⌜Val.has_type_list [l] (sig_args (ef_sig LOCK))
-                   ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig LOCK))⌝
-                   → |={⊤}=>
-                 frag_state_interp q m'0 σ' z' -∗
-                                                  match acquire_spec with
-                                                  | mk_funspec _ _ A _ _ Q =>
-                                                      ∃ x'' : dtfr A,
-                 ⌜JMeq.JMeq x x''⌝
-                 ∧ funspec2post' A Q x'' (genv_symb_injective ge) (sig_res (ef_sig LOCK)) ret
-
-               end )%I with "[]" as "Hpost1".
-      {
-        iNext.
-        iIntros (ret m1 z1) "%Hty %Hv".
-        iIntros "!> Hfrag". 
-        unfold acquire_spec.
-        simpl.
-        iExists (l, sh, R).
-        iSplit; auto.
-        destruct z1.
-        rewrite /PROPx /PARAMSx /GLOBALSx /LOCALx /SEPx /=.
-        iSplit; auto.
-        iFrame.
-        
-
-
-
-
-
-
-
-      
-      { rewrite /frag_state_interp.
-        rewrite /threads_safe.
-      Locate "|={".
-      Search fupd.
-      apply fupd_intro.
-*) *)
+ *)
         
     
   
