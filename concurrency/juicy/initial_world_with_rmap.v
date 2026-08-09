@@ -37,6 +37,9 @@ Require Import VST.veric.initialize.
 Require Import VST.concurrency.common.addressFiniteMap.
 Require Import VST.concurrency.common.permissions.
 Require Import VST.concurrency.compiler.mem_equiv.
+Require Import VST.concurrency.common.HybridMachineSig.
+Require Import VST.concurrency.common.HybridMachine.
+Require Import VST.concurrency.juicy.semax_conc_pred.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -328,3 +331,482 @@ Section initial_world_with_rmap_lemmas.
   Qed.
 
 End initial_world_with_rmap_lemmas.
+
+Section concurrent_opreations.
+  
+  Definition join_perm (p q : option permission) : option permission :=
+    match p, q with
+    | None, _ => q
+    | _, None => p
+
+    | Some Nonempty, Some Nonempty => Some Nonempty
+    | Some Nonempty, Some Readable => Some Readable
+    | Some Readable, Some Nonempty => Some Readable
+
+    | Some Nonempty, Some Writable => Some Writable
+    | Some Writable, Some Nonempty => Some Writable
+
+    | Some Readable, Some Readable => Some Readable
+    | Some Readable, Some Writable => Some Writable
+    | Some Writable, Some Readable => Some Writable
+
+    | _, _ => None
+    end.
+
+  Definition acquire_delta (p q maxp : access_map) : delta_map :=
+    PTree.map
+      (fun b f ofs =>
+         match f ofs with
+         | Some _ => Some (join_perm ((p !!! b) ofs) ((q !!! b) ofs))
+         | None => None (* NOT create permissions outside the memory’s maximum permissions.*)
+         end
+      ) maxp.2.
+
+  Lemma join_perm_correct :
+    forall p q, (exists r, permjoin_def.permjoin p q r) -> permjoin_def.permjoin p q (join_perm p q).
+  Proof.
+    intros p q H.
+    destruct p as [[]|], q as [[]|]; simpl in *;
+      try constructor;
+      try solve [destruct H as [r Hr]; inversion Hr].
+  Qed.
+
+  Lemma perm_union_permjoin :
+    forall p q r, perm_union p q = Some r -> permjoin_def.permjoin p q r.
+  Proof.
+    intros p q r H.
+    destruct p as [p |]; destruct q as [q |]; destruct r as [r |];
+      simpl in H; try discriminate; inversion H; subst; try done; try constructor;
+      destruct p, q; try done; inv H; constructor.
+  Qed.
+
+  Lemma acquire_delta_permMapJoin_new :
+    forall p q maxp,
+      (forall b ofs, (maxp.2 !! b)%maps = None -> (p !!! b) ofs = None) ->
+      permMapLt p maxp ->
+      permMapsDisjoint p q ->
+      permMapJoin p q (computeMap q (acquire_delta p q maxp)).
+  Proof.
+    intros p q maxp Houtside Hlt Hdisj.
+    unfold permMapJoin.
+    intros b ofs.
+    unfold acquire_delta, computeMap.
+    rewrite /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    destruct ((maxp.2 !! b)%maps) as [fmax |] eqn:Hmaxb.
+    - destruct (fmax ofs) as [mx |] eqn:Hmaxofs.
+      + (* maxp has permission here, so acquire_delta updates to join_perm *)
+        rewrite Hmaxb /=.
+        destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl.
+        * rewrite Hmaxofs /=.
+          (* Hqb : (q.2 !! b)%maps = Some fq
+             q permission comes from block-specific function fq *)
+          apply join_perm_correct.
+          rewrite /permMapsDisjoint in Hdisj.
+          specialize (Hdisj b ofs).
+          destruct Hdisj as (pu & Hdisj).
+          exists pu.
+          rewrite /PMap.get in Hdisj.
+          rewrite Hqb in Hdisj.
+          by apply perm_union_permjoin.
+        * rewrite Hmaxofs.
+          (* None case: q permission comes from default function q.1. *)
+          apply join_perm_correct.
+          specialize (Hdisj b ofs).
+          destruct Hdisj as (pu & Hdisj).
+          exists pu.
+          rewrite /PMap.get in Hdisj.
+          rewrite Hqb in Hdisj.
+          by apply perm_union_permjoin.
+      + (* maxp has no permission at this offset, so no update *)
+        rewrite Hmaxb /=.
+        assert (Hpnone : (p !!! b) ofs = None).
+        { specialize (Hlt b ofs).
+          unfold PMap.get in Hlt.
+          rewrite Hmaxb Hmaxofs in Hlt.
+          destruct ((p !!! b) ofs) eqn: E; auto.
+          rewrite /PMap.get in E.
+          rewrite E in Hlt.
+          easy.
+        }
+        destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl.
+        * rewrite Hmaxofs.
+          rewrite /PMap.get in Hpnone.
+          rewrite Hpnone.
+          constructor.
+        * rewrite Hmaxofs.
+          rewrite /PMap.get in Hpnone.
+          rewrite Hpnone. constructor.
+    - (* maxp has no block b, so no update *)
+      rewrite Hmaxb /=.
+      assert (Hpnone : (p !!! b) ofs = None).
+      { by apply Houtside. }
+      rewrite /PMap.get in Hpnone.
+      rewrite Hpnone.
+      constructor.
+  Qed.
+
+  Lemma computeMap_acquire_delta_permMapLt :
+    forall p q maxp, permMapLt p maxp -> permMapLt q maxp ->
+      (forall b ofs, Mem.perm_order'' ((maxp !!! b) ofs) (join_perm ((p !!! b) ofs) ((q !!! b) ofs))) ->
+      permMapLt (computeMap q (acquire_delta p q maxp)) maxp.
+  Proof.
+    intros p q maxp Hp Hq Hjoin b ofs.
+    rewrite /computeMap /acquire_delta /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    destruct ((maxp.2 !! b)%maps) as [fmax |] eqn:Hmaxb.
+    - destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl;
+        destruct (fmax ofs) as [mx |] eqn:Hmaxofs; simpl.
+      + (* max has permission; delta uses join_perm *)
+        specialize (Hjoin b ofs).
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb /= in Hjoin.
+      + specialize (Hq b ofs).
+        unfold PMap.get in Hq.
+        by rewrite Hmaxb /= Hmaxofs Hqb in Hq.
+      + specialize (Hjoin b ofs).
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb /Mem.perm_order'' /= in Hjoin.
+      + specialize (Hq b ofs).
+        by rewrite /PMap.get Hmaxb /= Hmaxofs Hqb in Hq.
+    - specialize (Hq b ofs).
+      by rewrite /PMap.get Hmaxb /= in Hq.
+  Qed.
+
+  Lemma join_perm_below_max :
+    forall p q maxp b ofs, permMapLt p maxp -> permMapLt q maxp -> permMapsDisjoint p q ->
+      Mem.perm_order'' ((maxp !!! b) ofs) (join_perm ((p !!! b) ofs) ((q !!! b) ofs)).
+  Proof.
+    intros p q maxp b ofs Hp Hq Hdisj.
+    specialize (Hp b ofs).
+    specialize (Hq b ofs).
+    specialize (Hdisj b ofs).
+    destruct Hdisj as (pu & Hdisj).
+    destruct ((p !!! b) ofs) as [pp |] eqn:Hpbo;
+      destruct ((q !!! b) ofs) as [qq |] eqn:Hqbo;
+      simpl in *; try done.
+    - destruct pp, qq; try done.
+    - destruct pp; try done.
+  Qed.
+
+  Lemma computeMap_acquire_delta_empty_get :
+    forall q maxp b ofs,
+      ((computeMap q (acquire_delta empty_map q maxp)) !!! b) ofs = (q !!! b) ofs.
+  Proof.
+    intros q maxp b ofs.
+    unfold computeMap, acquire_delta.
+    rewrite /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    destruct ((maxp.2 !! b)%maps) as [fmax |] eqn:Hmaxb;
+      destruct ((q.2 !! b)%maps) as [fq |] eqn:Hqb; simpl; try done.
+    - destruct (fmax ofs); simpl; reflexivity.
+    - destruct (fmax ofs); simpl; reflexivity.
+  Qed.
+
+  Lemma permMapsDisjoint2_empty_l :
+    forall rmap, permMapsDisjoint2 (empty_map, empty_map) rmap.
+  Proof.
+    intros rmap.
+    rewrite /permMapsDisjoint2 /=.
+    split; apply empty_disjoint'.
+  Qed.
+
+  Lemma permMapsDisjoint2_empty_r :
+    forall rmap, permMapsDisjoint2 rmap (empty_map, empty_map).
+  Proof.
+    intros rmap.
+    rewrite /permMapsDisjoint2 /=.
+    split; apply permMapsDisjoint_comm; apply empty_disjoint'.
+  Qed.
+
+  Lemma join_perm_disjoint3 :
+    forall a b c, (exists ab, perm_union a b = Some ab) ->
+             (exists ac, perm_union a c = Some ac) ->
+             (exists bc, perm_union b c = Some bc) ->
+             exists u, perm_union (join_perm a b) c = Some u.
+  Proof.
+    intros a b c [ab Hab] [ac Hac] [bc Hbc].
+    destruct a as [a|], b as [b|], c as [c|];
+      simpl in *; try discriminate; eauto;
+    try destruct a, b, c; simpl in *; try discriminate; eauto.
+    destruct a, b; simpl in *; try discriminate; eexists; eauto.
+    destruct a, c; simpl in *; try discriminate; eexists; eauto.
+    destruct a; simpl in *; try discriminate; eexists; eauto.
+  Qed.
+
+  Lemma acquire_delta_preserves_disjoint3 :
+    forall l p maxp x,
+      permMapsDisjoint l p ->
+      permMapsDisjoint l x ->
+      permMapsDisjoint p x ->
+      permMapsDisjoint (computeMap p (acquire_delta l p maxp)) x.
+  Proof.
+    intros l p maxp x Hlp Hlx Hpx b ofs.
+    rewrite /acquire_delta /computeMap /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    specialize (Hlp b ofs) as [pu_lp Hlp].
+    specialize (Hlx b ofs) as [pu_lx Hlx].
+    specialize (Hpx b ofs) as [pu_px Hpx].
+    rewrite /PMap.get in Hlp, Hlx, Hpx.
+    destruct ((maxp.2 !! b)%maps) as [fmax|] eqn:Hmax.
+    - destruct ((p.2 !! b)%maps) as [fp|] eqn:Hp; simpl.
+      + destruct ((l.2 !! b)%maps) as [fl|] eqn:Hl; simpl.
+        * (* updated case: new permission = join_perm l p *)
+          destruct (fmax ofs) as [mx|] eqn:Hmax_ofs; simpl.
+          ++ apply join_perm_disjoint3; eexists; done.
+          ++ eexists; done.
+        * (* lock permission l comes from its default function l.1 *)
+          destruct (fmax ofs) as [mx |] eqn:Hmax_ofs; simpl.
+          ++ apply join_perm_disjoint3; eexists; done.
+          ++ eexists; done.
+      + (* default permission function p.1 because Hp : (p.2 !! b)%maps = None *)
+        destruct (fmax ofs) as [mx |] eqn:Hmax_ofs; simpl.
+        * apply join_perm_disjoint3; eexists; eauto.
+        * eexists; done.
+    - (* no update because Hmax : (maxp.2 !! b)%maps = None *)
+      simpl.
+      eexists; done.
+  Qed.
+
+  Lemma join_perm_coh_right :
+    forall a l p, perm_coh a l -> perm_coh a p -> perm_coh a (join_perm l p).
+  Proof.
+    intros a l p H1 H2.
+    destruct a as [a|], l as [l|], p as [p|];
+      simpl in *; try contradiction; auto;
+      try destruct a, l, p; simpl in *; try contradiction; try done.
+    - destruct a, l; try done.
+    - destruct l, p; try done.
+    - destruct l; try done.
+  Qed.
+
+  Lemma join_perm_coh_left :
+    forall l p x, perm_coh l x -> perm_coh p x -> perm_coh (join_perm l p) x.
+  Proof.
+    intros l p x H1 H2.
+    destruct l as [l|], p as [p|], x as [x|];
+      simpl in *; try contradiction; auto;
+      try destruct l, p, x; simpl in *; try contradiction; auto.
+    - destruct l, p; try done.
+    - destruct l, x; try done.
+    - destruct l; try done.
+  Qed.
+
+  Lemma acquire_delta_preserves_coherence_right :
+    forall a l p maxp, permMapCoherence a l -> permMapCoherence a p ->
+      permMapCoherence a (computeMap p (acquire_delta l p maxp)).
+  Proof.
+    intros a l p maxp Hal Hap.
+    unfold permMapCoherence in *.
+    intros b ofs.
+    specialize (Hal b ofs).
+    specialize (Hap b ofs).
+    unfold computeMap, acquire_delta.
+    rewrite /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    destruct ((maxp.2 !! b)%maps) as [fmax|] eqn:Hmax;
+      destruct ((p.2 !! b)%maps) as [fp|] eqn:Hp;
+      destruct ((l.2 !! b)%maps) as [fl|] eqn:Hl;
+      simpl in *;
+      unfold PMap.get in Hal, Hap;
+      rewrite Hl in Hal;
+      rewrite Hp in Hap;
+      simpl in Hal, Hap;
+      try (
+          destruct (fmax ofs) as [mx|]; simpl;
+          [ eapply join_perm_coh_right; eauto
+          | exact Hap ]
+        ); exact Hap.
+  Qed.
+
+  Lemma acquire_delta_preserves_coherence_left :
+    forall l p x maxp, permMapCoherence l x -> permMapCoherence p x ->
+      permMapCoherence (computeMap p (acquire_delta l p maxp)) x.
+  Proof.
+    intros l p x maxp Hlx Hpx.
+    unfold permMapCoherence in *.
+    intros b ofs.
+    specialize (Hlx b ofs).
+    specialize (Hpx b ofs).
+    unfold computeMap, acquire_delta.
+    rewrite /PMap.get /=.
+    rewrite PTree.gcombine; auto.
+    rewrite PTree.gmap.
+    destruct ((maxp.2 !! b)%maps) as [fmax|] eqn:Hmax;
+      destruct ((p.2 !! b)%maps) as [fp|] eqn:Hp;
+      destruct ((l.2 !! b)%maps) as [fl|] eqn:Hl;
+      simpl in *;
+      unfold PMap.get in Hlx, Hpx;
+      rewrite Hl in Hlx;
+      rewrite Hp in Hpx;
+      simpl in Hlx, Hpx;
+      try (
+          destruct (fmax ofs) as [mx|]; simpl;
+          [ eapply join_perm_coh_left; eauto
+          | exact Hpx ]
+        ); exact Hpx.
+  Qed.
+
+  Lemma permMapCoherence_writable_bound_r :
+    forall p q, permMapCoherence p q ->
+      forall b ofs, Mem.perm_order'' (Some Writable) ((q !!! b) ofs).
+  Proof.
+    intros p q Hcoh b ofs.
+    specialize (Hcoh b ofs).
+    unfold perm_coh in Hcoh.
+    destruct ((p !!! b) ofs) as [pp|];
+      destruct ((q !!! b) ofs) as [qq|];
+      simpl in *; try contradiction; auto;
+      try destruct pp, qq; simpl in *; try contradiction; auto.
+    - constructor.
+    - constructor.
+    - constructor.
+    - destruct qq; try done; try constructor.
+  Qed.
+
+  Lemma Mem_load_unchecked_store_unchecked_other:
+   forall m b ofs b' ofs' v,
+     b' <> b \/ (ofs' + size_chunk Mptr <= ofs \/ ofs + size_chunk Mptr <= ofs')%Z ->
+     Mem_load_unchecked Mptr (Mem_store_unchecked Mptr m b ofs v) b' ofs' =
+       Mem_load_unchecked Mptr m b' ofs'.
+ Proof.
+   intros.
+   rewrite /Mem_load_unchecked /= /Mem_store_unchecked_contents.
+   destruct (eq_dec b' b) as [Hb | Hb].
+   - subst b'.
+     rewrite PMap.gss.
+     f_equal.
+     rewrite Mem.getN_setN_outside; auto.
+     rewrite encode_val_length -size_chunk_conv.
+     destruct H; done.
+   - by rewrite PMap.gso.
+ Qed.
+
+ Lemma Mem_load_unchecked_store_unchecked_lock_addresses_disjoint
+   (m : mem) (ls : gset (Values.block * Z))
+   (b b1 : Values.block) (o : ptrofs) (o1 : Z) :
+   lock_addresses_disjoint ls ->
+   (b1, o1) ∈ ls ->
+   (b, Ptrofs.unsigned o) ∈ ls ->
+   (b1, o1) <> (b, Ptrofs.unsigned o) ->
+   Mem_load_unchecked Mptr (Mem_store_unchecked Mptr m b (Ptrofs.unsigned o) (Vptrofs Ptrofs.zero)) b1 o1 = Mem_load_unchecked Mptr m b1 o1.
+  Proof.
+    intros Hdisj Hin1 Hin2 Hneq.
+    pose proof (Hdisj (b, Ptrofs.unsigned o) (b1, o1) Hin2 Hin1) as Hsep.
+    assert ((b, Ptrofs.unsigned o) <> (b1, o1)) by congruence.
+    specialize (Hsep H).
+    simpl in Hsep.
+    unfold Mem_load_unchecked, Mem_store_unchecked.
+    destruct (Mem.store Mptr m b (Ptrofs.unsigned o) (Vptrofs Ptrofs.zero))
+      as [m'|] eqn:Hstore; simpl; auto;
+    eapply Mem_load_unchecked_store_unchecked_other; eauto.
+  Qed.
+(*
+  Ltac get_lk n dq rsh Hvalid Hincl Hlk :=
+  let Hseq := fresh "Hseq" in
+  assert (Hseq : seq 0%nat (Z.to_nat LKSIZE) !! n = Some n) by
+    (vm_compute; reflexivity);
+  iDestruct (big_sepL_lookup_acc with "HLK") as "[HLKi Hclose]";
+  first exact Hseq;
+  iDestruct (mapsto_lookup with "Hm HLKi")
+    as %(dq & rsh & Hvalid & Hincl & Hlk);
+  iDestruct ("Hclose" with "HLKi") as "HLK".
+
+Ltac norm_adr_add :=
+  repeat match goal with
+    | H : context[adr_add (?b, ?o) ?n] |- _ =>
+        replace (adr_add (b, o) n) with (b, (o + Z.of_nat n)%Z) in H
+          by (unfold adr_add; simpl; f_equal; lia)
+    end.
+
+Ltac solve_LK_VAL_contra :=
+  norm_adr_add;
+  match goal with
+  | Hval : (resR_to_resource (?σ !! _)).2 = Some (VAL _) |- False =>
+      erewrite resR_to_resource_eq in Hval; eauto;
+      rewrite /= elem_of_to_agree in Hval;
+      inversion Hval
+  end.
+
+Lemma frag_mem_auth_store_unchecked_lock_zero `{!heapGS Σ}
+  (q : Qp) (m : mem) (σ : rmap) (sh : share) (b : Values.block) (o : Z) (v : val) :
+  frag_mem_auth (Σ := Σ) q m σ -∗ LKspec (Σ := Σ) LKSIZE sh (b, o) ==∗
+  frag_mem_auth (Σ := Σ) q (Mem_store_unchecked Mptr m b o v) σ ∗
+  LKspec (Σ := Σ) LKSIZE sh (b, o).
+Proof.
+  iIntros "((%Hcoh & %Heq) & Hm) HLK".
+  iDestruct (resource_map.resource_map_auth_valid with "Hm") as %(_ & Hvalid).
+  rewrite /LKspec /=.
+   (* Mptr store changes 8 bytes
+      -> coherent must be re-proved for all 8 bytes
+      -> need LK facts for all 8 addresses
+    *)
+  get_lk 0%nat dq0 rsh0 Hvalid0 Hincl0 Hlk0.
+  get_lk 1%nat dq1 rsh1 Hvalid1 Hincl1 Hlk1.
+   get_lk 2%nat dq2 rsh2 Hvalid2 Hincl2 Hlk2.
+   get_lk 3%nat dq3 rsh3 Hvalid3 Hincl3 Hlk3.
+   get_lk 4%nat dq4 rsh4 Hvalid4 Hincl4 Hlk4.
+   get_lk 5%nat dq5 rsh5 Hvalid5 Hincl5 Hlk5.
+   get_lk 6%nat dq6 rsh6 Hvalid6 Hincl6 Hlk6.
+   get_lk 7%nat dq7 rsh7 Hvalid7 Hincl7 Hlk7.
+   iSplitL "Hm"; auto.
+   rewrite /mem_auth.
+   iExists σ.
+   iFrame "Hm".
+   iPureIntro; split; last done.
+     (* the store changes only these bytes: (b,o)+0 ... (b,o)+7
+        and LKspec says exactly those bytes are LK, not VAL.
+        coherent requires concrete memory contents to match σ only for VAL locations.
+        -> contradiction
+
+       - outside range: memory unchanged, use old coherence
+       - inside range: locations are LK, so no VAL-content obligation
+     *)
+   unfold coherent, resource_at in *.
+   intro loc.
+   destruct (Hcoh loc) as (Hnext & Hcontents & Haccess).
+   split3; try done.
+   unfold contents_cohere, contents_at in *.
+   intros mv Hval.
+   destruct (adr_range_dec (b, o) (size_chunk Mptr) loc) as [Hin | Hout].
+   - (* loc is inside the stored range *)
+     destruct loc as [bb ofs].
+     destruct Hin as (Hb & Hlo & Hhi); simpl in *.
+     subst bb.
+     change (size_chunk Mptr) with 8%Z in Hhi.
+     assert (ofs = o \/ ofs = o + 1 \/ ofs = o + 2 \/ ofs = o + 3 \/
+               ofs = o + 4 \/ ofs = o + 5 \/ ofs = o + 6 \/ ofs = o + 7)%Z as Hor by lia.
+     exfalso.
+     repeat destruct Hor as [-> | Hor]; repeat solve_LK_VAL_contra.
+     (* solve_LK_VAL_contra doesn't work well with adr_add (b, o) 0 and adr_add (b, o) 7  *)
+     + replace (adr_add (b, o) 0%nat) with (b, o) in Hlk0; last first.
+       { rewrite /adr_add //=; f_equal. lia. }
+       erewrite resR_to_resource_eq in Hval; eauto.
+       rewrite /= elem_of_to_agree in Hval.
+       inversion Hval.
+     + subst ofs.
+       erewrite resR_to_resource_eq in Hval; eauto.
+       rewrite /= elem_of_to_agree in Hval.
+       inv Hval.
+   - (* outside range: memory unchanged, use old coherence *)
+     rewrite <- (Hcontents mv Hval).
+     rewrite /juicy_mem.contents_at /Mem_store_unchecked /=.
+     rewrite /Mem_store_unchecked_contents.
+     destruct loc as (b' & ofs); simpl in *.
+     destruct (Pos.eq_dec b' b) as [Hb | Hb].
+     + subst b'.
+       rewrite Maps.PMap.gss Mem.setN_other; auto.
+       intros.
+       intro Heq; subst r.
+       apply Hout.
+       split; auto.
+       rewrite encode_val_length in H.
+       by rewrite size_chunk_conv.
+     + rewrite Maps.PMap.gso; auto.
+ Qed. *)
+
+End concurrent_opreations.
+  
