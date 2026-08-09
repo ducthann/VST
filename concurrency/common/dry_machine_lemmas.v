@@ -135,10 +135,10 @@ Module ThreadPoolWF.
   Defined. *)
 
   Lemma initial_invariant0: forall pmap c,
-      DryHybridMachine.invariant (mkPool c (pmap, empty_map) (* (empty_map, empty_map) *)).
+      DryHybridMachine.invariant (mkPool c pmap) (* (empty_map, empty_map) *).
   Proof.
     intros pmap c.
-    pose (IM:=mkPool c (pmap,empty_map) (* (empty_map, empty_map) *)); fold IM.
+    pose (IM:=mkPool c pmap (* (empty_map, empty_map) *)); fold IM.
     assert (isZ: forall i, OrdinalPool.containsThread IM i -> (i = 0)%N).
     { rewrite /containsThread /IM /=.
       move => i; destruct i; first[reflexivity | intros HH; inversion HH].
@@ -161,25 +161,19 @@ Module ThreadPoolWF.
     + move => i l cnt rm /noLock contra; exfalso; now eauto.
     + move=> i cnti; split.
       * move => j0 cntj.
-        move: (cnti) (cntj) => cnti0 cntj0;
-                                move: cnti cntj => /isZ Hi /isZ Hj.
-        subst.
-        simpl in IM.
-        unfold OrdinalPool.mkPool in IM.
-        unfold getThreadR.
-        simpl.
-        eapply permCoh_empty'.
+        exfalso.
+        apply (noLock i cnti Hres).
       * move => l rm /noLock contra; exfalso; now eauto.
-    + move => l mr /noLock contra; exfalso; now eauto.
-    + move => b ofs.
-      rewrite / IM /= //.
+    + unfold lr_valid; simpl; unfold OrdinalPool.lr_valid; intros.
+      case Hres: (OrdinalPool.lockRes IM (b, ofs)) => [rm |]; last done.
+      by case: (noLock (b, ofs) rm Hres).
   Qed.
 
   Lemma initial_mem_compatible: forall c m,
-      mem_compatible (mkPool c (getCurPerm m, empty_map) (* (empty_map, empty_map) *)) m.
+      mem_compatible (mkPool c (getCurPerm m) (* (empty_map, empty_map) *)) m.
   Proof.
     intros c m.
-    pose (IM:=mkPool c (getCurPerm m,empty_map) (* (empty_map, empty_map) *)); fold IM.
+    pose (IM:=mkPool c (getCurPerm m) (* (empty_map, empty_map) *)); fold IM.
     assert (isZ: forall i, OrdinalPool.containsThread IM i -> (i = 0)%N).
     { rewrite /containsThread /IM /=.
       move => i; destruct i; first[reflexivity | intros HH; inversion HH].
@@ -197,218 +191,131 @@ Module ThreadPoolWF.
     constructor; try done.
     intros ??.
     pose proof (isZ _ cnt); subst.
-    subst IM; simpl.
-    split; [apply cur_lt_max | apply empty_LT].
+    subst IM; simpl; apply cur_lt_max.
   Qed.
 
-  Lemma updThread_inv: forall ds i (cnt: containsThread ds i) c pmap,
-      invariant ds ->
-      (forall j (cnt: containsThread ds j),
-          i<>j -> permMapsDisjoint pmap.1 (getThreadR cnt).1 /\
-                permMapsDisjoint pmap.2 (getThreadR cnt).2) ->
-      (forall j (cnt: containsThread ds j),
-          i<>j ->
-          permMapCoherence (getThreadR cnt).1 pmap.2)->
-      (forall j (cnt: containsThread ds j),
-          i<>j ->
-          permMapCoherence pmap.1 (getThreadR cnt).2)->
-      (forall l pmap0, lockRes ds l = Some pmap0 ->
-                  permMapsDisjoint pmap0.1 pmap.1 /\
-                  permMapsDisjoint pmap0.2 pmap.2  ) ->
-      (forall l pmap0, lockRes ds l = Some pmap0 ->
-                  permMapCoherence pmap0.1 pmap.2 /\
-                  permMapCoherence pmap.1 pmap0.2) ->
-      (permMapCoherence pmap#1 pmap#2) ->
-      invariant (updThread cnt c pmap).
+  Check permMapsDisjoint.
+
+  Lemma updThread_inv :
+  forall ds i (cnt : containsThread ds i) c (pmap : res),
+    invariant ds ->
+    (forall j (cntj : containsThread ds j),
+        i <> j ->
+        permMapsDisjoint pmap (getThreadR cntj)) ->
+    (forall l rmap,
+        lockRes ds l = Some rmap ->
+        permMapsDisjoint pmap rmap) ->
+    (forall l rmap,
+        lockRes ds l = Some rmap ->
+        Mem.perm_order''
+          (Some Nonempty)
+          (pmap # (l.1) l.2)) ->
+
+    invariant (updThread cnt c pmap).
   Proof.
-    intros ds x cnt c pmap INV A A' A'' B B' C.
+    intros ds x cnt c pmap INV Hthr Hlock Hlock_perm.
+    destruct INV as [Htt Hll Htl Hlocks Hvalid].
     constructor.
-    - intros.
-      destruct (scheduler.NatTID.eq_tid_dec x i); [|destruct (scheduler.NatTID.eq_tid_dec x j)].
+    
+    (* Threads remain pairwise disjoint. *)
+    - intros i j cnti cntj Hneq.
+      destruct (scheduler.NatTID.eq_tid_dec x i) as [Hxi | Hxi].
+      + subst i.
+        assert (cntj_old : containsThread ds j).
+        { eapply cntUpdate'; eauto. }
+        
+        rewrite gssThreadRes.
+        erewrite @gsoThreadRes with (cntj := cntj_old); auto.
+      + destruct (scheduler.NatTID.eq_tid_dec x j) as [Hxj | Hxj].
+        * subst j.
+          assert (cnti_old : containsThread ds i).
+          { eapply cntUpdate'; eauto. }
+          apply permMapsDisjoint_comm.
+          rewrite gssThreadRes.
+          erewrite @gsoThreadRes with (cntj := cnti_old); auto.
+        * assert (cnti_old : containsThread ds i).
+          { eapply cntUpdate'; eauto. }
+          assert (cntj_old : containsThread ds j).
+          { eapply cntUpdate'; eauto. }
+          erewrite @gsoThreadRes with (cntj := cnti_old); auto.
+          erewrite @gsoThreadRes with (cntj := cntj_old); auto.
+    (* Lock resources do not change. *)
+    - intros laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2.
+      rewrite gsoThreadLPool in Hres1.
+      rewrite gsoThreadLPool in Hres2.
+      eapply Hll; eauto.
+    (* Threads remain disjoint from lock resources. *)
+    - intros i laddr cnti rmap Hres.
+      rewrite gsoThreadLPool in Hres.
+      destruct (scheduler.NatTID.eq_tid_dec x i) as [Hxi | Hxi].
       + subst i.
         rewrite gssThreadRes.
-        rewrite gsoThreadRes; try solve[assumption].
-        assert (cntj':=cntj).
-        apply cntUpdate' in cntj'.
-        eapply (A); assumption.
-      + subst j.
-        apply permMapsDisjoint2_comm.
-        rewrite gssThreadRes.
-        rewrite gsoThreadRes; try solve[assumption].
-        apply A; assumption.
-      + rewrite gsoThreadRes; try solve[assumption].
-        rewrite gsoThreadRes; try solve[assumption].
-        inversion INV. apply no_race_thr; assumption.
-    -  intros.
-       rewrite gsoThreadLPool in Hres1.
-       rewrite gsoThreadLPool in Hres2.
-       inversion INV. eapply no_race_lr; eauto.
-    - intros i laddr cnti rmap.
-      rewrite gsoThreadLPool; intros Hres.
-      destruct (scheduler.NatTID.eq_tid_dec x i).
-      + subst x. rewrite gssThreadRes.
-        apply permMapsDisjoint2_comm.
-        eapply B; eassumption.
-      + rewrite gsoThreadRes; auto.
-        inversion INV. eapply no_race; eassumption.
-    - intros i cnti.
-      destruct (scheduler.NatTID.eq_tid_dec x i).
-      + subst x; rewrite gssThreadRes; split; intros.
-        * { destruct (scheduler.NatTID.eq_tid_dec i j).
-            - subst i. rewrite gssThreadRes. assumption.
-            - rewrite gsoThreadRes; auto. }
-        * rewrite gsoThreadLPool in H.
-          apply B' with (l:= laddr); assumption.
-      + rewrite gsoThreadRes; auto; split ; intros.
-        *
-          { destruct (scheduler.NatTID.eq_tid_dec x j).
-            - subst j. rewrite gssThreadRes; apply A''; auto.
-            - rewrite gsoThreadRes; auto.
-              inversion INV. destruct (thread_data_lock_coh0 i cnti) as [H1 H2].
-              apply H1.
-          }
-        * rewrite gsoThreadLPool in H.
-          inversion INV. destruct (thread_data_lock_coh0 i cnti) as [H1 H2].
-          eapply H2; eauto.
-    - move => laddr rmap;
-               rewrite gsoThreadLPool => isLock; split.
-      + move => j cntj .
-        { destruct (scheduler.NatTID.eq_tid_dec x j).
-          - subst j. rewrite gssThreadRes.
-            destruct (B' laddr rmap ltac:(assumption)).  assumption.
-          - rewrite gsoThreadRes; auto.
-            inversion INV. destruct (locks_data_lock_coh0 laddr rmap ltac:(auto)) as [H1 H2].
-            apply H1.
-        }
-      + move => laddr' rmap';
-                 rewrite gsoThreadLPool => isLock'.
-        inversion INV. destruct (locks_data_lock_coh0 laddr rmap ltac:(auto)) as [H1 H2].
-        eapply H2; eauto.
-    - move => b' ofs'; rewrite gsoThreadLPool.
-      inversion INV. apply lockRes_valid0.
-  Qed.
-
-  Lemma invariant_decr:
-    forall tp c pmap i (cnti: containsThread tp i)
-      (Hinv: invariant tp)
-      (Hdecr1: forall b ofs,
-          Mem.perm_order'' ((getThreadR cnti).1 # b ofs)
-                           (pmap.1 # b ofs))
-      (Hdecr2: forall b ofs,
-          Mem.perm_order'' ((getThreadR cnti).2 # b ofs)
-                           (pmap.2 # b ofs)),
-      invariant (updThread cnti c pmap).
-  Proof.
-    intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    constructor.
-    - intros k j cntk cntj Hkj.
-      destruct (i == k) eqn:Hik; move/eqP:Hik=>Hik.
-      + subst k.
-        rewrite gssThreadRes.
-        rewrite gsoThreadRes; auto.
-        specialize (no_race_thr0 _ _ cnti cntj Hkj).
-        unfold permMapsDisjoint2, permMapsDisjoint in *.
-        erewrite <- forall2_and.
-        erewrite <- forall2_and in no_race_thr0.
-        intros b ofs.
-        destruct (no_race_thr0 b ofs) as [H1 H2].
-        split; rewrite perm_union_comm;
-          erewrite perm_union_comm in H1, H2;
-          eapply perm_union_lower;
-            by eauto.
-      + rewrite gsoThreadRes; auto.
-        destruct (i == j) eqn:Hij; move/eqP:Hij=>Hij.
-        subst j.
-        rewrite gssThreadRes.
-        specialize (no_race_thr0 _ _ cntk cnti Hkj).
-        unfold permMapsDisjoint2, permMapsDisjoint in *.
-        erewrite <- forall2_and.
-        erewrite <- forall2_and in no_race_thr0.
-        intros b ofs.
-        destruct (no_race_thr0 b ofs) as [H1 H2].
-        split;
-          eapply perm_union_lower;
-            by eauto.
-        rewrite gsoThreadRes;
-          by auto.
-    - intros.
-      erewrite gsoThreadLPool in Hres1, Hres2.
-        by eauto.
-    - intros.
-      erewrite gsoThreadLPool in Hres.
-      destruct (i == i0) eqn:Heq; move/eqP:Heq=>Heq.
-      + subst.
-        rewrite gssThreadRes.
-        specialize (no_race0 _ _ cnti _ Hres).
-        unfold permMapsDisjoint2, permMapsDisjoint in *.
-        erewrite <- forall2_and.
-        erewrite <- forall2_and in no_race0.
-        intros b ofs.
-        destruct (no_race0 b ofs) as [H1 H2].
-        erewrite perm_union_comm in H1, H2.
-        split;
-          erewrite perm_union_comm;
-          eapply perm_union_lower;
-            by eauto.
-      + rewrite gsoThreadRes; auto.
-        eauto.
-    - intros k cntk.
-      destruct (i == k) eqn:Hik; move/eqP:Hik=>Hik.
-      + subst.
-        rewrite gssThreadRes.
-        split.
-        * intros j cntj b ofs.
-          destruct (k == j) eqn:Hkj; move/eqP:Hkj=>Hkj.
-          subst.
-          rewrite gssThreadRes.
-          pose proof ((thread_data_lock_coh0 _ cnti).1 _ cnti b ofs).
-          eauto using perm_coh_lower.
-          rewrite gsoThreadRes; auto.
-          pose proof ((thread_data_lock_coh0 _ cnti).1 _ cntj b ofs).
-          eauto using perm_coh_lower, po_refl.
-        * intros laddr rmap Hres b ofs.
-          rewrite gsoThreadLPool in Hres.
-          eapply perm_coh_lower; eauto.
-          eapply thread_data_lock_coh0; eauto.
-          now eapply po_refl.
-      + rewrite gsoThreadRes; auto.
-        split.
-        * intros j cntj b ofs.
-          destruct (i == j) eqn:Hij; move/eqP:Hij=>Hij.
-          subst.
-          rewrite gssThreadRes.
-          destruct (thread_data_lock_coh0 k cntk).
-          eapply perm_coh_lower; eauto.
-          eapply H.
-          eapply po_refl.
-          rewrite gsoThreadRes; auto.
-          destruct (thread_data_lock_coh0 k cntk);
-            now eapply H.
-        * intros laddr rmap Hres.
-          rewrite gsoThreadLPool in Hres.
-          eapply thread_data_lock_coh0; eauto.
+        eapply Hlock; eauto.
+      + assert (cnti_old : containsThread ds i).
+        { eapply cntUpdate'; eauto. }
+        
+        erewrite @gsoThreadRes with (cntj := cnti_old); auto.
+        eapply Htl; eauto.        
+    (* Every thread and lock has Nonempty permission at lock addresses. *)
     - intros laddr rmap Hres.
       rewrite gsoThreadLPool in Hres.
-      destruct (locks_data_lock_coh0 laddr rmap Hres) as [H1 H2].
       split.
-      + intros j cntj b ofs.
-        destruct (i == j) eqn:Hij; move/eqP:Hij=>Hij.
-        * subst.
+      + intros j cntj.
+        destruct (scheduler.NatTID.eq_tid_dec x j) as [Hxj | Hxj].
+        * subst j.
           rewrite gssThreadRes.
-          eapply perm_coh_lower; eauto.
-          now apply H1.
-          now apply po_refl.
-        * rewrite gsoThreadRes; auto.
-          eapply H1.
+          eapply Hlock_perm; eauto.
+        * assert (cntj_old : containsThread ds j).
+          { eapply cntUpdate'; eauto. }
+          erewrite @gsoThreadRes with (cntj := cntj_old); auto.
+          exact ((proj1 (Hlocks laddr rmap Hres)) j cntj_old).
       + intros laddr' rmap' Hres'.
         rewrite gsoThreadLPool in Hres'.
-        eauto.
-    - intros b ofs.
+        exact ((proj2 (Hlocks laddr rmap Hres)) laddr' rmap' Hres').
+    (* The lock map itself is unchanged. *)
+    - move=> b ofs.
       rewrite gsoThreadLPool.
-      specialize (lockRes_valid0 b ofs).
-      destruct (lockRes tp (b, ofs));
-        by auto.
+      exact (Hvalid b ofs).
+  Qed.
+
+  Lemma invariant_decr :
+  forall tp c pmap i (cnti : containsThread tp i)
+    (Hinv : invariant tp)
+    (Hdecr : forall b ofs,
+        Mem.perm_order''
+          ((getThreadR cnti) # b ofs)
+          (pmap # b ofs)),
+    invariant (updThread cnti c pmap).
+  Proof.
+    intros tp c pmap i cnti Hinv Hdecr.
+    eapply updThread_inv.
+    - exact Hinv.
+    (* The decreased map remains disjoint from other threads. *)
+    - intros j cntj Hneq.
+      pose proof (no_race_thr tp Hinv i j cnti cntj Hneq) as Hdisj.
+      unfold permMapsDisjoint in *.
+      intros b ofs.
+      specialize (Hdisj b ofs).
+      specialize (Hdecr b ofs).
+      rewrite perm_union_comm.
+      rewrite perm_union_comm in Hdisj.
+      eapply perm_union_lower; eauto.
+    (* The decreased map remains disjoint from lock resources. *)
+    - intros laddr rmap Hres.
+      pose proof (no_race tp Hinv i laddr cnti rmap Hres) as Hdisj.
+      unfold permMapsDisjoint in *.
+      intros b ofs.
+      specialize (Hdisj b ofs).
+      specialize (Hdecr b ofs).
+      rewrite perm_union_comm.
+      rewrite perm_union_comm in Hdisj.
+      eapply perm_union_lower; eauto.
+    (* Permission at a lock address remains at most Nonempty. *)
+    - intros laddr rmap Hres.
+      pose proof ((proj1 (locks_data_lock_coh tp Hinv laddr rmap Hres)) i cnti) as Hnonempty.
+      eapply mem_lemmas.po_trans.
+      + exact Hnonempty.
+      + apply Hdecr.
   Qed.
 
   (** [invariant] is preserved by [updThreadC]*)
@@ -425,117 +332,121 @@ Module ThreadPoolWF.
         by auto.
   Qed.
 
-  Lemma updLock_inv:
-    forall tp b ofs rmap
-      (Hinv: invariant tp)
-      (Hdisjoint_res: forall laddr rmap',
-          laddr <> (b, ofs) ->
-          lockRes tp laddr = Some rmap' ->
-          permMapsDisjoint2 rmap rmap')
-      (Hdisjoint_thr: forall i (cnti: containsThread tp i),
-          permMapsDisjoint2 (getThreadR cnti) rmap)
-      (Hcoh_res: forall laddr rmap',
-          laddr <> (b, ofs) ->
-          lockRes tp laddr = Some rmap' ->
-          permMapCoherence rmap.1 rmap'.2 /\
-          permMapCoherence rmap'.1 rmap.2)
-      (Hcoh_rmap: permMapCoherence rmap.1 rmap.2)
-      (Hcoh_thr: forall i (cnti: containsThread tp i),
-          permMapCoherence rmap.1 (getThreadR cnti).2 /\
-          permMapCoherence (getThreadR cnti).1 rmap.2)
-      (Hvalid1: forall ofs0,
-          (ofs < ofs0 < ofs + lksize.LKSIZE)%Z -> lockRes tp (b, ofs0) = None)
-      (Hvalid2: forall ofs0 : Z,
-          (ofs0 < ofs < ofs0 + lksize.LKSIZE)%Z -> lockRes tp (b, ofs0) = None),
-      invariant (updLockSet tp (b, ofs) rmap).
+  Lemma updLock_inv :
+  forall tp b ofs rmap (Hinv : invariant tp)
+    (Hdisjoint_res :
+       forall laddr rmap',
+         laddr <> (b, ofs) -> lockRes tp laddr = Some rmap' -> permMapsDisjoint rmap rmap')
+    (Hdisjoint_thr :
+       forall i (cnti : containsThread tp i), permMapsDisjoint (getThreadR cnti) rmap)
+    (* Old lock resources are bounded at the new lock address,
+       and the new resource is bounded at old lock addresses. *)
+    (Hbound_res :
+       forall laddr rmap',
+         laddr <> (b, ofs) -> lockRes tp laddr = Some rmap' ->
+         Mem.perm_order'' (Some Nonempty) (rmap' # b ofs) /\
+         Mem.perm_order'' (Some Nonempty) (rmap # (laddr.1) laddr.2))
+    (* The new resource is bounded at its own lock address. *)
+    (Hbound_rmap : Mem.perm_order'' (Some Nonempty) (rmap # b ofs))
+    (* Every thread is bounded at the new lock address. *)
+    (Hbound_thr : forall i (cnti : containsThread tp i),
+         Mem.perm_order'' (Some Nonempty) ((getThreadR cnti) # b ofs))
+    (Hvalid1 :
+       forall ofs0, (ofs < ofs0 < ofs + lksize.LKSIZE)%Z -> lockRes tp (b, ofs0) = None)
+    (Hvalid2 :
+       forall ofs0, (ofs0 < ofs < ofs0 + lksize.LKSIZE)%Z -> lockRes tp (b, ofs0) = None),
+    invariant (updLockSet tp (b, ofs) rmap).
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
+    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 locks_data_lock_coh0 lockRes_valid0].
     constructor.
-    - intros. rewrite! gLockSetRes.
-      now auto.
+    (* Updating locks does not modify thread resources. *)
     - intros.
-      destruct (EqDec_address (b, ofs) laddr1).
-      + subst.
-        erewrite gssLockRes in Hres1. inversion Hres1; subst.
-        erewrite gsoLockRes in Hres2 by eauto.
-        eapply Hdisjoint_res;
-          now eauto.
-      + erewrite gsoLockRes in Hres1 by eauto.
-        destruct (EqDec_address (b, ofs) laddr2).
-        * subst.
-          erewrite gssLockRes in Hres2.
-          inversion Hres2; subst.
-          eapply permMapsDisjoint2_comm.
-          now eauto.
-        * erewrite gsoLockRes in Hres2 by eauto.
-          now eauto.
+      rewrite !gLockSetRes.
+      eapply no_race_thr0; eauto.
+    (* Lock resources remain pairwise disjoint. *)
     - intros.
-      destruct (EqDec_address (b, ofs) laddr).
-      + subst.
-        erewrite gssLockRes in Hres.
-        inversion Hres; subst.
-        now eapply Hdisjoint_thr.
-      + erewrite gsoLockRes in Hres by eauto.
+      destruct (EqDec_address (b, ofs) laddr1) as [Heq1 | Hneq1].
+      + subst laddr1.
+        rewrite gssLockRes in Hres1.
+        inversion Hres1; subst rmap1.
+        rewrite gsoLockRes in Hres2.
+        eapply Hdisjoint_res; eauto. done.
+      + rewrite gsoLockRes in Hres1; auto.
+        destruct (EqDec_address (b, ofs) laddr2) as [Heq2 | Hneq2].
+        * subst laddr2.
+          rewrite gssLockRes in Hres2.
+          inversion Hres2; subst rmap2.
+          apply permMapsDisjoint_comm.
+          eapply Hdisjoint_res; eauto.
+        * rewrite gsoLockRes in Hres2; auto.
+          exact (no_race_lr0 laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2).
+    (* Threads remain disjoint from lock resources. *)
+    - intros i laddr cnti rmap' Hres.
+      destruct (EqDec_address (b, ofs) laddr) as [Heq | Hneq].
+      + subst laddr.
+        rewrite gssLockRes in Hres.
+        inversion Hres; subst rmap'.
+        eapply Hdisjoint_thr.
+      + rewrite gsoLockRes in Hres; auto.
+        assert (cnti_old : containsThread tp i). by eapply cntUpdateL'; eauto.
         rewrite gLockSetRes.
-        now eauto.
-    - intros.
-      rewrite gLockSetRes.
-      split; intros; [rewrite gLockSetRes;
-                      eapply (thread_data_lock_coh0 _ cnti).1|].
-      destruct (EqDec_address (b, ofs) laddr).
-      + subst.
-        rewrite gssLockRes in H.
-        inversion H; subst.
-        eapply Hcoh_thr.
-      + erewrite gsoLockRes in H by eauto.
-        eapply thread_data_lock_coh0; eauto.
-    - intros.
-      destruct (EqDec_address (b, ofs) laddr).
-      + subst. erewrite gssLockRes in Hres.
-        inversion Hres; subst.
-        split; intros;
-          [rewrite gLockSetRes; eapply Hcoh_thr|].
-        destruct (EqDec_address (b, ofs) laddr').
-        * subst.
-          erewrite gssLockRes in H.
-          inversion H; subst.
-          eauto.
-        * erewrite gsoLockRes in H by eauto.
-          eapply Hcoh_res; eauto.
-      + erewrite gsoLockRes in Hres by eauto.
-        split; [intros; rewrite gLockSetRes;
-                eapply (locks_data_lock_coh0 _ _ Hres).1 |].
-        intros.
-        destruct (EqDec_address (b, ofs) laddr').
-        * subst.
-          erewrite gssLockRes in H.
-          inversion H; subst.
-          eapply Hcoh_res;
-            now eauto.
-        * erewrite gsoLockRes in H by eauto.
-          eapply locks_data_lock_coh0;
-            now eauto.
+        exact (no_race0 i laddr cnti_old rmap' Hres).
+    (* Permissions at every lock address are at most Nonempty. *)
+    - intros laddr rmap' Hres.
+      destruct (EqDec_address (b, ofs) laddr) as [Heq | Hneq].
+      (* The newly installed lock. *)
+      + subst laddr.
+        rewrite gssLockRes in Hres.
+        inversion Hres; subst rmap'.
+        split.
+        * intros i cnti.
+          rewrite gLockSetRes.
+          eapply Hbound_thr.
+        * intros laddr' rmap' Hres'.
+          destruct (EqDec_address (b, ofs) laddr') as [Heq' | Hneq'].
+          -- subst laddr'.
+             rewrite gssLockRes in Hres'.
+             inversion Hres'; subst rmap'.
+             exact Hbound_rmap.
+          -- rewrite gsoLockRes in Hres'; auto.
+             assert (Hlneq : laddr' <> (b, ofs)) by congruence.
+             exact (proj1 (Hbound_res laddr' rmap' Hlneq Hres')).
+      (* An existing lock. *)
+      + rewrite gsoLockRes in Hres; auto.
+        split.
+        * intros i cnti.
+          apply ((proj1 (locks_data_lock_coh0 laddr rmap' Hres)) i cnti).
+        * intros laddr' rmap'' Hres'.
+          destruct (EqDec_address (b, ofs) laddr') as [Heq' | Hneq'].
+          -- subst laddr'.
+             rewrite gssLockRes in Hres'.
+             inversion Hres'; subst rmap''.
+             assert (Hlneq : laddr <> (b, ofs)) by congruence.
+             exact (proj2 (Hbound_res laddr rmap' Hlneq Hres)).
+          -- rewrite gsoLockRes in Hres'; auto.
+             exact ((proj2 (locks_data_lock_coh0 laddr rmap' Hres)) laddr' rmap'' Hres').
+    (* Preserve lock-range validity. *)
     - intros b' ofs'.
-      destruct (EqDec_address (b,ofs) (b', ofs')).
-      + inversion e; subst.
+      destruct (EqDec_address (b, ofs) (b', ofs')) as [Heq | Hneq].
+      + inversion Heq; subst b' ofs'.
         rewrite gsslockResUpdLock.
-        intros ofs0 HH.
-        erewrite gsolockResUpdLock.
-        apply Hvalid1 || apply Hvalid2; auto.
-        intros Hcontra; inversion Hcontra; subst.
-        now lia.
+        intros ofs0 Hrange.
+        rewrite gsolockResUpdLock.
+        * apply Hvalid1 || apply Hvalid2; auto.
+        * intros Hcontra.
+          inversion Hcontra; subst.
+          lia.
       + rewrite gsolockResUpdLock; auto.
         specialize (lockRes_valid0 b' ofs').
-        destruct (lockRes tp (b', ofs')) eqn:Hres;
-          auto.
-        intros ofs0 ineq.
-        destruct (EqDec_address (b, ofs) (b',ofs0)).
-        * inversion e; subst.
-          apply Hvalid1 in ineq || apply Hvalid2 in ineq.
-          rewrite ineq in Hres; inversion Hres.
-        * rewrite gsolockResUpdLock;
-            now eauto.
+        destruct (lockRes tp (b', ofs')) eqn:Hres; auto.
+        intros ofs0 Hrange.
+        destruct (EqDec_address (b, ofs) (b', ofs0)) as [Heq' | Hneq'].
+        * inversion Heq'; subst b' ofs0.
+          apply Hvalid1 in Hrange || apply Hvalid2 in Hrange.
+          rewrite Hrange in Hres.
+          discriminate.
+        * rewrite gsolockResUpdLock; auto.
   Qed.
 
  (** [mem_compatible] is preserved by [addThread]*)
@@ -587,211 +498,171 @@ Module ThreadPoolWF.
   Qed.
 
   (** [invariant] is preserved by [remLockSet]*)
-  Lemma remLock_inv: forall ds a,
-           invariant ds ->
-           invariant (remLockSet ds a).
+  Lemma remLock_inv: forall ds a, invariant ds -> invariant (remLockSet ds a).
   Proof.
     intros.
-    inversion H as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    econstructor; eauto.
-    - intros.
-      destruct (EqDec_address a laddr1), (EqDec_address a laddr2); subst;
-        try (subst; by exfalso);
-      try (erewrite gsslockResRemLock in Hres1);
-        try (erewrite gsslockResRemLock in Hres2);
-        try (discriminate);
-      try (erewrite gsolockResRemLock in Hres1 by eauto);
-      try (erewrite gsolockResRemLock in Hres2 by eauto);
-      now eauto.
-    - intros.
-      destruct (EqDec_address a laddr); subst;
-              try (erewrite gsslockResRemLock in Hres);
-              try (erewrite gsolockResRemLock in Hres by eauto);
-              try (discriminate);
-              rewrite gRemLockSetRes;
-              now eauto.
-    - intros.
-      pose proof (cntRemoveL' _ cnti) as cnti'.
-      erewrite @gRemLockSetRes with (cnti := cnti').
-      destruct (thread_data_lock_coh0 _ cnti').
-      split; intros.
-      rewrite gRemLockSetRes;
-        now eauto.
-      destruct (EqDec_address a laddr); subst;
-        try (erewrite gsslockResRemLock in H2);
-        try (erewrite gsolockResRemLock in H2 by eauto);
-        try (discriminate);
-        now eauto.
-    - intros.
-      destruct (EqDec_address a laddr); subst;
-        try (erewrite gsslockResRemLock in Hres);
-        try (erewrite gsolockResRemLock in Hres by eauto);
-        try (discriminate);
-        destruct (locks_data_lock_coh0 _ _ Hres);
-        split; intros;
-          [rewrite gRemLockSetRes; now eauto | idtac].
-      destruct (EqDec_address a laddr'); subst;
-        try (erewrite gsslockResRemLock in H2);
-        try (erewrite gsolockResRemLock in H2 by eauto);
-        try (discriminate);
-        now eauto.
+    inversion H as [no_race_thr0 no_race_lr0 no_race0 locks_data_lock_coh0 lockRes_valid0].
+    constructor.
+    (* Removing a lock does not change thread resources. *)
+    - intros i j cnti cntj Hneq.
+    pose proof (cntRemoveL' _ cnti) as cnti_old.
+    pose proof (cntRemoveL' _ cntj) as cntj_old.
+    erewrite @gRemLockSetRes with (cnti := cnti_old).
+    erewrite @gRemLockSetRes with (cnti := cntj_old).
+    exact (no_race_thr0 i j cnti_old cntj_old Hneq).
+    (* Remaining lock resources are still disjoint. *)
+    - intros laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2.
+      destruct (EqDec_address a laddr1) as [Heq1 | Hneq1].
+      + subst laddr1.
+        rewrite gsslockResRemLock in Hres1.
+        discriminate.
+      + rewrite gsolockResRemLock in Hres1; auto.
+        destruct (EqDec_address a laddr2) as [Heq2 | Hneq2].
+        * subst laddr2.
+          rewrite gsslockResRemLock in Hres2.
+          discriminate.
+        * rewrite gsolockResRemLock in Hres2; auto.
+          exact (no_race_lr0 laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2).
+
+    (* Threads remain disjoint from remaining lock resources. *)
+    - intros i laddr cnti rmap Hres.
+      destruct (EqDec_address a laddr) as [Heq | Hneq].
+      + subst laddr.
+        rewrite gsslockResRemLock in Hres.
+        discriminate.
+      + rewrite gsolockResRemLock in Hres; auto.
+        pose proof (cntRemoveL' _ cnti) as cnti_old.
+        erewrite @gRemLockSetRes with (cnti := cnti_old).
+        exact (no_race0 i laddr cnti_old rmap Hres).
+    (* Permission bounds at remaining lock addresses are preserved. *)
+    - intros laddr rmap Hres.
+      destruct (EqDec_address a laddr) as [Heq | Hneq].
+      + subst laddr.
+        rewrite gsslockResRemLock in Hres.
+        discriminate.
+      + rewrite gsolockResRemLock in Hres; auto.
+        destruct (locks_data_lock_coh0 laddr rmap Hres) as [Hthreads Hlocks].
+        split.
+        * intros j cntj.
+          pose proof (cntRemoveL' _ cntj) as cntj_old.
+          erewrite @gRemLockSetRes with (cnti := cntj_old).
+          exact (Hthreads j cntj_old).
+        * intros laddr' rmap' Hres'.
+          destruct (EqDec_address a laddr') as [Heq' | Hneq'].
+          -- subst laddr'.
+             rewrite gsslockResRemLock in Hres'.
+             discriminate.
+          -- rewrite gsolockResRemLock in Hres'; auto.
+             exact (Hlocks laddr' rmap' Hres').
+    (* Removing a lock preserves non-overlapping lock ranges. *)
     - intros b ofs.
       specialize (lockRes_valid0 b ofs).
       destruct (lockRes (remLockSet ds a) (b, ofs)) eqn:Hres; auto.
-      destruct (EqDec_address a (b, ofs)); subst.
-      rewrite gsslockResRemLock in Hres. discriminate.
-      rewrite gsolockResRemLock in Hres;
-        auto.
-      rewrite Hres in lockRes_valid0.
-      intros ofs0 Hintv.
-      specialize (lockRes_valid0 ofs0 Hintv).
-      destruct (EqDec_address a (b, ofs0)); subst;
-        [rewrite gsslockResRemLock | rewrite gsolockResRemLock];
-        now auto.
+      destruct (EqDec_address a (b, ofs)) as [Heq | Hneq].
+      + subst a.
+        rewrite gsslockResRemLock in Hres.
+        discriminate.
+      + rewrite gsolockResRemLock in Hres; auto.
+        rewrite Hres in lockRes_valid0.
+        intros ofs0 Hrange.
+        specialize (lockRes_valid0 ofs0 Hrange).
+        destruct (EqDec_address a (b, ofs0)) as [Heq' | Hneq'].
+        * subst a.
+          rewrite gsslockResRemLock.
+          reflexivity.
+        * rewrite gsolockResRemLock; auto.
   Qed.
 
-  Lemma invariant_add:
-    forall tp i (cnti: containsThread tp i) c pmap1 pmap2 vf arg
-      (Hinv: invariant
-               (addThread
-                  (updThread cnti c pmap1)
-                  vf arg pmap2)),
-      invariant (updThread cnti c pmap1).
+
+  Lemma invariant_add : forall tp i (cnti : containsThread tp i) c pmap1 pmap2 vf arg
+    (Hinv : invariant (addThread (updThread cnti c pmap1) vf arg pmap2)),
+    invariant (updThread cnti c pmap1).
   Proof.
-    intros.
+    intros tp i cnti c pmap1 pmap2 vf arg Hinv.
     constructor.
+    (* Existing threads remain disjoint. *)
     - intros k j cntk cntj Hneq.
       assert (cntk' := cntAdd vf arg pmap2 cntk).
       assert (cntj' := cntAdd vf arg pmap2 cntj).
-      pose proof ((no_race_thr _ Hinv) _ _ cntk' cntj' Hneq).
-      erewrite @gsoAddRes with (cntj := cntk) in H; eauto.
-      erewrite @gsoAddRes with (cntj := cntj) in H; eauto.
+      pose proof ((no_race_thr _ Hinv) k j cntk' cntj' Hneq) as Hdisj.
+      erewrite @gsoAddRes with (cntj := cntk) in Hdisj; eauto.
+      erewrite @gsoAddRes with (cntj := cntj) in Hdisj; eauto.
+    (* Lock resources are unchanged by addThread. *)
     - intros laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2.
-      eapply (no_race_lr _ Hinv); eauto.
+      erewrite <- @gsoAddLPool with (vf := vf) (arg := arg) (p := pmap2) in Hres1.
+      erewrite <- @gsoAddLPool with (vf := vf) (arg := arg) (p := pmap2) in Hres2.
+      exact ((no_race_lr _ Hinv) laddr1 laddr2 rmap1 rmap2 Hneq Hres1 Hres2).
+    (* Existing threads remain disjoint from lock resources. *)
     - intros j laddr cntj rmap Hres.
       assert (cntj' := cntAdd vf arg pmap2 cntj).
       erewrite <- @gsoAddRes with (cntj' := cntj').
-      eapply (no_race _ Hinv _ laddr);
-        now eauto.
-    - intros j cntj.
-      assert (cntj' := cntAdd vf arg pmap2 cntj).
-      erewrite <- @gsoAddRes with (cntj' := cntj').
-      pose proof (thread_data_lock_coh _ Hinv _ cntj') as Hcoh.
-      split.
-      + intros k cntk.
-        assert (cntk' := cntAdd vf arg pmap2 cntk).
-        erewrite <- @gsoAddRes with (cntj' := cntk').
-        eapply (proj1 Hcoh).
-      + intros laddr rmap Hres.
-        erewrite <- @gsoAddLPool
-        with (vf := vf) (arg := arg) (p := pmap2) in Hres.
-        eapply (proj2 Hcoh); eauto.
+      erewrite <- @gsoAddLPool with (vf := vf) (arg := arg) (p := pmap2) in Hres.
+      exact ((no_race _ Hinv) j laddr cntj' rmap Hres).
+    (* Permission bounds at lock addresses are preserved. *)
     - intros laddr rmap Hres.
-      erewrite <- @gsoAddLPool
-      with (vf := vf) (arg := arg) (p := pmap2) in Hres.
-      pose proof (locks_data_lock_coh _ Hinv _ _ Hres ) as Hcoh.
+      erewrite <- @gsoAddLPool with (vf := vf) (arg := arg) (p := pmap2) in Hres.
+      pose proof (locks_data_lock_coh _ Hinv laddr rmap Hres) as Hcoh.
       split.
       + intros j cntj.
         assert (cntj' := cntAdd vf arg pmap2 cntj).
         erewrite <- @gsoAddRes with (cntj' := cntj').
-        eapply Hcoh.1.
+        exact ((proj1 Hcoh) j cntj').
       + intros laddr' rmap' Hres'.
-        erewrite <- @gsoAddLPool
-        with (vf := vf) (arg := arg) (p := pmap2) in Hres'.
-        eapply Hcoh.2; eauto.
-    - (* lr_valid *)
-      intros b0 ofs0.
-      pose proof (lockRes_valid _ Hinv).
-      specialize (H b0 ofs0).
-      rewrite gsoAddLPool in H;
-        now auto.
+        erewrite <- @gsoAddLPool with (vf := vf) (arg := arg) (p := pmap2) in Hres'.
+        exact ((proj2 Hcoh) laddr' rmap' Hres').
+    (* Lock-range validity is unchanged by addThread. *)
+    - intros b0 ofs0.
+      pose proof ((lockRes_valid _ Hinv) b0 ofs0) as Hvalid.
+      rewrite gsoAddLPool in Hvalid.
+      exact Hvalid.
   Qed.
 
-  Lemma invariant_not_freeable:
-    forall tp
-      (Hinv: invariant tp),
-    forall b ofs,
-      (forall i (cnti: containsThread tp i), (getThreadR cnti).2 # b ofs <> Some Freeable) /\
-      (forall laddr rmap (Hres: lockRes tp laddr = Some rmap), rmap.2 # b ofs <> Some Freeable).
+  Lemma invariant_not_freeable :
+    forall tp (Hinv : invariant tp) b ofs rmap0 (Hlock : lockRes tp (b, ofs) = Some rmap0),
+      (forall i (cnti : containsThread tp i), (getThreadR cnti) # b ofs <> Some Freeable) /\
+        (forall laddr rmap (Hres : lockRes tp laddr = Some rmap), rmap # b ofs <> Some Freeable).
   Proof.
-    intros.
-    split; intros;
-    [pose proof ((thread_data_lock_coh _ Hinv _ cnti).1 _ cnti b ofs) |
-     pose proof ((locks_data_lock_coh _ Hinv _ _ Hres).2 _ _ Hres b ofs)];
-    apply perm_coh_not_freeable in H;
-    assumption.
-  Qed.
-
-  Lemma invariant_freeable_empty_threads:
-    forall tp i (cnti: containsThread tp i) b ofs
-      (Hinv: invariant tp)
-      (Hfreeable: (getThreadR cnti).1 # b ofs = Some Freeable),
-    forall j (cntj: containsThread tp j),
-      (getThreadR cntj).2 # b ofs = None /\
-      (i <> j -> (getThreadR cntj).1 # b ofs = None).
-  Proof.
-    intros.
-    pose proof ((thread_data_lock_coh _ Hinv _ cntj).1 _ cnti b ofs) as Hcoh.
-    rewrite Hfreeable in Hcoh.
-    simpl in Hcoh.
+    intros tp Hinv b ofs rmap0 Hlock.
+    pose proof (locks_data_lock_coh tp Hinv (b, ofs) rmap0 Hlock) as Hcoh.
+    destruct Hcoh as [Hthreads Hlocks].
     split.
-    simpl.
-    destruct ((OrdinalPool.getThreadR cntj).2 # b ofs); auto; now exfalso.
-    intros Hneq.
-    pose proof ((no_race_thr _ Hinv _ _ cnti cntj Hneq).1 b ofs).
-    rewrite Hfreeable in H.
-    apply no_race_racy in H; eauto using racy.
-    inversion H;
-      now auto.
+    - intros i cnti Hfreeable.
+      specialize (Hthreads i cnti).
+      simpl in Hthreads.
+      rewrite Hfreeable in Hthreads.
+      inversion Hthreads.
+    - intros laddr rmap Hres Hfreeable.
+      specialize (Hlocks laddr rmap Hres).
+      simpl in Hlocks.
+      rewrite Hfreeable in Hlocks.
+      inversion Hlocks.
   Qed.
 
-  Lemma invariant_freeable_empty_locks:
-    forall tp i (cnti: containsThread tp i) b ofs
-      (Hinv: invariant tp)
-      (Hfreeable: (getThreadR cnti).1 # b ofs = Some Freeable),
-    forall laddr rmap,
-      lockRes tp laddr = Some rmap ->
-      rmap.1 # b ofs = None /\
-      rmap.2 # b ofs = None.
+  Lemma invariant_freeable_empty_locks :
+    forall tp i (cnti : containsThread tp i) b ofs (Hinv : invariant tp)
+           (Hfreeable : (getThreadR cnti) # b ofs = Some Freeable),
+    forall laddr rmap, lockRes tp laddr = Some rmap -> rmap # b ofs = None.
   Proof.
-    intros.
-    pose proof ((locks_data_lock_coh _ Hinv _ _ H).1 _ cnti b ofs) as Hcoh.
-    pose proof ((no_race _ Hinv _  _ cnti _ H).1 b ofs) as Hdisjoint.
-    rewrite Hfreeable in Hdisjoint, Hcoh.
-    split.
-    apply no_race_racy in Hdisjoint; eauto using racy.
-    inversion Hdisjoint;
-      now auto.
-    simpl in Hcoh;
-      destruct (rmap.2 # b ofs); eauto; by exfalso.
+    intros tp i cnti b ofs Hinv Hfreeable laddr rmap Hres.
+    pose proof ((no_race tp Hinv i laddr cnti rmap Hres) b ofs) as Hdisjoint.
+    rewrite Hfreeable in Hdisjoint.
+    apply no_race_racy in Hdisjoint;
+      eauto using racy.
+    inversion Hdisjoint; auto.
   Qed.
 
-  Lemma mem_compatible_invalid_block:
-    forall tp m b ofs
-      (Hcomp: mem_compatible tp m)
-      (Hinvalid: ~ Mem.valid_block m b),
-      (forall i (cnti: containsThread tp i),
-          (getThreadR cnti).1 # b ofs = None /\
-          (getThreadR cnti).2 # b ofs = None) /\
-      (forall laddr rmap,
-          lockRes tp laddr = Some rmap ->
-          rmap.1 # b ofs = None /\
-          rmap.2 # b ofs = None).
+  Lemma mem_compatible_invalid_block :
+    forall tp m b ofs (Hcomp : mem_compatible tp m) (Hinvalid : ~ Mem.valid_block m b),
+      (forall i (cnti : containsThread tp i), (getThreadR cnti) # b ofs = None) /\
+        (forall laddr rmap, lockRes tp laddr = Some rmap -> rmap # b ofs = None).
   Proof.
-    intros.
-    destruct Hcomp.
+    intros tp m b ofs Hcomp Hinvalid.
+    destruct Hcomp as [Hthreads Hlocks Hlock_blocks].
     split.
-    - intros.
-      split;
-        eapply permMapLt_invalid_block;
-        eauto;
-        now eapply compat_th.
-    - intros.
-      split;
-        eapply permMapLt_invalid_block;
-        eauto;
-        eapply compat_lp;
-        now eauto.
+    - intros i cnti.
+      eapply permMapLt_invalid_block; eauto.
+    - intros laddr rmap Hres.
+      eapply permMapLt_invalid_block; eauto.
   Qed.
 
   (** ** Lemmas about initial state*)
@@ -820,7 +691,7 @@ Module ThreadPoolWF.
     forall pmap m m' f arg tp
       (Hinit: init_mach pmap m tp m' f arg)
       (cnt: containsThread tp 0),
-      getThreadR cnt = (getCurPerm m', empty_map).
+      getThreadR cnt = getCurPerm m'.
   Proof.
     intros.
     simpl in *.
@@ -865,21 +736,7 @@ Module ThreadPoolWF.
     - intros.
       erewrite init_lockRes_empty in Hres by eauto.
       discriminate.
-    - intros.
-      split.
-      + intros.
-        pose proof (init_thread Hinit cnti); subst.
-        pose proof (init_thread Hinit cntj); subst.
-        Tactics.pf_cleanup.
-        erewrite getThreadR_init by eauto.
-        simpl.
-        intros ? ?.
-        rewrite empty_map_spec.
-        now apply perm_coh_empty_1.
-      + intros.
-        erewrite init_lockRes_empty in H by eauto.
-        discriminate.
-    - intros.
+    - intros laddr rmap Hres.
       erewrite init_lockRes_empty in Hres by eauto.
       discriminate.
     - intros b ofs.
@@ -1096,212 +953,125 @@ Module CoreLanguageDry.
       (pf : containsThread tp i) (c': semC)
       (Hinv: invariant tp)
       (Hcompatible : mem_compatible tp m)
-      (Hdecay: decay (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1) m')
+      (Hdecay: decay (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf)) m')
       (Hvalid_blocks: forall b, Mem.valid_block m b -> Mem.valid_block m' b), 
-      mem_compatible (updThread pf (Krun c') (getCurPerm m', (getThreadR pf).2)) m'.
+      mem_compatible (updThread pf (Krun c') (getCurPerm m')) m'.
   Proof.
     intros.
     constructor.
-    { intros tid cnt.
-      (* tid is also a valid thread in tp*)
-      assert (cnt0 : containsThread tp tid)
-        by (eapply cntUpdate' in cnt; auto).
-      (* and it's resources are below the maximum permissions on the memory*)
-      destruct (DryHybridMachine.compat_th _ _ Hcompatible cnt0) as [Hlt1 Hlt2].
-      (* let's prove a slightly different statement that will reduce proof duplication*)
-      assert (Hhelper: forall b ofs, Mem.perm_order'' ((getMaxPerm m') # b ofs) ((getThreadR cnt).1 # b ofs)  /\
-                                Mem.perm_order''  ((getMaxPerm m') # b ofs) ((getThreadR cnt).2 # b ofs)).
-      { intros b ofs.
-        (* we proceed by case analysis on whether the block was a valid one or not*)
-        destruct (valid_block_dec (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1) b)
-          as [Hvalid|Hinvalid].
-        - (*case it's a valid block*)
-          destruct (Hdecay b ofs) as [ _ HdecayValid].
-          destruct (HdecayValid Hvalid) as [Hfreed | Heq]; clear Hdecay.
-          + (* case it is a block that was freed *)
-            destruct (Hfreed Cur) as [HFree Hdrop].
-            (* since the data of thread tid have a Freeable permission on (b,
-                 ofs) it must be that no lock permission exists in the threadpool and
-                 hence on thread tid as well*)
-            assert (Hlock_empty: (getThreadR cnt)#2 # b ofs = None).
-            { destruct (DryHybridMachine.thread_data_lock_coh _ Hinv _ cnt0) as [Hcoh _].
-              specialize (Hcoh _ pf b ofs).
-              assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-              unfold permission_at in Hp.
-              rewrite <- Hp, HFree in Hcoh.
-              simpl in Hcoh.
-              destruct (((OrdinalPool.getThreadR cnt0)#2) # b ofs) eqn:?;
-                       first by exfalso.
-              simpl in Hcoh.
-              destruct (i == tid) eqn:Htid; move/eqP:Htid=>Htid; subst.
-              - rewrite gssThreadRes. Tactics.pf_cleanup. simpl.
-                assumption.
-              - erewrite gsoThreadRes with (cntj := cnt0) by assumption.
-                assumption.
+    (* Thread resources are below the new maximum permissions. *)
+    - intros tid cnt.
+      assert (cnt0 : containsThread tp tid). by eapply cntUpdate' in cnt; eauto.
+      pose proof (DryHybridMachine.compat_th _ _ Hcompatible cnt0) as Hlt.
+      intros b ofs.
+      destruct (valid_block_dec (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf)) b)
+        as [Hvalid | Hinvalid].
+      + destruct (Hdecay b ofs) as [_ Hdecay_valid].
+        destruct (Hdecay_valid Hvalid) as [Hfreed | Heq].
+        (* The block was freed. *)
+        * destruct (Hfreed Cur) as [Hfree _].
+          destruct (i == tid) eqn:Htid;
+            move/eqP:Htid => Htid; subst.
+          -- rewrite gssThreadRes.
+             apply getCur_Max.
+          -- assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs).
+             unfold permission_at in Hp.
+             rewrite Hp in Hfree.
+             pose proof (DryHybridMachine.no_race_thr _ Hinv _ _ pf cnt0 Htid) as Hdisjoint.
+             pose proof (Hdisjoint b ofs) as Hunion.
+             assert (Hempty : (getThreadR cnt0) # b ofs = None).
+             { assert (Hnot_racy : not_racy ((getThreadR cnt0) # b ofs)).
+               { eapply no_race_racy with (p1 := (getThreadR pf) # b ofs); eauto.
+                 rewrite Hfree.
+                 constructor.
+               }
+               inversion Hnot_racy; auto.
+             }
+             erewrite gsoThreadRes with (cntj := cnt0) by eauto.
+             rewrite Hempty.
+             apply po_None.
+        (* The relevant permissions did not change. *)
+        * destruct (i == tid) eqn:Htid;
+            move/eqP:Htid => Htid; subst.
+          -- rewrite gssThreadRes.
+             apply getCur_Max.
+          -- erewrite gsoThreadRes with (cntj := cnt0) by eauto.
+             pose proof (Heq Max) as HeqMax.
+             pose proof (restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs)
+               as Hrestr_max.
+             rewrite getMaxPerm_correct.
+             unfold permission_at.
+             rewrite <- HeqMax.
+             unfold permission_at in Hrestr_max.
+             rewrite Hrestr_max.
+             exact (Hlt b ofs).
+      (* The block was invalid in the old restricted memory. *)
+      + apply Mem.nextblock_noaccess with (ofs := ofs) (k := Max) in Hinvalid.
+        pose proof (restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs)
+          as Hrestr_max.
+        unfold permission_at in Hrestr_max.
+        rewrite Hrestr_max in Hinvalid.
+        destruct (i == tid) eqn:Htid;
+          move/eqP:Htid => Htid; subst.
+        * rewrite gssThreadRes.
+          apply getCur_Max.
+        * specialize (Hlt b ofs).
+          rewrite Hinvalid in Hlt.
+          destruct ((getThreadR cnt0) # b ofs) eqn:Hthread; simpl in Hlt; try contradiction.
+          erewrite gsoThreadRes with (cntj := cnt0) by eauto.
+          rewrite Hthread.
+          apply po_None.
+   (* Lock resources are below the new maximum permissions. *)
+    - intros laddr rmap Hres.
+      change (lockRes tp laddr = Some rmap) in Hres.
+      pose proof (DryHybridMachine.compat_lp _ _ Hcompatible laddr rmap Hres) as Hlt.
+      intros b ofs.
+      destruct (valid_block_dec (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf)) b)
+        as [Hvalid | Hinvalid].
+      + destruct (Hdecay b ofs) as [_ Hdecay_valid].
+        destruct (Hdecay_valid Hvalid) as [Hfreed | Heq].
+        (* The block was freed. *)
+        * destruct (Hfreed Cur) as [Hfree _].
+          assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs).
+          unfold permission_at in Hp.
+          rewrite Hp in Hfree.
+          pose proof (DryHybridMachine.no_race _ Hinv _ _ pf rmap Hres) as Hdisjoint.
+          pose proof (Hdisjoint b ofs) as Hunion.
+          assert (Hempty : rmap # b ofs = None).
+          { assert (Hnot_racy : not_racy (rmap # b ofs)).
+            { eapply no_race_racy with (p1 := (getThreadR pf) # b ofs); eauto.
+              rewrite Hfree.
+              constructor.
             }
-            rewrite Hlock_empty.
-            (* and that concludes the case for lock permissions*)
-            split; [idtac | eapply po_None].
-            (* for data permissions we proceed by case analysis*)
-            destruct (i == tid) eqn:Htid;
-              move/eqP:Htid=>Htid; subst;
-                              (* for the thread that took the step it is
-                              straightforward by the definition of [Mem.mem]*)
-                              first by (rewrite gssThreadRes; simpl;
-                                        apply getCur_Max).
-            (* for other threads it must hold by the disjointess invariant
-            that:*)
-            assert (Hempty: (getThreadR cnt).1 # b ofs = None).
-            { assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-              unfold permission_at in Hp. rewrite Hp in HFree.
-              assert (Hno_race := DryHybridMachine.no_race_thr _ Hinv _ _ pf cnt0 Htid).
-              unfold permMapsDisjoint2 in Hno_race.
-              pose proof (proj1 Hno_race b ofs) as Hunion.
-              assert (Hnot_racy : not_racy ((getThreadR cnt0).1 # b ofs)).
-              eapply no_race_racy with (p1 := (getThreadR pf).1 # b ofs); eauto.
-              rewrite HFree. constructor.
-              rewrite gsoThreadRes; auto.
-                by inversion Hnot_racy.
-            }
-            rewrite Hempty.
-            now apply po_None.
-          + (* Case where the permission between the two states remained the same*)
-            destruct (i == tid) eqn:Htid;
-              move/eqP:Htid=>Htid; subst.
-            * rewrite gssThreadRes. simpl.
-              split. eapply getCur_Max.
-              rewrite getMaxPerm_correct. unfold permission_at.
-              assert (HeqCur := Heq Max).
-              rewrite <- HeqCur.
-              Tactics.pf_cleanup.
-              assert (Hrestr_max := restrPermMap_Max Hlt1 b ofs).
-              unfold permission_at in Hrestr_max.
-              rewrite Hrestr_max.
-              eauto.
-            * (*case it's  another thread*)
-              rewrite gsoThreadRes; auto.
-              assert (HeqCur := Heq Max).
-              assert (Hrestr_max := restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-              unfold permission_at in Hrestr_max.
-              rewrite getMaxPerm_correct. unfold permission_at.
-              rewrite <- HeqCur.
-              rewrite Hrestr_max;
-                by eauto.
-        - (*case it is an invalid block*)
-          (* since the lock permissions don't chan and that block was
-               invalid before it must be that the lock/data permissions the threads
-               had are empty*)
-          apply Mem.nextblock_noaccess with (ofs := ofs) (k := Max) in Hinvalid.
-          assert (Hp := restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-          unfold permission_at in Hp. rewrite Hp in Hinvalid.
-          specialize (Hlt1 b ofs).
-          specialize (Hlt2 b ofs).
-          rewrite Hinvalid in Hlt1 Hlt2.
-          simpl in Hlt1, Hlt2.
-          repeat match goal with
-                 | [H: match ?Expr with _ => _ end |- _] =>
-                   destruct Expr eqn:?
-                 end; try by exfalso.
-          (*we proceed by case analysis on the thread id*)
-          destruct (i == tid) eqn:Htid; move/eqP:Htid => Htid; subst.
-          +
-            (*for the thread that stepped the data permissions may have
-                changed. But the goal is easily discharged by the Max> Cur invariant
-                of [Mem.mem]*)
-            split; rewrite gssThreadRes; simpl;
-              [now eapply getCur_Max| Tactics.pf_cleanup; rewrite Heqo; now apply po_None].
-          + (*for different threads the permission maps did not change, hence
-                remain empty at this location*)
-            erewrite! gsoThreadRes with (cntj := cnt0) by eauto.
-            rewrite Heqo0 Heqo.
-            split; simpl; now apply po_None.
-      }
-      split; intros b ofs; destruct (Hhelper b ofs);
-        assumption.
-    }
-    { (*likewise for lock resources*)
-      simpl.
-      intros l pmaps Hres.
-      (* the resources in the lockpool did not change*)
-      rewrite OrdinalPool.gsoThreadLPool in Hres.
-      (* proving something more convenient*)
-      assert (Hgoal: forall b ofs, Mem.perm_order'' ((getMaxPerm m') # b ofs) (pmaps.1 # b ofs) /\
-                              Mem.perm_order'' ((getMaxPerm m') # b ofs) (pmaps.2 # b ofs)).
-      {
-        (* the resources on the lp are below the maximum permissions on the memory*)
-        destruct (DryHybridMachine.compat_lp _ _ Hcompatible l _ Hres) as [Hlt1 Hlt2].
-        intros b ofs.
-        (* by cases analysis on whether b was a valid block*)
-        destruct (valid_block_dec (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1) b)
-          as [Hvalid|Hinvalid].
-        - (*case it was a valid block *)
-          destruct (Hdecay b ofs) as [ _ HdecayValid].
-          destruct (HdecayValid Hvalid) as [Hfreed | Heq]; clear Hdecay.
-          + destruct (Hfreed Cur) as [HFree Hdrop].
-            (* since the data of thread tid have a Freeable permission on (b,
-                 ofs) it must be that no lock permission exists in the threadpool and
-                 hence on pmaps as well*)
-            assert (HemptyL: pmaps.2 # b ofs = None).
-            { (*for lock permissions this is derived by coherency between data and locks*)
-              destruct (DryHybridMachine.locks_data_lock_coh _ Hinv l _ Hres) as [Hcoh _].
-              specialize (Hcoh _ pf b ofs).
-              assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-              unfold permission_at in Hp.
-              rewrite <- Hp, HFree in Hcoh.
-              simpl in Hcoh.
-              destruct ((pmaps#2) # b ofs) eqn:?;
-                       first by exfalso.
-              reflexivity.
-            }
-            assert (HemptyD: pmaps.1 # b ofs = None).
-            { (*for data permissions this is derived by the disjointness invariant *)
-              assert (Hp := restrPermMap_Cur (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-              unfold permission_at in Hp. rewrite Hp in HFree.
-              destruct (DryHybridMachine.no_race _ Hinv _ _ pf _ Hres) as [Hno_race _].
-              specialize (Hno_race b ofs).
-              assert (Hnot_racy : not_racy (pmaps.1 # b ofs))
-                by (eapply no_race_racy with (p1 := (getThreadR pf).1 # b ofs); eauto;
-                    rewrite HFree;
-                    constructor).
-                by inversion Hnot_racy.
-            }
-            rewrite HemptyL HemptyD.
-            split;
-              by eapply po_None.
-          + (* case the permission remained the same*)
-            rewrite getMaxPerm_correct. unfold permission_at.
-            assert (HeqCur := Heq Max).
-            rewrite <- HeqCur.
-            assert (Hrestr_max := restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-            unfold permission_at in Hrestr_max.
-            rewrite Hrestr_max;
-              by eauto.
-        - (*case b was an invalid block*)
-          (* since the lock permissions don't change and that block was
-               invalid before it must be that the lock/data permissions the threads
-               had are empty*)
-          apply Mem.nextblock_noaccess with (ofs := ofs) (k := Max) in Hinvalid.
-          assert (Hp := restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf).1 b ofs).
-          unfold permission_at in Hp. rewrite Hp in Hinvalid.
-          specialize (Hlt1 b ofs).
-          specialize (Hlt2 b ofs).
-          rewrite Hinvalid in Hlt1 Hlt2.
-          simpl in Hlt1, Hlt2.
-          repeat match goal with
-                 | [H: match ?Expr with _ => _ end |- _] =>
-                   destruct Expr eqn:?
-                 end; try by exfalso.
-          split; now apply po_None.
-      }
-      split; intros b ofs; destruct (Hgoal b ofs); now auto.
-    }
-    { simpl.
-      intros.
-      rewrite OrdinalPool.gsoThreadLPool in H.
-      eapply Hvalid_blocks.
-      eapply (DryHybridMachine.lockRes_blocks _ _ Hcompatible);
-        by eauto.
-    }
+            inversion Hnot_racy; auto.
+          }
+          rewrite Hempty.
+          apply po_None.
+        (* The relevant permissions did not change. *)
+        * pose proof (Heq Max) as HeqMax.
+          pose proof (restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs)
+            as Hrestr_max.
+          rewrite getMaxPerm_correct.
+          unfold permission_at.
+          rewrite <- HeqMax.
+          unfold permission_at in Hrestr_max.
+          rewrite Hrestr_max.
+          exact (Hlt b ofs).
+      (* The block was invalid in the old restricted memory. *)
+      + apply Mem.nextblock_noaccess with (ofs := ofs) (k := Max) in Hinvalid.
+        pose proof (restrPermMap_Max (DryHybridMachine.compat_th _ _ Hcompatible pf) b ofs)
+          as Hrestr_max.
+        unfold permission_at in Hrestr_max.
+        rewrite Hrestr_max in Hinvalid.
+        specialize (Hlt b ofs).
+        rewrite Hinvalid in Hlt.
+        destruct (rmap # b ofs) eqn:Hrmap; simpl in Hlt; try contradiction.
+        apply po_None.
+    (* Lock addresses that were valid remain valid. *)
+    - intros laddr rmap Hres.
+      change (lockRes tp laddr = Some rmap) in Hres.
+      apply Hvalid_blocks.
+      eapply (DryHybridMachine.lockRes_blocks _ _ Hcompatible); eauto.
   Qed.
 
   (** [mem_compatible] is preserved by coresteps*)
@@ -1311,8 +1081,8 @@ Module CoreLanguageDry.
       (Hinv: invariant tp)
       (Hcode: getThreadC pf = Krun c)
       (Hcompatible : mem_compatible tp m)
-      (Hcorestep: ev_step semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1) ev c' m'),
-      mem_compatible (updThread pf (Krun c') (getCurPerm m', (getThreadR pf).2)) m'.
+      (Hcorestep: ev_step semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf)) ev c' m'),
+      mem_compatible (updThread pf (Krun c') (getCurPerm m')) m'.
   Proof.
     intros.
     assert (Hdecay := ev_step_decay _ _ _ _ _ Hcorestep).
@@ -1328,8 +1098,8 @@ Module CoreLanguageDry.
       (pf : containsThread tp i) (c: semC)
       (Hinv: invariant tp)
       (Hcompatible : mem_compatible tp m)
-      (Hinitial: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1) c m' vf arg),
-      mem_compatible (updThread pf (Krun c) (getCurPerm m', (getThreadR pf).2)) m'.
+      (Hinitial: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf)) c m' vf arg),
+      mem_compatible (updThread pf (Krun c) (getCurPerm m')) m'.
   Proof.
     intros.
     assert (Hdecay := initial_core_decay _ _ _ _ _ _ Hinitial).
@@ -1425,161 +1195,65 @@ Module CoreLanguageDry.
     forall tp m m1 m1' i (pf: containsThread tp i) c
       (Hinv : invariant tp)
       (Hcompatible : mem_compatible tp m)
-      (Hrestrict_pmap : restrPermMap (Hcompatible i pf)#1 = m1)
+      (Hrestrict_pmap : restrPermMap (Hcompatible i pf) = m1)
       (Hdecay: decay m1 m1'),
-      invariant (updThread pf (Krun c) (getCurPerm m1', (getThreadR pf)#2)).
+      invariant (updThread pf (Krun c) (getCurPerm m1')).
   Proof.
-    constructor.
-    { (* non-interference between threads *)
-      pose proof (DryHybridMachine.no_race_thr _ Hinv) as Hno_race; clear Hinv.
-      intros j k.
-      Opaque getThreadR.
-      destruct (i == j) eqn:Heqj, (i == k) eqn:Heqk;
-        move/eqP:Heqj=>Heqj;
-                        move/eqP:Heqk=>Heqk; intros cntj' cntk' Hneq;
-                                        assert (cntk: containsThread tp k)
-                                        by (eapply cntUpdate'; eauto);
-                                        assert (cntj: containsThread tp j)
-                                          by (eapply cntUpdate'; eauto).
-      - (* case i = j = k *)
-        subst j k; exfalso; now auto.
-      - (* case i = j but i <> k*)
-        subst j. Tactics.pf_cleanup.
-        (* the permissions of thread i will be the ones after stepping*)
-        erewrite gssThreadRes.
-        (* while the permission for thread k will remain the same*)
-        erewrite @gsoThreadRes with (cntj := cntk) by assumption.
-        destruct (Hno_race _ _ pf cntk Hneq) as [Hno_race1 Hno_race2].
-        assert (Hlt := proj1 (DryHybridMachine.compat_th _ _ Hcompatible cntk)).
-        subst m1.
-        split.
-        + (*disjointness of data permissions*)
-          eapply decay_disjoint; eauto.
-          unfold permMapLt in *.
-          intros b ofs.
-          rewrite getMaxPerm_correct;
-            by rewrite restrPermMap_Max.
-          intros b ofs.
-          rewrite getCurPerm_correct;
-            by rewrite restrPermMap_Cur.
-        + (*disjointness of lock permissions*)
-          simpl; by eauto.
-      - (* case i = k but j <> k (symmetric) *)
-        subst k.
-        erewrite @gsoThreadRes with (cntj := cntj); auto.
-        erewrite gssThreadRes.
-        destruct (Hno_race _ _ pf cntj Heqj) as [Hno_race1 Hno_race2].
-        assert (Hlt := proj1 (DryHybridMachine.compat_th _ _ Hcompatible cntj)).
-        subst m1.
-        split.
-        + (*disjointness of data permissions*)
-          eapply permMapsDisjoint_comm.
-          eapply decay_disjoint; eauto.
-          unfold permMapLt in *.
-          intros b ofs.
-          rewrite getMaxPerm_correct;
-            by rewrite restrPermMap_Max.
-          intros b ofs.
-          rewrite getCurPerm_correct;
-            by rewrite restrPermMap_Cur.
-        + (*disjointness of lock permissions*)
-          simpl;
-            by eapply permMapsDisjoint_comm.
-      - (*case both threads are not i*)
-        erewrite @gsoThreadRes with (cntj := cntj); auto.
-        erewrite @gsoThreadRes with (cntj := cntk); auto.
-    }
-    { (* non-interference in the lockpool*)
-      intros.
-      rewrite! gsoThreadLPool in Hres1, Hres2.
-      eapply DryHybridMachine.no_race_lr;
-        by eauto.
-    }
-    { intros j laddr cntj' rmap Hres.
-      rewrite gsoThreadLPool in Hres.
-      assert (cntj := cntUpdate' _ _ pf cntj').
-      destruct (DryHybridMachine.no_race _ Hinv _ laddr cntj _ Hres) as [Hdata Hlocks]; clear Hinv.
-      destruct (i == j) eqn:Hij; move/eqP:Hij=>Hik; subst.
-      - erewrite gssThreadRes.
-        (* lock permissions did not change so second goal is trivial*)
-        split; simpl; Tactics.pf_cleanup; eauto.
-        (*for data permissions we will use the fact that decay preserves the
-          invariant ([decay_disjoint])*)
-        assert (Hlt := proj1 (DryHybridMachine.compat_lp _ _ Hcompatible _ _ Hres)).
-        eapply decay_disjoint; eauto.
+    intros tp m m1 m1' i pf c Hinv Hcompatible Hrestrict_pmap Hdecay.
+    subst m1.
+    eapply ThreadPoolWF.updThread_inv; eauto.
+    (* The new map remains disjoint from other threads. *)
+    - intros j cntj Hneq.
+      pose proof (DryHybridMachine.no_race_thr _ Hinv i j pf cntj Hneq) as Hdisjoint.
+      pose proof (DryHybridMachine.compat_th _ _ Hcompatible cntj) as Hlt.
+      eapply decay_disjoint; eauto.
+      + unfold permMapLt in *.
         intros b ofs.
-        rewrite getMaxPerm_correct;
-          by rewrite restrPermMap_Max.
-        intros b ofs.
+        rewrite getMaxPerm_correct.
+        rewrite restrPermMap_Max.
+        exact (Hlt b ofs).
+      + intros b ofs.
         rewrite getCurPerm_correct.
-        rewrite restrPermMap_Cur;
-          by (eapply Hdata; eauto).
-      - (* if it is a different thread then the permissions didn't change and
-          the result is straightforward*)
-        erewrite @gsoThreadRes with (cntj := cntj);
-          by eauto.
-    }
-    { (* coherence between lock and data permissions*)
-      intros k cntk'.
-      assert (cntk := cntUpdate' _ _ pf cntk').
-      (* the lock permissions of threads remain the same through internal steps*)
-      destruct (DryHybridMachine.thread_data_lock_coh _ Hinv _ cntk) as [Hthreads Hlockpool].
-      assert (Heq: (getThreadR cntk').2 = (getThreadR cntk).2)
-        by (destruct (i == k) eqn:Hik;
-            move/eqP:Hik=>Hik; subst;
-                         [erewrite gssThreadRes; Tactics.pf_cleanup |
-                          erewrite gsoThreadRes with (cntj := cntk) by assumption];
-                         reflexivity).
-      rewrite Heq.
-      split.
-      - (* coherence between locks and data from a thread*)
-        intros j cntj'.
-        destruct (i == j) eqn:Hij; move/eqP:Hij=>Hij; subst.
-        + rewrite gssThreadRes.
-          simpl.
-          destruct (DryHybridMachine.compat_th _ _  Hcompatible cntk).
-          eapply decay_coherence; eauto.
-          intros b ofs.
-          rewrite getMaxPerm_correct.
-          rewrite restrPermMap_Max. eauto.
-          intros b ofs.
-          rewrite getCurPerm_correct.
-          rewrite restrPermMap_Cur;
-            now eapply Hthreads.
-        + (*if i <> j *)
-          erewrite gsoThreadRes with (cntj := cntUpdate' _ _ pf cntj') by assumption.
-            by eauto.
-      - (*coherence between locks and data from a lock*)
-        intros laddr rmap Hres.
-        rewrite gsoThreadLPool in Hres.
-          by eauto.
-    }
-    { (* coherence between lock and data permissions *)
-      intros laddr rmap Hres.
-      rewrite gsoThreadLPool in Hres.
-      split.
-      - intros j cntj'.
-        destruct (i == j) eqn:Hij; move/eqP:Hij=>Hij; subst.
-        + rewrite gssThreadRes.
-          simpl.
-          destruct (DryHybridMachine.compat_lp _ _ Hcompatible laddr _ Hres) as [_ Hlt].
-          eapply decay_coherence; eauto.
-          intros b ofs.
-          rewrite getMaxPerm_correct.
-          rewrite restrPermMap_Max; eauto.
-          intros b ofs.
-          rewrite getCurPerm_correct restrPermMap_Cur.
-            by eapply (proj1 (DryHybridMachine.locks_data_lock_coh _ Hinv laddr _ Hres)); eauto.
-        + erewrite gsoThreadRes with (cntj := cntUpdate' _ _ pf cntj') by assumption.
-            by eapply (proj1 (DryHybridMachine.locks_data_lock_coh _ Hinv laddr _ Hres)); eauto.
-      - intros ? ? Hres'.
-        rewrite gsoThreadLPool in Hres'.
-        eapply (proj2 (DryHybridMachine.locks_data_lock_coh _ Hinv laddr _ Hres)); eauto.
-    }
-    { (* well-formed locks*)
-      eapply updThread_lr_valid;
-        apply (DryHybridMachine.lockRes_valid _ Hinv).
-    }
+        rewrite restrPermMap_Cur.
+        exact (Hdisjoint b ofs).
+    (* The new map remains disjoint from lock resources. *)
+    - intros laddr rmap Hres.
+      pose proof (DryHybridMachine.no_race _ Hinv i laddr pf rmap Hres) as Hdisjoint.
+      pose proof (DryHybridMachine.compat_lp _ _ Hcompatible laddr rmap Hres) as Hlt.
+      eapply decay_disjoint; eauto.
+      + unfold permMapLt in *.
+        intros b ofs.
+        rewrite getMaxPerm_correct.
+        rewrite restrPermMap_Max.
+        exact (Hlt b ofs).
+      + intros b ofs.
+        rewrite getCurPerm_correct.
+        rewrite restrPermMap_Cur.
+        exact (Hdisjoint b ofs).
+    (* The new map remains at most Nonempty at lock addresses. *)
+    - intros laddr rmap Hres.
+      pose proof (DryHybridMachine.lockRes_blocks _ _ Hcompatible laddr rmap Hres) as Hvalid_block.
+      assert (Hvalid_restr : Mem.valid_block (restrPermMap (Hcompatible i pf)) laddr.1).
+      {
+        eapply restrPermMap_valid; eauto.
+      }
+      pose proof ((proj1 (DryHybridMachine.locks_data_lock_coh _ Hinv laddr rmap Hres)) i pf)
+        as Hold_bound.
+      destruct (Hdecay laddr.1 laddr.2) as [_ Hdecay_valid].
+      destruct (Hdecay_valid Hvalid_restr) as [Hfreed | Heq].
+      + destruct (Hfreed Cur) as [_ Hdrop].
+        rewrite getCurPerm_correct.
+        unfold permission_at.
+        rewrite Hdrop.
+        apply po_None.
+      + pose proof (Heq Cur) as HeqCur.
+        rewrite getCurPerm_correct.
+        unfold permission_at.
+        rewrite <- HeqCur.
+        pose proof (restrPermMap_Cur (Hcompatible i pf) (laddr#1) laddr#2) as HrestrCur.
+        unfold permission_at in HrestrCur.
+        rewrite HrestrCur.
+        exact Hold_bound.
   Qed.
   
  (** [invariant] is preserved by initial_core *)
@@ -1588,9 +1262,9 @@ Module CoreLanguageDry.
       (pf : containsThread tp i) c m1 m' vf arg
       (Hinv: invariant tp)
       (Hcompatible: mem_compatible tp m)
-      (Hrestrict_pmap: restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1 = m1)
+      (Hrestrict_pmap: restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf) = m1)
       (Hcorestep: initial_core semSem n m1 c m' vf arg),
-      invariant (updThread pf (Krun c) (getCurPerm m', (getThreadR pf).2)).
+      invariant (updThread pf (Krun c) (getCurPerm m')).
   Proof.
     intros.
     subst.
@@ -1606,10 +1280,10 @@ Module CoreLanguageDry.
       (pf : containsThread tp i) c m1 m1' c'
       (Hinv: invariant tp)
       (Hcompatible: mem_compatible tp m)
-      (Hrestrict_pmap: restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf).1 = m1)
+      (Hrestrict_pmap: restrPermMap (DryHybridMachine.compat_th _ _ Hcompatible pf) = m1)
       (Hcorestep: corestep semSem c m1 c' m1')
       (Hcore: getThreadC pf = Krun c),
-      invariant (updThread pf (Krun c') (getCurPerm m1', (getThreadR pf).2)).
+      invariant (updThread pf (Krun c') (getCurPerm m1')).
   Proof.
     intros.
     apply corestep_decay in Hcorestep.
@@ -1664,40 +1338,19 @@ Module CoreLanguageDry.
 
   (** If some thread has permission above readable on some address then
     stepping another thread cannot change the value of that location*)
-  Corollary corestep_disjoint_val:
-    forall (tp : t)  (m m' : mem) i j (Hneq: i <> j)
-      (c c' : semC)
-      (pfi : containsThread tp i) (pfj : containsThread tp j)
-      (Hcomp : mem_compatible tp m) (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).1) b ofs Cur Readable \/
-                  Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).2) b ofs Cur Readable)
-      (Hcorestep: corestep semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c' m')
-      (Hinv: invariant tp),
+  Corollary corestep_disjoint_locks :
+    forall (tp : t) (m m' : mem) i (c c' : semC) (pfi : containsThread tp i) (Hcomp : mem_compatible tp m) laddr rmap (Hres : lockRes tp laddr = Some rmap) (b : block) (ofs : Z)
+           (Hreadable : Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp laddr rmap Hres)) b ofs Cur Readable)
+           (Hcorestep : corestep semSem c (restrPermMap(DryHybridMachine.compat_th _ _ Hcomp pfi)) c' m') (Hinv : invariant tp),
       Maps.ZMap.get ofs (Mem.mem_contents m) # b =
-      Maps.ZMap.get ofs (Mem.mem_contents m') # b.
+        Maps.ZMap.get ofs (Mem.mem_contents m') # b.
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    destruct Hreadable;
-      eapply corestep_stable_val; eauto;
-        [left; eapply no_race_thr0; eauto| right; eapply (proj1 (thread_data_lock_coh0 j pfj)); eauto].
-  Qed.
-
-  Corollary corestep_disjoint_locks:
-    forall (tp : t) (m m' : mem) i j (c c' : semC)
-      (pfi : containsThread tp i) (pfj : containsThread tp j)
-      (Hcomp : mem_compatible tp m) (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).2) b ofs Cur Readable)
-      (Hcorestep: corestep semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c' m')
-      (Hinv: invariant tp),
-      Maps.ZMap.get ofs (Mem.mem_contents m) # b =
-      Maps.ZMap.get ofs (Mem.mem_contents m') # b.
-  Proof.
-    intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
     eapply corestep_stable_val; eauto.
-    right; eapply (proj1 (thread_data_lock_coh0 j pfj));
-      by eauto.
+    left.
+    exact
+      (DryHybridMachine.no_race
+         tp Hinv i laddr pfi rmap Hres).
   Qed.
 
   (** If some lock has permission above [Readable] on some address then
@@ -1707,20 +1360,17 @@ Module CoreLanguageDry.
       (pfi : containsThread tp i) (Hcomp : mem_compatible tp m) addr pmap
       (Hlock: lockRes tp addr = Some pmap)
       (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock).1)
-                           b ofs Cur Readable \/
-                  Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock).2)
+      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock))
                            b ofs Cur Readable)
-      (Hcorestep: corestep semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c' m')
+      (Hcorestep: corestep semSem c (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi)) c' m')
       (Hinv: invariant tp),
       Maps.ZMap.get ofs (Mem.mem_contents m) # b =
       Maps.ZMap.get ofs (Mem.mem_contents m') # b.
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    destruct Hreadable;
-      eapply corestep_stable_val; eauto;
-        [left; eapply no_race0; eauto| right; eapply (proj1 (locks_data_lock_coh0 addr _ Hlock)); eauto].
+    eapply corestep_stable_val; eauto.
+    left.
+    exact (DryHybridMachine.no_race tp Hinv i addr pfi pmap Hlock).
   Qed.
 
   Lemma initial_core_stable_val:
@@ -1772,36 +1422,37 @@ Module CoreLanguageDry.
       (c c' : semC)
       (pfi : containsThread tp i) (pfj : containsThread tp j)
       (Hcomp : mem_compatible tp m) (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).1) b ofs Cur Readable \/
-                  Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).2) b ofs Cur Readable)
-      (Hcorestep: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c m' v arg)
+      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj)) b ofs Cur Readable)
+      (Hcorestep: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi)) c m' v arg)
       (Hinv: invariant tp),
       Maps.ZMap.get ofs (Mem.mem_contents m) # b =
       Maps.ZMap.get ofs (Mem.mem_contents m') # b.
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    destruct Hreadable;
-      eapply initial_core_stable_val; eauto;
-        [left; eapply no_race_thr0; eauto| right; eapply (proj1 (thread_data_lock_coh0 j pfj)); eauto].
+    eapply initial_core_stable_val; eauto.
+    left.
+    exact
+      (DryHybridMachine.no_race_thr
+         tp Hinv i j pfi pfj Hneq).
   Qed.
 
-  Corollary initial_core_disjoint_locks:
-    forall (tp : t) (m m' : mem) i j (c : semC) n v arg
-      (pfi : containsThread tp i) (pfj : containsThread tp j)
-      (Hcomp : mem_compatible tp m) (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfj).2) b ofs Cur Readable)
-      (Hcorestep: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c m' v arg)
-      (Hinv: invariant tp),
+  Corollary initial_core_disjoint_locks :
+    forall (tp : t) (m m' : mem) i (c : semC) n v arg (pfi : containsThread tp i)
+      (Hcomp : mem_compatible tp m) addr pmap (Hlock : lockRes tp addr = Some pmap) (b : block) (ofs : Z)
+      (Hreadable : Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp addr pmap Hlock))
+               b ofs Cur Readable)
+      (Hcorestep :initial_core semSem n (restrPermMap (DryHybridMachine.compat_th
+                                                         _ _ Hcomp pfi)) c m' v arg)
+           (Hinv : invariant tp),
       Maps.ZMap.get ofs (Mem.mem_contents m) # b =
-      Maps.ZMap.get ofs (Mem.mem_contents m') # b.
-  Proof.
+        Maps.ZMap.get ofs (Mem.mem_contents m') # b.
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
     eapply initial_core_stable_val; eauto.
-    right; eapply (proj1 (thread_data_lock_coh0 j pfj));
-      by eauto.
+    left.
+    exact
+      (DryHybridMachine.no_race
+         tp Hinv i addr pfi pmap Hlock).
   Qed.
 
   (** If some lock has permission above [Readable] on some address then
@@ -1811,20 +1462,17 @@ Module CoreLanguageDry.
       (pfi : containsThread tp i) (Hcomp : mem_compatible tp m) addr pmap
       (Hlock: lockRes tp addr = Some pmap)
       (b : block) (ofs : Z)
-      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock).1)
-                           b ofs Cur Readable \/
-                  Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock).2)
+      (Hreadable: Mem.perm (restrPermMap (DryHybridMachine.compat_lp _ _ Hcomp _ _ Hlock))
                            b ofs Cur Readable)
-      (Hcorestep: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi).1) c m' v arg)
+      (Hcorestep: initial_core semSem n (restrPermMap (DryHybridMachine.compat_th _ _ Hcomp pfi)) c m' v arg)
       (Hinv: invariant tp),
       Maps.ZMap.get ofs (Mem.mem_contents m) # b =
       Maps.ZMap.get ofs (Mem.mem_contents m') # b.
   Proof.
     intros.
-    destruct Hinv as [no_race_thr0 no_race_lr0 no_race0 thread_data_lock_coh0 locks_data_lock_coh0 lockRes_valid0].
-    destruct Hreadable;
-      eapply initial_core_stable_val; eauto;
-        [left; eapply no_race0; eauto| right; eapply (proj1 (locks_data_lock_coh0 addr _ Hlock)); eauto].
+    eapply initial_core_stable_val; eauto.
+    left.
+    exact (DryHybridMachine.no_race tp Hinv i addr pfi pmap Hlock).
   Qed.
 
   Lemma permMapLt_decay:
