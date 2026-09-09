@@ -1,1 +1,0 @@
-thannd@Ducs-Mac-mini.local.2816:1788971913
