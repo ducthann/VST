@@ -606,7 +606,7 @@ iMod ("He" $! psi x1 (F0 rho ∗ F1 rho) (typlist_of_typelist tys) args with "[F
 iMod "Hmask" as "_".
 clear TC8. simpl fst in *. simpl snd in *.
 rewrite /jsafeN jsafe_unfold /jsafe_pre.
-iIntros "!> !>" (?) "s"; iDestruct ("He1" with "s") as (x') "(? & pre & post)".
+iIntros "!> !>" (?) "s"; iDestruct ("He1" with "s") as (x') "(pre & post)".
 destruct Hinline as [Hinline | ?]; last done.
 iRight; iRight; iExists e, _, _; iSplit.
 { iPureIntro; simpl.
@@ -617,9 +617,9 @@ iNext.
 iIntros (??? [??]).
 iMod (fupd_mask_subseteq (nE x1)) as "Hmask"; first done.
 iMod ("post" $! _ _ _ _) as "post".
-iMod "Hmask" as "_"; iIntros "!> S H".
+iMod "Hmask" as "_"; iIntros "!> H".
 iExists _; iSplit; first done.
-iDestruct ("post" with "S H") as "($ & Q & F0 & F)".
+iDestruct ("post" with "H") as "($ & Q & F0 & F)".
 iDestruct ("Htc" with "[Q]") as %Htc; first by iFrame.
 pose (tx' := match ret,ret0 with
                    | Some id, Some v => Maps.PTree.set id v tx

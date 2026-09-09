@@ -164,12 +164,12 @@ Section initial_world_with_rmap_lemmas.
   Proof. intros; apply perm_of_rmap_of_mem_with_rmap_exact; auto. Qed.
 
   (** ** Exposing the selected authoritative resource map *)
-  
-  Definition frag_mem_auth (q : Qp) (m : mem) (σ : rmap) : iProp Σ :=
+
+  Definition frag_mem_auth q (m : mem) (σ : rmap) : iProp Σ :=
     ⌜coherent m σ /\ mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝ ∧
       resource_map.resource_map_auth
         (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
-        (gen_heap_name heapGS_gen_heapGS) q σ.
+        (gen_heap_name heapGS_gen_heapGS) q%Qp σ.
   
   Lemma frag_mem_auth_set (m : mem) (σ : rmap) (Hvalid : ✓ σ)
     (Hnext : forall loc, (loc.1 >= Mem.nextblock m)%positive -> (σ !! loc = None)%stdpp)
@@ -809,4 +809,3 @@ Proof.
  Qed. *)
 
 End concurrent_opreations.
-  

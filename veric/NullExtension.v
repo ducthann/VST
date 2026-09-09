@@ -24,10 +24,25 @@ Require Import VST.veric.SequentialClight.
      (*ext_spec_exit*)
      (fun rv m z => True).
 
+Definition null_Jextspec {Σ : gFunctors} : Jext_spec Σ :=
+  Build_Jext_spec Σ
+    (* Jext_spec_type *)
+    (fun _ => False)
+    (* Jext_spec_pre *)
+    (fun _ _ _ _ _ => False%I)
+    (* Jext_spec_post *)
+    (fun _ _ _ _ _ => False%I)
+    (* Jext_spec_exit *)
+    (fun _ => True%I).
+
+
 Lemma NullExtension_whole_program_sequential_safety:
-   forall {CS: compspecs} `{!VSTGpreS unit Σ}
+  forall {CS: compspecs} `{!VSTGpreS unit Σ}
      (prog: Clight.program) V G m,
-     (forall {HH : semax.VSTGS unit Σ}, semax_prog extspec prog tt V G) ->
+    (forall {HH : semax.VSTGS unit Σ}, @semax_prog
+                                    unit Σ HH
+                                    (null_Jextspec (Σ := Σ))
+                                    CS prog tt V G) ->
      Genv.init_mem prog = Some m ->
      exists b, exists q, exists m',
        Genv.find_symbol (Genv.globalenv prog) (prog_main prog) = Some b /\

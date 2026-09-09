@@ -80,17 +80,15 @@ Program Definition jsafe_pre
   |={E}=> ∀ m, state_interp m z -∗
       (∃ i, ⌜halted Hcore c i⌝ ∧ state_interp m z ∗ Jext_spec_exit Hspec (Some (Vint i))) ∨
       (|={E}=> ∃ c' m', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c') ∨
-      (∃ e args x, ⌜at_external Hcore c m = Some (e, args)⌝ ∧ state_interp m z ∗ Jext_spec_pre Hspec e x (genv_symb ge) (sig_args (ef_sig e)) args ∗
+      (∃ e args x, ⌜at_external Hcore c m = Some (e, args)⌝ ∧ (* state_interp m z ∗ *) Jext_spec_pre Hspec e x (genv_symb ge) (sig_args (ef_sig e)) args ∗
          ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
-          |={E}=> state_interp m' z' -∗ Jext_spec_post Hspec e x (genv_symb ge) (sig_res (ef_sig e)) ret -∗
+          |={E}=> (* state_interp m' z' -∗ *) Jext_spec_post Hspec e x (genv_symb ge) (sig_res (ef_sig e)) ret -∗
           ∃ c', ⌜after_external Hcore ret c m' = Some c'⌝ ∧ state_interp m' z' ∗ jsafe E z' c')).
 
 Local Instance jsafe_pre_contractive : Contractive jsafe_pre.
 Proof.
   rewrite /jsafe_pre => n jsafe jsafe' Hsafe E z c.
-  do 13 f_equiv.
-  - f_contractive; repeat f_equiv. apply Hsafe.
-  - do 2 f_equiv. f_contractive; repeat f_equiv. apply Hsafe.
+  repeat first [f_contractive | f_equiv]; try apply Hsafe.
 Qed.
 
 Local Definition jsafe_def : coPset -> Z -> C -> iProp Σ := fixpoint jsafe_pre.
@@ -121,12 +119,11 @@ Proof.
     iExists _, _; iSplit; first done.
     iFrame; by iApply "IH".
   - iRight; iRight.
-    iDestruct "H" as (????) "($ & $ & H)".
-    iSplit; first done.
+    iDestruct "H" as (???) "($ & $ & H)".
     iIntros "!>" (????).
     iMod (fupd_mask_subseteq E1) as "Hclose"; first done; iMod ("H" with "[%]") as "H'"; first done; iMod "Hclose" as "_".
-    iIntros "!> S Hpost".
-    iDestruct ("H'" with "S Hpost") as (??) "[? Hpost]"; iExists _; iFrame "%"; iFrame.
+    iIntros "!> Hpost".
+    iDestruct ("H'" with "Hpost") as (??) "[? Hpost]"; iExists _; iFrame "%"; iFrame.
     by iApply "IH".
 Qed.
 
@@ -305,11 +302,11 @@ Qed.
     - iRight; iLeft.
       iMod "H" as (?? H) "H".
       apply Hstep in H; eauto.
-    - rewrite Hat_ext; iDestruct "H" as (????) "(S & Hpre & H)".
-      iRight; iRight; iExists _, _, _; iSplit; first done; iFrame "S Hpre".
+    - rewrite Hat_ext; iDestruct "H" as (???) "(S & Hpre & H)".
+      iRight; iRight; iExists _, _, _; iFrame "S Hpre".
       iNext; iIntros (????).
       iMod ("H" with "[//]") as "H".
-      iIntros "!> S Hpost"; iDestruct ("H" with "S Hpost") as (? Hafter) "$".
+      iIntros "!> Hpost"; iDestruct ("H" with "Hpost") as (? Hafter) "$".
       apply Hafter_ext in Hafter; eauto.
   Qed.
 

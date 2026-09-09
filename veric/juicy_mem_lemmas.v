@@ -454,7 +454,7 @@ Proof.
   iIntros "Hm"; iMod (mapsto_alloc with "Hm") as "[$ H]"; first done.
   rewrite /address_mapsto.
   iExists (replicate (Z.to_nat (hi - lo)) Undef).
-  rewrite (big_sepL_seq (replicate _ _)) replicate_length; setoid_rewrite nth_replicate; iFrame.
+  rewrite (big_sepL_seq (replicate _ _)) length_replicate; setoid_rewrite nth_replicate; iFrame.
   iPureIntro; split; last done.
   split; first by rewrite -Hch.
   split; last done.
@@ -552,7 +552,7 @@ Proof.
   iDestruct "H" as (? Hlen) "H".
   rewrite -(big_sepL_fmap _ (fun i b0 => adr_add (b, lo) i ↦ b0)).
   iApply (mapsto_free with "Hm H"); first done.
-  rewrite fmap_length Hlen //.
+  rewrite length_fmap Hlen //.
 Qed.
 
 Lemma mapsto_free: forall m ch b lo hi m' v (Hch : size_chunk ch = hi - lo),
