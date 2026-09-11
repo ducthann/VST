@@ -241,9 +241,10 @@ clear IHfs H; unfold funspec2jspec; simpl.
 destruct sig; unfold funspec2pre, funspec2post; simpl.
 if_tac; simpl; last done.
 unfold funspec2pre', funspec2post'.
-iIntros "(% & $)".
+iIntros "(% & ?)".
+iExists x; iFrame.
 iSplit; first done.
-iIntros (??) "!> $".
+iIntros (??) "!> H"; by iApply "H".
 }
 
 {
@@ -301,24 +302,13 @@ Proof.
 intros f Hin Hnorepeat.
 unfold semax_external.
 iIntros (ge ????) "!> !> (%Hargsty & Hp & Hf)".
-Print add_funspecs_prepost.
-iIntros "!>" (??) "Hs".
+iIntros "!>" (???) "Hs".
 iDestruct (add_funspecs_prepost _ _ _ _ (genv_symb_injective ge) with "[$Hp]") as (x') "($ & Hpost)"; [done..|].
-iIntros (????).
-iMod ("Hpost" $! _ _) as "Hpost".
-iModIntro.
-iIntros "Hext".
+iFrame; iIntros (?????); iMod ("Hpost" $! _ _) as "Hpost".
+iIntros "!> $ Hext".
 iDestruct ("Hpost" with "Hext") as "HQ".
-
-(* FIX ME *)
-Admitted.
-
-(*
-iIntros "!>" (??) "$".
-iDestruct (add_funspecs_prepost _ _ _ _ (genv_symb_injective ge) with "[$Hp]") as (x') "($ & Hpost)"; [done..|].
-iIntros (????); iMod ("Hpost" $! _ _) as "Hpost".
-iIntros "!> $ H"; iSpecialize ("Hpost" with "H"); iFrame.
-Qed. *)
+iFrame.
+Qed.
 
 Lemma semax_ext (ext_link: Strings.String.string -> ident) id sig sig' cc A E P Q (fs : funspecs) :
   let f := mk_funspec sig cc A E P Q in

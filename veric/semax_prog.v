@@ -989,7 +989,7 @@ Proof.
   intros.
   iIntros "?".
   rewrite /jsafeN jsafe_unfold /jsafe_pre.
-  iIntros "!> % ?"; iLeft.
+  iIntros "!> %% ?"; iLeft.
   iExists Int.zero; iSplit; first by iPureIntro.
   by iFrame; iApply H.
 Qed.
@@ -1076,8 +1076,8 @@ iAssert (rguard OK_spec psi (E a) Delta f0 (frame_ret_assert (normal_ret_assert 
   destruct ek; simpl proj_ret_assert; monPred.unseal; try iDestruct "Q" as (->) "Q"; try iDestruct "Q" as "[]".
   iIntros (??); simpl.
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (?) "(Hm & ?)".
-  iMod (free_stackframe _ f0  _ _ vx tx with "[$Hm]") as (??) "?"; try eassumption; try solve [constructor].
+  iIntros (??) "(Hm & ?)".
+  iMod (free_stackframe _ f0  _ _ vx tx with "[$Hm]") as (???) "?"; try eassumption; try solve [constructor].
   { destruct H as (? & Hmatch & ?); split3; auto.
     split3; simpl; eauto.
     * intros ??; setoid_rewrite Maps.PTree.gempty; done.
@@ -1087,7 +1087,7 @@ iAssert (rguard OK_spec psi (E a) Delta f0 (frame_ret_assert (normal_ret_assert 
       specialize (Hmatch id); rewrite Hid // in Hmatch. }
   { rewrite /stackframe_of /f0 /=.
     by monPred.unseal. }
-  iIntros "!>"; iExists _, _; iSplit.
+  iIntros "!>"; iExists _, _, _; iSplit.
   { iPureIntro; econstructor; eauto. }
   iFrame.
   by iApply return_stop_safe; try iPureIntro. }
@@ -1120,7 +1120,7 @@ Lemma semax_prog_rule {CS: compspecs} :
        (Genv.find_symbol (globalenv prog) (prog_main prog) = Some b) *
        (exists m', semantics.initial_core (cl_core_sem (globalenv prog)) h
                        m q m' (Vptr b Ptrofs.zero) nil) *
-       (state_interp Mem.empty z ∗ funspec_auth ∅ ∗ has_ext z ⊢ |==> state_interp m z ∗ jsafeN OK_spec (globalenv prog) ⊤ z q ∧
+       (forall σ0, state_interp Mem.empty σ0 z ∗ funspec_auth ∅ ∗ has_ext z ⊢ |==> ∃ σ, state_interp m σ z ∗ jsafeN OK_spec (globalenv prog) ⊤ z q ∧
            (*no_locks ∧*) matchfunspecs (globalenv prog) G (*∗ funassert (nofunc_tycontext V G) (empty_environ (globalenv prog))*))
      } }%type.
 Proof.
@@ -1171,8 +1171,8 @@ Proof.
   split; [split |]; auto.
   clear Hinit.
 
-  iIntros "((Hm & $) & Hf & Hz)".
-  iMod (initialize_mem' with "[$Hm $Hf]") as "($ & Hm & Hcore & Hmatch)"; [done..|].
+  iIntros (?) "((Hm & $) & Hf & Hz)".
+  iMod (initialize_mem' with "[$Hm $Hf]") as "((% & $) & Hm & Hcore & Hmatch)"; [done..|].
   iIntros "!>"; iSplit; last done.
   destruct H4 as [post [H4 H4']].
   unfold main_spec_ext' in H4'.

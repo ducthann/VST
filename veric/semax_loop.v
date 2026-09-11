@@ -71,7 +71,7 @@ Proof.
   iIntros (tx vx) "!> H".
   iIntros (??).
   iApply jsafe_step.
-  iIntros (m) "[Hm ?]".
+  iIntros (m ?) "[Hm ?]".
   monPred.unseal.
   iDestruct "H" as "(%TC & (F & P) & fun)".
   unfold expr_true, expr_false, Cnot, lift1 in *.
@@ -81,6 +81,7 @@ Proof.
   rewrite (add_and (▷ _) (▷ _)); last by iIntros "[H _]"; iApply (typecheck_expr_sound with "H").
   iDestruct "P" as "[P >%HTCb]".
   assert (cenv_sub (@cenv_cs CS) psi) by (eapply cenv_sub_trans; destruct HGG; auto).
+  iAssert (mem_auth m) with "[$Hm]" as "Hm".
   iCombine "Hm P" as "H"; rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & H & _)"; iApply (eval_expr_relate(CS := CS) with "[$Hm $H]").
   iDestruct "H" as "(H & >%Heval)".
   rewrite /tc_expr /typecheck_expr /= denote_tc_assert_andp; fold (typecheck_expr(CS := CS)).
@@ -100,7 +101,8 @@ Proof.
   simpl in *; unfold Cop.sem_notbool in *.
   destruct (Cop.bool_val _ _ _) eqn: Hbool_val; inv H10.
   super_unfold_lift.
-  iIntros "!>"; iExists _, _; iSplit.
+  iDestruct "Hm" as (?) "Hm".
+  iIntros "!>"; iExists _, _, _; iSplit.
   - iPureIntro; eapply step_ifthenelse; eauto.
   - iFrame; iNext.
     eapply bool_val_Cop in Hbool_val; eauto; subst.
@@ -169,8 +171,8 @@ Proof.
   iIntros (??).
   set (rho := construct_rho _ _ _).
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (?) "? !>".
-  iExists (State f body (Kloop1 body incr k) vx tx), _; iSplit; first by iPureIntro; constructor.
+  iIntros (??) "? !>".
+  iExists (State f body (Kloop1 body incr k) vx tx), _, _; iSplit; first by iPureIntro; constructor.
   iFrame; iNext.
   iApply assert_safe_jsafe.
   rewrite semax_unfold in H.

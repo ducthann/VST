@@ -179,11 +179,11 @@ Definition semax_external
    ∀ args: list val,
    ■ (⌜Val.has_type_list args (sig_args (ef_sig ef))⌝ ∧
      (P x (filter_genv gx, args) ∗ F) ={E x}=∗
-   ∀ m z, state_interp m z -∗ ∃ x': Jext_spec_type OK_spec ef,
-    (* state_interp m z ∗ *) Jext_spec_pre OK_spec ef x' (genv_symb_injective gx) ts args ∗
-     (*□*) ∀ tret: rettype, ∀ ret: option val, ∀ m': mem, ∀ z': OK_ty,
-      |={E x}=> (* state_interp m' z' -∗ *) Jext_spec_post OK_spec ef x' (genv_symb_injective gx) tret ret -∗
-      state_interp m' z' ∗ Q x (make_ext_rval (filter_genv gx) tret ret) ∗ F).
+   ∀ m σ z, state_interp m σ z -∗ ∃ x': Jext_spec_type OK_spec ef,
+    state_interp m σ z ∗ Jext_spec_pre OK_spec ef x' (genv_symb_injective gx) ts args ∗
+     (*□*) ∀ tret: rettype, ∀ ret: option val, ∀ m': mem, ∀ σ', ∀ z': OK_ty,
+      |={E x}=> state_interp m' σ' z' -∗ Jext_spec_post OK_spec ef x' (genv_symb_injective gx) tret ret -∗
+      state_interp m' σ' z' ∗ Q x (make_ext_rval (filter_genv gx) tret ret) ∗ F).
 
 Lemma Forall2_implication {A B} (P Q:A -> B -> Prop) (PQ:forall a b, P a b -> Q a b):
   forall l t, Forall2 P l t -> Forall2 Q l t.
@@ -216,13 +216,13 @@ Proof.
   iMod (fupd_mask_subseteq (E1 x1)) as "Hmask"; first done.
   iMod ("H" $! _ (F ∗ F1) with "[$P1 $F $F1]") as "H1"; first done.
   iMod "Hmask" as "_".
-  iIntros "!>" (??) "s".
-  iDestruct ("H1" with "s") as (x') "(? & H')".
-  iExists x'; iFrame; iIntros (????).
+  iIntros "!>" (???) "s".
+  iDestruct ("H1" with "s") as (x') "(? & ? & H')".
+  iExists x'; iFrame; iIntros (?????).
   iMod (fupd_mask_subseteq (E1 x1)) as "Hmask"; first done.
-  iMod ("H'" $! _ _ _ _) as "H'".
+  iMod ("H'" $! _ _ _ _ _) as "H'".
   iMod "Hmask" as "_".
-  iIntros "!> Hpost"; iDestruct ("H'" with "Hpost") as "($ & Q1 & $ & F1)".
+  iIntros "!> s Hpost"; iDestruct ("H'" with "s Hpost") as "($ & Q1 & $ & F1)".
   iApply (HQ with "[$F1 $Q1]"); iPureIntro; split; auto.
   destruct tret, ret; auto.
 Qed.

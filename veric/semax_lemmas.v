@@ -1041,12 +1041,12 @@ Proof.
     by inversion 1; constructor.
   - iApply jsafe_step.
     rewrite /jstep_ex.
-    iIntros (m) "? !>".
-    iExists _, m; iFrame; iPureIntro; split; auto; constructor.
+    iIntros (m ?) "? !>".
+    iExists _, m, _; iFrame; iPureIntro; split; auto; constructor.
   - iApply jsafe_step.
     rewrite /jstep.
-    iIntros (m) "? !>".
-    iExists _, m; iFrame; iPureIntro; split; auto; constructor.
+    iIntros (m ?) "? !>".
+    iExists _, m, _; iFrame; iPureIntro; split; auto; constructor.
   - iApply (convergent_controls_jsafe with "H"); simpl; try congruence.
     by inversion 1; constructor.
 Qed.

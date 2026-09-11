@@ -172,7 +172,7 @@ Proof.
   rewrite -(big_opL_fmap VAL (fun i v => mapsto (adr_add (b, ofs) i) (DfracOwn (Share sh)) v)).
   iDestruct (mapsto_lookup_big with "Hm H") as %Hcoh; iPureIntro.
   rewrite -H; intros; specialize (Hcoh i).
-  rewrite fmap_length list_lookup_fmap in Hcoh.
+  rewrite length_fmap list_lookup_fmap in Hcoh.
   destruct (lookup_lt_is_Some_2 bl i) as [? Hi]; first lia.
   rewrite Hi in Hcoh; rewrite /nthbyte Nat2Z.id (nth_lookup_Some _ _ _ _ Hi).
   apply Hcoh; lia.

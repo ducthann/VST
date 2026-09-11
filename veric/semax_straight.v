@@ -57,16 +57,15 @@ iIntros (ora _).
 monPred.unseal.
 iApply jsafe_step.
 rewrite /jstep_ex.
-iIntros (m) "[Hm ?]".
+iIntros (m ?) "[Hm ?]".
 iMod (fupd_mask_subseteq E) as "Hmask"; first done.
-iMod (Hc with "[P $Hm]") as (??? Hstep) ">Hc"; [done..| |].
+iMod (Hc with "[P $Hm]") as (??? Hstep) ">((% & ?) & Q)"; [done..| |].
 { rewrite bi.sep_and_l; iFrame.
   iSplit; last iDestruct "P" as "[_ $]".
   iDestruct "P" as "[(_ & $) _]". }
 iMod "Hmask" as "_"; iIntros "!>".
-destruct Hstep as (? & ? & ?); iExists _, m'; iSplit; first by iPureIntro; eauto.
-iDestruct "Hc" as "(? & Q)"; iFrame.
-iNext.
+destruct Hstep as (? & ? & ?); iExists _, m', _; iSplit; first by iPureIntro; eauto.
+iFrame; iNext.
 iSpecialize ("Hsafe" $! EK_normal None te' ve).
 iPoseProof ("Hsafe" with "[Q $fun]") as "Hsafe'".
 { simpl; subst; iSplit; try done.

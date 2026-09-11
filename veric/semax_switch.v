@@ -168,10 +168,10 @@ Proof.
   rewrite /guard' /_guard /assert_safe.
   iIntros (? _).
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (?) "(Hm & ?) !>".
+  iIntros (??) "(Hm & ?) !>".
   destruct HGG as [CSUB ?]; iDestruct (eval_expr_relate with "[$Hm Q]") as %?; [done.. | |].
   { inversion Htc as [->]; rewrite tc_expr_cenv_sub //. }
-  iExists _, _; iSplit.
+  iExists _, _, _; iSplit.
   { iPureIntro; econstructor; try done.
     erewrite (eval_expr_cenv_sub_Vint CSUB) by done.
     rewrite Hta //. }

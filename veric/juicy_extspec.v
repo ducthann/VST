@@ -69,7 +69,9 @@ Section juicy_safety.
    and to run the underlying semantics without any permissions. But that's a poor fit for VST's approach
    to soundness. Instead, our "authoritative" state is still just the current thread's view of the state. *)
 
-Definition state_interp m z := mem_auth m ∗ ext_auth z.
+(*Definition state_interp m z := mem_auth m ∗ ext_auth z.*)
+Definition mem_rmap_auth m σ := ⌜coherent m σ⌝ ∧ resource_map.resource_map_auth(H1 := gen_heapGpreS_heap(gen_heapGpreS := gen_heap_inG)) (gen_heap_name _) 1 σ.
+Definition state_interp m σ z := mem_rmap_auth m σ ∗ ext_auth z.
 (* Do we even need the external ghost state in this model? Could we just share
    arbitrary resources with the external calls? *)
 
@@ -77,13 +79,13 @@ Definition state_interp m z := mem_auth m ∗ ext_auth z.
    masks, so we can't restrict updates around steps. *)
 Program Definition jsafe_pre
     (jsafe : coPset -d> Z -d> C -d> iPropO Σ) : coPset -d> Z -d> C -d> iPropO Σ := λ E z c,
-  |={E}=> ∀ m, state_interp m z -∗
-      (∃ i, ⌜halted Hcore c i⌝ ∧ state_interp m z ∗ Jext_spec_exit Hspec (Some (Vint i))) ∨
-      (|={E}=> ∃ c' m', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c') ∨
-      (∃ e args x, ⌜at_external Hcore c m = Some (e, args)⌝ ∧ (* state_interp m z ∗ *) Jext_spec_pre Hspec e x (genv_symb ge) (sig_args (ef_sig e)) args ∗
-         ▷ (∀ ret m' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
-          |={E}=> (* state_interp m' z' -∗ *) Jext_spec_post Hspec e x (genv_symb ge) (sig_res (ef_sig e)) ret -∗
-          ∃ c', ⌜after_external Hcore ret c m' = Some c'⌝ ∧ state_interp m' z' ∗ jsafe E z' c')).
+  |={E}=> ∀ m σ, state_interp m σ z -∗
+      (∃ i, ⌜halted Hcore c i⌝ ∧ state_interp m σ z ∗ Jext_spec_exit Hspec (Some (Vint i))) ∨
+      (|={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c') ∨
+      (∃ e args x, ⌜at_external Hcore c m = Some (e, args)⌝ ∧ state_interp m σ z ∗ Jext_spec_pre Hspec e x (genv_symb ge) (sig_args (ef_sig e)) args ∗
+         ▷ (∀ ret m' σ' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
+          |={E}=> state_interp m' σ' z' -∗ Jext_spec_post Hspec e x (genv_symb ge) (sig_res (ef_sig e)) ret -∗
+          ∃ c', ⌜after_external Hcore ret c m' = Some c'⌝ ∧ state_interp m' σ' z' ∗ jsafe E z' c')).
 
 Local Instance jsafe_pre_contractive : Contractive jsafe_pre.
 Proof.
@@ -111,19 +113,19 @@ Proof.
   iIntros (?) "H". iLöb as "IH" forall (z c).
   rewrite !jsafe_unfold /jsafe_pre.
   iMod (fupd_mask_subseteq E1) as "Hclose"; first done; iMod "H"; iMod "Hclose" as "_".
-  iIntros "!>" (?) "?"; iDestruct ("H" with "[$]") as "[H | [H | H]]".
+  iIntros "!>" (??) "?"; iDestruct ("H" with "[$]") as "[H | [H | H]]".
   - by iLeft.
   - iRight; iLeft.
-    iMod (fupd_mask_subseteq E1) as "Hclose"; first done; iMod "H" as (???) "[??]"; iMod "Hclose" as "_".
+    iMod (fupd_mask_subseteq E1) as "Hclose"; first done; iMod "H" as (???) "(? & ? & ?)"; iMod "Hclose" as "_".
     iModIntro.
-    iExists _, _; iSplit; first done.
+    iExists _, _, _; iSplit; first done.
     iFrame; by iApply "IH".
   - iRight; iRight.
-    iDestruct "H" as (???) "($ & $ & H)".
-    iIntros "!>" (????).
+    iDestruct "H" as (???) "($ & $ & $ & H)".
+    iIntros "!>" (?????).
     iMod (fupd_mask_subseteq E1) as "Hclose"; first done; iMod ("H" with "[%]") as "H'"; first done; iMod "Hclose" as "_".
-    iIntros "!> Hpost".
-    iDestruct ("H'" with "Hpost") as (??) "[? Hpost]"; iExists _; iFrame "%"; iFrame.
+    iIntros "!> S Hpost".
+    iDestruct ("H'" with "S Hpost") as (??) "[? Hpost]"; iExists _; iFrame "%"; iFrame.
     by iApply "IH".
 Qed.
 
@@ -162,20 +164,20 @@ Lemma jsafe_local_step:
 Proof.
   intros ?????; iIntros "H".
   rewrite (jsafe_unfold _ _ s1) /jsafe_pre.
-  iIntros "!>" (?) "?".
+  iIntros "!>" (??) "?".
   iRight; iLeft.
-  iModIntro; iExists _, _; iSplit; first done.
+  iModIntro; iExists _, _, _; iSplit; first done.
   by iFrame.
 Qed.
 
-Definition jstep E z c c' := ∀ m, state_interp m z -∗ |={E}=> ∃ m', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c'.
+Definition jstep E z c c' := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
 
-Definition jstep_ex E z c := ∀ m, state_interp m z -∗ |={E}=> ∃ c' m', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' z ∗ ▷ jsafe E z c'.
+Definition jstep_ex E z c := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
 
 Lemma jstep_exists : forall E z c c', jstep E z c c' ⊢ jstep_ex E z c.
 Proof.
   intros; rewrite /jstep /jstep_ex.
-  iIntros "H" (?) "?".
+  iIntros "H" (??) "?".
   iMod ("H" with "[$]") as (??) "?"; eauto.
 Qed.
 
@@ -183,8 +185,8 @@ Lemma jstep_mono : forall E z c1 c2 c', (forall m m', corestep Hcore c1 m c' m' 
   jstep E z c1 c' ⊢ jstep E z c2 c'.
 Proof.
   intros; rewrite /jstep.
-  iIntros "H" (?) "?".
-  iMod ("H" with "[$]") as (??) "?"; eauto 6.
+  iIntros "H" (??) "?".
+  iMod ("H" with "[$]") as (???) "($ & $)"; eauto.
 Qed.
 
 Lemma jsafe_step:
@@ -193,10 +195,10 @@ Lemma jsafe_step:
 Proof.
   intros; iIntros "H".
   rewrite jsafe_unfold /jsafe_pre /jstep_ex.
-  iIntros "!>" (m) "?"; iRight; iLeft.
-  iMod ("H" with "[$]") as (???) "[??]".
+  iIntros "!>" (m ?) "?"; iRight; iLeft.
+  iMod ("H" with "[$]") as (????) "[??]".
   iModIntro.
-  iExists _, _; iSplit; first done.
+  iExists _, _, _; iSplit; first done.
   by iFrame.
 Qed.
 
@@ -207,11 +209,11 @@ Lemma jsafe_step_forward_ex:
 Proof.
   intros; iIntros "H".
   rewrite jsafe_unfold /jsafe_pre.
-  rewrite /jstep_ex; iIntros (m1) "?".
+  rewrite /jstep_ex; iIntros (m1 ?) "?".
   iMod ("H" with "[$]") as "[H | [H | H]]".
   { iDestruct "H" as (??) "?"; exfalso; eapply Hhalt; eauto. }
-  iMod "H" as (???) "H".
-  iIntros "!>"; iExists _, _; iSplit; auto.
+  iMod "H" as (????) "H".
+  iIntros "!>"; iExists _, _, _; iSplit; auto.
   { iDestruct "H" as (????) "?".
     by rewrite Hext in H. }
 Qed.
@@ -224,12 +226,12 @@ Proof.
   intros; iIntros "H".
   rewrite jsafe_unfold /jsafe_pre.
   iMod "H".
-  rewrite /jstep; iIntros "!>" (m1) "?".
+  rewrite /jstep; iIntros "!>" (m1 ?) "?".
   iDestruct ("H" with "[$]") as "[H | [H | H]]".
   { iDestruct "H" as (??) "?"; exfalso; eapply Hhalt; eauto. }
-  iMod "H" as (?? Hstep) "H".
+  iMod "H" as (??? Hstep) "H".
   rewrite -(Hc1 _ _ _ Hstep).
-  iIntros "!>"; iExists _; iSplit; done.
+  iIntros "!>"; iExists _, _; iSplit; done.
   { iDestruct "H" as (??? H) "?".
     by rewrite Hext in H. }
 Qed.
@@ -297,16 +299,17 @@ Qed.
     intros.
     iIntros "H".
     rewrite !jsafe_unfold /jsafe_pre.
-    iMod "H"; iIntros "!>" (?) "?"; iDestruct ("H" with "[$]") as "[H | [H | H]]".
+    iMod "H"; iIntros "!>" (??) "?"; iDestruct ("H" with "[$]") as "[H | [H | H]]".
     - rewrite Hhalted; auto.
     - iRight; iLeft.
-      iMod "H" as (?? H) "H".
+      iMod "H" as (??? H) "($ & $)".
       apply Hstep in H; eauto.
-    - rewrite Hat_ext; iDestruct "H" as (???) "(S & Hpre & H)".
+    - rewrite Hat_ext; iDestruct "H" as (????) "(S & Hpre & H)".
       iRight; iRight; iExists _, _, _; iFrame "S Hpre".
-      iNext; iIntros (????).
+      iSplit => //.
+      iNext; iIntros (?????).
       iMod ("H" with "[//]") as "H".
-      iIntros "!> Hpost"; iDestruct ("H" with "Hpost") as (? Hafter) "$".
+      iIntros "!> S Hpost"; iDestruct ("H" with "S Hpost") as (? Hafter) "$".
       apply Hafter_ext in Hafter; eauto.
   Qed.
 

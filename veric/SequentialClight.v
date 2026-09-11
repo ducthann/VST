@@ -37,7 +37,7 @@ Proof. solve_inG. Qed.
 Lemma init_VST: forall Z `{!VSTGpreS Z Σ} (z : Z),
   ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ _ : gen_heapGS share address resource Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ,
     let H : VSTGS Z Σ := Build_VSTGS _ _ (HeapGS _ _ _ _) _ in
-    (state_interp Mem.empty z ∗ funspec_auth ∅ ∗ has_ext z) ∗ ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta) (gen_meta_name _) 1 ∅.
+    (state_interp Mem.empty empty z ∗ funspec_auth ∅ ∗ has_ext z) ∗ ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta) (gen_meta_name _) 1 ∅.
 Proof.
   intros; iIntros.
   iMod gen_heap_init_names_empty as (??) "(? & ?)".
@@ -60,21 +60,21 @@ Proof.
 Qed.
 
 Definition ext_spec_entails `{!VSTGS OK_ty Σ} (es1 : Jext_spec Σ) (es2 : external_specification mem external_function OK_ty) :=
-  (forall e x1 p tys args z m, state_interp m z ∗ Jext_spec_pre es1 e x1 p tys args ⊢
+  (forall e x1 p tys args z m σ, state_interp m σ z ∗ Jext_spec_pre es1 e x1 p tys args ⊢
      ∃ x2, ⌜ext_spec_pre es2 e x2 p tys args z m⌝ ∧
        ∀ ty ret z' m', ⌜ext_spec_post es2 e x2 p ty ret z' m'⌝ →
-       |==> state_interp m' z' ∗ Jext_spec_post es1 e x1 p ty ret) /\
-  (forall v z m, state_interp m z ∗ Jext_spec_exit es1 v ⊢ ⌜ext_spec_exit es2 v z m⌝).
+       |==> ∃ σ', state_interp m' σ' z' ∗ Jext_spec_post es1 e x1 p ty ret) /\
+  (forall v z m σ, state_interp m σ z ∗ Jext_spec_exit es1 v ⊢ ⌜ext_spec_exit es2 v z m⌝).
 
-Lemma adequacy: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (dry_ext_spec : ext_spec OK_ty) ge z q m n,
+Lemma adequacy: forall `{!VSTGS OK_ty Σ} {OK_spec : Jext_spec Σ} (dry_ext_spec : ext_spec OK_ty) ge z q m σ n,
   ext_spec_entails OK_spec dry_ext_spec →
-  state_interp m z ∗ jsafeN OK_spec ge ⊤ z q ⊢
+  state_interp m σ z ∗ jsafeN OK_spec ge ⊤ z q ⊢
   |={⊤}[∅]▷=>^n ⌜dry_safeN(genv_symb := genv_symb_injective) (cl_core_sem ge) dry_ext_spec ge n z q m⌝.
 Proof.
   intros.
   destruct H as (Hext & Hexit).
   iIntros "(S & Hsafe)".
-  iLöb as "IH" forall (m z q n).
+  iLöb as "IH" forall (m σ z q n).
   destruct n as [|n]; simpl.
   { iPureIntro. constructor. }
   rewrite [in (environments.Esnoc _ "Hsafe" _)]/jsafeN jsafe_unfold /jsafe_pre.
@@ -83,7 +83,7 @@ Proof.
     iDestruct (Hexit with "Hexit") as %?.
     iApply step_fupd_intro; first done; iApply step_fupdN_intro; first done.
     iPureIntro; eapply safeN_halted; eauto.
-  - iDestruct "Hsafe_core" as ">(%c' & %m' & % & s_interp & ▷jsafe)".
+  - iDestruct "Hsafe_core" as ">(%c' & %m' & % & % & s_interp & ▷jsafe)".
     iApply fupd_mask_intro; first done.
     iIntros "Hclose !>"; iMod "Hclose" as "_".
     iSpecialize ("IH" with "[$] [$]").
@@ -104,7 +104,7 @@ Proof.
       iApply step_fupdN_mono; first by do 8 setoid_rewrite bi.pure_forall.
       repeat (setoid_rewrite step_fupdN_plain_forall; last done; [|apply _..]).
       iIntros (ret m' z' n' ????).
-      iMod ("Hpost'" with "[//]") as "(S & H)".
+      iMod ("Hpost'" with "[//]") as "(% & S & H)".
       iApply fupd_mask_intro; first done.
       iIntros "Hclose !>"; iMod "Hclose" as "_".
       iMod ("Hpost" with "[//]") as "Hpost"; iDestruct ("Hpost" with "S H") as (??) "(S & Hsafe)"; [done..|].
@@ -187,7 +187,7 @@ Proof.
   set (HH := Build_VSTGS _ _ (HeapGS _ _ _ _) HE).
   specialize (H HH); specialize (EXIT HH); destruct H.
   eapply (semax_prog_rule _ _ _ _ n) in H as (b & q & (? & ? & Hinit & ->) & Hsafe); [|done..].
-  iMod (Hsafe with "H") as "Hsafe".
+  iMod (Hsafe with "H") as "(% & Hsafe)".
   rewrite bi.and_elim_l.
   iPoseProof (adequacy with "Hsafe") as "Hsafe"; first done.
   iApply step_fupd_intro; first done; iNext.

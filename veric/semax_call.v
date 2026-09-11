@@ -544,8 +544,8 @@ Lemma assert_safe_for_external_call {psi E curf vx ret ret0 tx k z'} :
 Proof.
   iIntros "H".
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (?) "? !>".
-  iExists _, _; iSplit; first by iPureIntro; constructor.
+  iIntros (??) "? !>".
+  iExists _, _, _; iSplit; first by iPureIntro; constructor.
   iFrame.
   by iApply assert_safe_jsafe'.
 Qed.
@@ -606,7 +606,7 @@ iMod ("He" $! psi x1 (F0 rho ∗ F1 rho) (typlist_of_typelist tys) args with "[F
 iMod "Hmask" as "_".
 clear TC8. simpl fst in *. simpl snd in *.
 rewrite /jsafeN jsafe_unfold /jsafe_pre.
-iIntros "!> !>" (?) "s"; iDestruct ("He1" with "s") as (x') "(pre & post)".
+iIntros "!> !>" (??) "s"; iDestruct ("He1" with "s") as (x') "(s & pre & post)".
 destruct Hinline as [Hinline | ?]; last done.
 iRight; iRight; iExists e, _, _; iSplit.
 { iPureIntro; simpl.
@@ -614,12 +614,12 @@ iRight; iRight; iExists e, _, _; iSplit.
 rewrite Eef TTL3; iFrame.
 iDestruct "rguard" as "#rguard".
 iNext.
-iIntros (??? [??]).
+iIntros (???? [??]).
 iMod (fupd_mask_subseteq (nE x1)) as "Hmask"; first done.
-iMod ("post" $! _ _ _ _) as "post".
-iMod "Hmask" as "_"; iIntros "!> H".
+iMod ("post" $! _ _ _ _ _) as "post".
+iMod "Hmask" as "_"; iIntros "!> s H".
 iExists _; iSplit; first done.
-iDestruct ("post" with "H") as "($ & Q & F0 & F)".
+iDestruct ("post" with "s H") as "($ & Q & F0 & F)".
 iDestruct ("Htc" with "[Q]") as %Htc; first by iFrame.
 pose (tx' := match ret,ret0 with
                    | Some id, Some v => Maps.PTree.set id v tx
@@ -955,17 +955,17 @@ Proof.
     iApply (bi.impl_intro_l (_ ∗ _) with "[stack Hsafe]"); last by iSplitL "stack"; [iApply "stack" | iApply "Hsafe"].
     iIntros "H".
     iApply jsafe_step; rewrite /jstep_ex.
-    iIntros (?) "(Hm & ?)".
+    iIntros (??) "(Hm & ?)".
     iAssert ⌜∃ v' : val, Clight.eval_expr psi ve te m e v' ∧ Cop.sem_cast v' (typeof e) (fn_return f) m = Some v⌝ as %(v1 & ? & ?).
-    { iDestruct "H" as "[H _]"; iApply ("H" with "Hm"). }
+    { iDestruct "H" as "[H _]"; iApply ("H" with "[$Hm]"). }
     iDestruct "H" as "(_ & stack & ?)".
-    iMod (free_stackframe with "[$Hm $stack]") as (??) "Hm"; [done..|].
-    iIntros "!>"; iExists _, _; iSplit; last iFrame.
+    iMod (free_stackframe with "[$Hm $stack]") as (???) "Hm"; [done..|].
+    iIntros "!>"; iExists _, _, _; iSplit; last iFrame.
     iPureIntro; rewrite {1}Hcont; econstructor; done.
   - iApply jsafe_step; rewrite /jstep_ex.
-    iIntros (?) "(Hm & ?)".
-    iMod (free_stackframe with "[$Hm $stack]") as (??) "Hm"; [done..|].
-    iIntros "!>"; iExists _, _; iSplit; last iFrame.
+    iIntros (??) "(Hm & ?)".
+    iMod (free_stackframe with "[$Hm $stack]") as (???) "Hm"; [done..|].
+    iIntros "!>"; iExists _, _, _; iSplit; last iFrame.
     iPureIntro; rewrite {1}Hcont; econstructor; done.
 Qed.
 
@@ -1177,15 +1177,15 @@ Proof.
       * rewrite closed_wrt_modvars_Scall //.
       * destruct H18' as [-> _]; rewrite H18 //. }
     iApply jsafe_step; rewrite /jstep_ex.
-    iIntros (?) "(Hm & ?)".
+    iIntros (??) "(Hm & ?)".
     destruct (build_call_temp_env f args) as (te & Hte).
     { rewrite /= in H18; rewrite H18 map_length // in Hlen. }
-    iMod (alloc_stackframe with "Hm") as (?? [??]) "(Hm & stack)"; [try done.. |].
+    iMod (alloc_stackframe with "[$Hm]") as (?? [??]) "((% & Hm) & stack)"; [try done.. |].
     { unfold var_sizes_ok in Hvars.
       rewrite !Forall_forall in Hvars, COMPLETE |- *.
       intros v H0. specialize (COMPLETE v H0). specialize (Hvars v H0).
       rewrite (cenv_sub_sizeof CSUB); auto. }
-    iIntros "!>"; iExists _, _; iSplit.
+    iIntros "!>"; iExists _, _, _; iSplit.
     { apply list_norepet_append_inv in H17 as (? & ? & ?).
       iPureIntro; constructor; constructor; done. }
     iFrame.
@@ -1256,17 +1256,18 @@ Proof.
   iDestruct (believe_exists_fundef with "Bel") as %[ff [H16 H16']]; [done..|].
   rewrite <- Genv.find_funct_find_funct_ptr in H16.
   rewrite /jsafeN jsafe_unfold /jsafe_pre.
-  iIntros "!>" (?) "(Hm & ?)".
+  iIntros "!>" (??) "(Hm & ?)".
   iRight; iLeft.
   rewrite (add_and (_ ∧ ▷ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "((_ & H) & _)"; destruct GuardEnv; iApply (tc_eval_exprlist with "H").
   iDestruct "H" as "(H & >%TC8)".
+  iAssert (mem_auth m) with "[$Hm]" as "Hm".
   iCombine "Hm H" as "H".
   rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & (H & _) & _)"; destruct GuardEnv; iApply (eval_expr_relate with "[$Hm $H]").
   iDestruct "H" as "[H >%EvalA']".
   rewrite -(@TTL5 clientparams); rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & (_ & H) & _)"; destruct GuardEnv; iApply (eval_exprlist_relate' with "[$Hm $H]").
   iDestruct "H" as "[H >%Hargs]".
-  rewrite TTL5 in Hargs |- *; iDestruct "H" as "(Hm & H)".
-  iIntros "!>"; iExists _, _; iSplit.
+  rewrite TTL5 in Hargs |- *; iDestruct "H" as "((% & Hm) & H)".
+  iIntros "!>"; iExists _, _, _; iSplit.
   { iPureIntro; eapply step_call with (vargs:=args); subst; eauto.
     rewrite EvalA //. }
   iDestruct "H" as "(_ & F0 & P)".
