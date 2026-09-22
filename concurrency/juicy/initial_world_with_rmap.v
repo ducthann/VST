@@ -165,11 +165,11 @@ Section initial_world_with_rmap_lemmas.
 
   (** ** Exposing the selected authoritative resource map *)
 
-  Definition frag_mem_auth q (m : mem) (σ : rmap) : iProp Σ :=
+  Definition frag_mem_auth (m : mem) (σ : rmap) : iProp Σ :=
     ⌜coherent m σ /\ mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝ ∧
       resource_map.resource_map_auth
         (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
-        (gen_heap_name heapGS_gen_heapGS) q%Qp σ.
+        (gen_heap_name heapGS_gen_heapGS) 1%Qp σ.
   
   Lemma frag_mem_auth_set (m : mem) (σ : rmap) (Hvalid : ✓ σ)
     (Hnext : forall loc, (loc.1 >= Mem.nextblock m)%positive -> (σ !! loc = None)%stdpp)
@@ -177,7 +177,7 @@ Section initial_world_with_rmap_lemmas.
     (Hperm : mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)):
     mem_auth Mem.empty
       ⊢ |==>
-      frag_mem_auth 1 m σ ∗
+      frag_mem_auth m σ ∗
       ([∗ map] l ↦ x ∈ σ,
         match x with
         | shared.YES dq _ v =>
@@ -210,7 +210,7 @@ Section initial_world_with_rmap_lemmas.
       mem_auth Mem.empty ∗ funspec_auth ∅
         ⊢ |==>
         (∃ σ : rmap,
-            frag_mem_auth 1 m σ ∗
+            frag_mem_auth m σ ∗
               ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝) ∗
         funspec_auth (init_funspecs m ge G) ∗ inflate_initial_mem m block_bounds ge G.
   Proof.
@@ -247,7 +247,7 @@ Section initial_world_with_rmap_lemmas.
       mem_auth Mem.empty ∗ funspec_auth ∅
         ⊢ |==>
         (∃ σ : rmap,
-            frag_mem_auth 1 m σ ∗ ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝) ∗
+            frag_mem_auth m σ ∗ ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝) ∗
         inflate_initial_mem m (block_bounds prog) (Genv.globalenv prog) G ∗
         initial_core_clight m (Genv.globalenv prog) G ∗
         matchfunspecs (Clight.globalenv prog) G.
