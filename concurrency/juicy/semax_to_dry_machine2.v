@@ -3818,6 +3818,225 @@ Qed.
     (* prove separately *)
   Admitted. *)
 
+  Lemma permjoin_perm_union_exists_no_WR
+    (p q r : option permission) :
+    permjoin_def.permjoin p q r ->
+    ~ (p = Some Writable /\ q = Some Readable) ->
+    ~ (p = Some Readable /\ q = Some Writable) ->
+    exists u, perm_union p q = Some u.
+  Proof.
+    intros Hj HWR HRW.
+    destruct p as [p |];
+      destruct q as [q |].
+    - destruct p; destruct q;
+        simpl in *;
+        try solve [eexists; reflexivity];
+        try solve [inversion Hj];
+        try solve [
+            exfalso; apply HWR; split; reflexivity
+          ];
+        try solve [
+            exfalso; apply HRW; split; reflexivity
+          ].
+    - eexists; reflexivity.
+    - eexists; reflexivity.
+    - eexists; reflexivity.
+  Qed.
+
+  Search writable0_share dshare.DfracOwn.
+
+  Definition writable_dfrac (dq : dshare.dfrac) : Prop :=
+    match dq with
+    | dshare.DfracOwn (Share sh) => writable0_share sh
+    | _ => False
+    end.
+
+  Lemma lookup_Some_VAL_from_perm_Writable σ loc :
+    ✓ (σ : resource_map.rmapUR _ _ _) -> perm_of_res (σ @ loc) = Some Writable ->
+    exists (dq : dshare.dfrac) (rsh : readable_dfrac dq) (v0 : agree (leibnizO resource)),
+    σ !! loc = Some (shared.YES dq rsh v0) /\ writable_dfrac dq.
+ Proof.
+   intros Hv HW.
+   rewrite /resource_at /resR_to_resource in HW.
+
+   destruct (σ !! loc) as [s |] eqn:Hlk.
+   - destruct s as [dq rsh v0 | sh0 rsh0].
+    + (* YES *)
+      exists dq, rsh, v0.
+      split; auto.
+      destruct dq as [sc | sc].
+      * (* DfracOwn *)
+        destruct sc as [sh |].
+        -- (* DfracOwn (Share sh) *)
+           rewrite Hlk in HW.
+           simpl in HW.
+           destruct (resource_map.elem_of_agree (A := leibnizO resource) v0) as [x Hx] eqn:He.
+           rewrite He in HW.
+           destruct x; simpl in HW.
+           ++ rewrite /perm_of_sh in HW.
+              repeat if_tac in HW;
+                try contradiction;
+                try discriminate;
+                assumption.
+           ++ destruct (eq_dec sh Share.bot);
+                discriminate.
+           ++ destruct (eq_dec sh Share.bot);
+                discriminate.
+        -- (* DfracOwn ShareBot *)
+           simpl in rsh.
+           contradiction.
+      * (* DfracBoth *)
+        destruct sc as [sh |].
+        -- (* DfracBoth (Share sh) *)
+           exfalso.
+           pose proof Hv as Hv1.
+           specialize (Hv1 loc).
+           rewrite Hlk Some_valid in Hv1.
+           apply shared.shared_valid in Hv1 as [Hdq _].
+           change (✓ dshare.DfracBoth (Share sh)) in Hdq.
+           destruct Hdq as (sh' & Hsh' & Hnw).
+           inversion Hsh'; subst sh'; clear Hsh'.
+           change (~ writable0_share sh) in Hnw.
+           simpl in HW.
+           destruct (resource_map.elem_of_agree (A := leibnizO resource) v0) as [x Hx] eqn:He.
+           rewrite Hlk in HW.
+           simpl in HW.
+           rewrite He in HW.
+           destruct x; simpl in HW.
+           ++ rewrite (perm_of_sh_clamped_readable sh Hnw) in HW.
+              discriminate.
+           ++ discriminate.
+           ++ discriminate.
+        -- (* DfracBoth ShareBot *)
+           simpl in rsh.
+           contradiction.
+    + (* NO *)
+      destruct sh0 as [sh |].
+      * simpl in HW.
+        rewrite Hlk in HW.
+        cbn [resR_to_resource shared.dfrac_of shared.val_of option_map] in HW.
+        rewrite /perm_of_res /perm_of_sh' /perm_of_sh in HW.
+        destruct (writable0_share_dec sh) as [Hw | Hnw].
+        ++ exfalso.
+           apply rsh0.
+           change (readable_share sh).
+           by apply writable0_readable.
+        ++ repeat if_tac in HW;
+             try contradiction;
+             discriminate.
+      * simpl in HW.
+        rewrite Hlk in HW.
+        simpl in HW. inv HW.
+  - (* lookup = None *)
+    simpl in HW.
+    destruct (eq_dec Share.bot Share.bot) as [_ | Hneq].
+    + rewrite Hlk in HW. simpl in HW. if_tac in HW. inv HW. inv HW.
+    + contradiction.
+ Qed.
+ 
+
+  Lemma lookup_Some_VAL_from_perm_Readable σ loc :
+    perm_of_res (σ @ loc) = Some Readable ->
+    exists (dq : dshare.dfrac)
+           (rsh : readable_dfrac dq)
+           (v0 : agree (leibnizO resource)),
+      σ !! loc = Some (shared.YES dq rsh v0).
+  Proof.
+    rewrite /resource_at /resR_to_resource.
+    destruct (σ !! loc) as [s |] eqn:Hlk; simpl.
+    - destruct s as [dq rsh v0 | sh rsh].
+      + intros _.
+        exists dq, rsh, v0. done.
+      + intros H.
+        rewrite /perm_of_res in H.
+        destruct sh as [sh |]; simpl in H;
+          repeat if_tac in H; try discriminate.
+    - intros H.
+      rewrite /perm_of_res in H.
+      repeat if_tac in H; try discriminate.
+  Qed.
+
+  Lemma writable_readable_dfrac_excl dq1 dq :
+    writable_dfrac dq1 -> readable_dfrac dq -> ~ ✓ (dq1 ⋅ dq).
+  Proof.
+    intros Hw Hr.
+    assert (Hwdf : forall dq, writable_dfrac dq ->
+                         exists sh, dq = dshare.DfracOwn (Share sh) /\ writable0_share sh).
+    { intros dq0 Hw0.
+      destruct dq0; destruct s; try done.
+      by exists sh.
+    }
+    apply Hwdf in Hw.
+    destruct Hw as (sh & Heq & Hw).
+    intros Hcontra.
+    subst dq1.
+    rewrite ora_comm in Hcontra.
+    apply dfrac_valid_own_readable in Hcontra; auto.
+    destruct Hcontra as (sh' & Hsh & Hnw).
+    by inv Hsh.
+  Qed.
+
+  Lemma valid_rmap_op_not_WR (σ1 σ2 : resource_map.rmapUR share address (leibnizO resource))
+    (b : positive) (ofs : Z) (Hvalid : ✓ (σ1 ⋅ σ2)) :
+    ~ ((perm_of_rmap σ1) # b ofs = Some Writable /\ (perm_of_rmap σ2) # b ofs = Some Readable).
+  Proof.
+    intros [HW HR].
+    rewrite perm_of_rmap_lookup in HW.
+    rewrite perm_of_rmap_lookup in HR.
+    assert (Hv1 : ✓ σ1).
+    { eapply cmra_valid_op_l; exact Hvalid. }
+    assert (Hv2 : ✓ σ2).
+    { eapply cmra_valid_op_r; exact Hvalid. }
+    destruct (lookup_Some_VAL_from_perm_Writable σ1 (b, ofs) Hv1 HW)
+      as (dq1 & rsh1 & v1 & Hlk1 & Hw1).
+    destruct (lookup_Some_VAL_from_perm_Readable σ2 (b, ofs) HR)
+      as (dq2 & rsh2 & v2 & Hlk2).
+    pose proof Hvalid as Hv.
+    specialize (Hv (b, ofs)).
+    rewrite gmap.lookup_op in Hv.
+    rewrite Hlk1 Hlk2 in Hv.
+    rewrite -Some_op in Hv.
+    rewrite shared.YES_op' in Hv.
+    destruct (shared.readable_dfrac_dec (dq1 ⋅ dq2)) as [rsh12 | Hnread] eqn:Hdec.
+    - rewrite Some_valid in Hv.
+      apply shared.shared_valid in Hv as [Hdq _].
+      eapply (writable_readable_dfrac_excl dq1 dq2); auto.
+    - rewrite Some_valid in Hv; done.
+  Qed.
+
+  Lemma perm_of_rmap_op_permMapsDisjoint
+    (σ0R σlock : resource_map.rmapUR share address (leibnizO resource))
+    (Hvalid : ✓ (σ0R ⋅ σlock)) :
+    permMapsDisjoint (perm_of_rmap σlock) (perm_of_rmap σ0R).
+  Proof.
+    unfold permMapsDisjoint.
+    intros b ofs.
+    pose proof ((perm_of_rmap_op_permMapJoin σ0R σlock Hvalid) b ofs) as Hj.
+    eapply permjoin_perm_union_exists_no_WR; auto.
+    - apply Hj.
+    - intros [HW HR].
+      eapply (valid_rmap_op_not_WR σlock σ0R b ofs); auto.
+      rewrite comm; done.
+    - intros [HR HW].
+      eapply (valid_rmap_op_not_WR σ0R σlock b ofs); auto.
+  Qed.
+
+  Lemma rmap_frag_permMapsDisjoint (γ : gname) (q1 q2 : Qp)
+    (σ1 σ2 : resource_map.rmapUR share address (leibnizO resource)) :
+    rmap_frag γ q1 σ1 ∗ rmap_frag γ q2 σ2 ⊢ ⌜permMapsDisjoint (perm_of_rmap σ1) (perm_of_rmap σ2)⌝.
+  Proof.
+    rewrite /rmap_frag.
+    iIntros "(H1 & H2)".
+    iPoseProof (own_valid_2 with "H1 H2") as "Hv".
+  Admitted.
+
+(*
+  Lemma invariant_acquire_ghost γ (tp : dtp) tp' m ls (i : nat) :
+    threads_safe tp' γ ∗ lock_state1 γ m ls (lockRes tp') ⊢
+    ⌜invariant tp'⌝ ∧ threads_safe tp' γ ∗ lock_state1 γ m ls (lockRes tp').
+  Proof.
+    Search permMapsDisjoint permMapJoin. *)
+
   Lemma acquire_safe (γ : gname) (tp : dtp) (m : mem) (ls : gset address) (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp) (Hcompat : mem_compatible tp m)
     (Hlocks : locks_coherent tp m ls) (cnti : containsThread tp i)
     (Hlt : permMapLt (perm_of_rmap σ1) (getMaxPerm m))
@@ -3923,6 +4142,8 @@ Qed.
       iDestruct "Hacquire" as (Hlt_store) "(Hmem_post & Hauth_post & Hfrag_post &
                                           Hls_store & Hl & HR)".
       set (σpost := σ1R ⋅ σlock).
+      
+      
       set (m_thread' := restrPermMap Hlt_store).
       iAssert (thread_state_interp γ (getCurPerm m_thread') q m_thread' σpost ())
         with "[Hmem_post Hauth_post Hfrag_post Hext]" as "Hstate".
@@ -4044,11 +4265,20 @@ frag_mem_auth            rmap_frag
         symmetry.
         apply (Hcompute b).
       }
-      
+      Print rmap_frag.
       set (l1' := (l1.1, Ptrofs.intval (Ptrofs.repr l1.2))).
       set (tp' := updLockSet (updThread cnti (Kresume c Vundef) newThreadPerm) l1' empty_map).
+      (* iPoseProof (own_valid_2 with "Hfrag_post Hfrag_y") as "%Hv".
+      change (✓ (◯F{q} σpost ⋅ ◯F{q0} σ0)) in Hv.
+      apply frac_auth_frag_op_valid in Hv.
+      destruct Hv as [_ Hvalid_post_y]. *)
+
+
+      
       iAssert (threads_safe tp' γ) with "[Hsafe Hjsafe Hfrag_post]" as "Hthreads".
-      { rewrite /threads_safe.
+      {
+
+        rewrite /threads_safe.
         assert (Hnum : pos.n (OrdinalPool.num_threads tp') = pos.n (OrdinalPool.num_threads tp)).
         { subst tp'; auto. }
         rewrite Hnum.
@@ -4085,7 +4315,8 @@ frag_mem_auth            rmap_frag
           assert (c'' = c').
           { change (Some (Returnstate Vundef k) = Some c') in Hafter.
             rewrite Hafter in Hafter''. inv Hafter''. done. }
-          rewrite H //. }
+          rewrite H //.
+      }
       set (ev := Events.acquire l1' (Some (build_delta_content δ m_global'))).
       iExists tp', m_global', ev, σnew2.
       rewrite /lock_state1.
@@ -4207,7 +4438,14 @@ frag_mem_auth            rmap_frag
               split; auto.
             * rewrite gsoThreadCode; auto.
               apply Htp_wf.
-          + 
+          + split.
+            pose proof (perm_of_rmap_op_permMapsDisjoint σ1 σlock Hvalid_join) as Hdisj.
+            destruct Hlock_holds as [l0' [Hlock_eq Heq_lock]].
+            unfold tp'.
+            constructor.
+            ++ intros i0 j cnti0 cntj Hneq.
+               
+            unfold invariant.
 
   Admitted.
       
