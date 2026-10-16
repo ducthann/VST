@@ -3971,6 +3971,8 @@ frag_mem_auth            rmap_frag
           f_equal.
           eapply Mem.mkmem_ext; simpl; reflexivity.
         - unfold permMapJoin.
+          Check lock_state1.
+          Print threads_safe.
           intros b ofs.
           assert (Hlock : forall b ofs, l0 # b ofs = (perm_of_rmap σlock) # b ofs).
           { admit. }
