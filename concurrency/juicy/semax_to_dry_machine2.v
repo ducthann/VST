@@ -4798,13 +4798,67 @@ frag_mem_auth            rmap_frag
                 pose proof (cntUpdateL' _ _ cntj) as cntj_upd.
                 destruct (Nat.eq_dec j i) as [Hji | Hji].
                 ++ subst j.
-                   Print nonEmptyRangeCur .
                    unfold nonEmptyRangeCur.
                    intros z Hz.
                    rewrite restrPermMap_Cur_eq.
                    rewrite (gLockSetRes _ _ cntj_upd cntj).
                    rewrite (gssThreadRes cnti (Kresume c Vundef) newThreadPerm cntj_upd).
+                   assert (Hσlock_locks :
+                            forall l' z,
+                              l' ∈ ls ->
+                              (0 <= z < Z.of_nat (size_chunk_nat Mptr))%Z ->
+                              Mem.perm_order'' (Some Nonempty)
+                                ((perm_of_rmap σlock) # (l'.1) (l'.2 + z)%Z)).
+                   {
+                     admit.
+                   }
+                   pose proof (Hlocks' l' Hl') as (_ & _ & Hrange).
+                   pose proof (Hrange i cnti (compat_th tp m Hcompat cnti)) as Hold.
+                   unfold nonEmptyRangeCur in Hold.
+                   specialize (Hold z Hz).
+                   rewrite restrPermMap_Cur_eq in Hold.
+                   assert (Hσ1 : (perm_of_rmap σ1) # (l'.1) (l'.2 + z)%Z = Some Nonempty).
+                   { unfold mem_equiv.access_map_equiv in Heq1.
+                     specialize (Heq1 l'.1).
+                     by rewrite Heq1.
+                   }
+                   pose proof (Hσlock_locks l' z Hl' Hz) as Hlock.
+                   pose proof (Hjoin_rmap l'.1 (l'.2 + z)%Z) as Hjoin.
+                   unfold mem_equiv.access_map_equiv in Heq_acq.
+                   specialize (Heq_acq l'.1).
+                   rewrite <- Heq_acq.
+                   rewrite Hσ1 in Hjoin.
+                   destruct ((perm_of_rmap σlock) # (l'.1) (l'.2 + z)%Z) as [p |] eqn:HpL.
+                   *** destruct p; simpl in Hlock; try contradiction;
+                       rewrite HpL in Hlock; inv Hlock.
+                       inversion Hjoin; subst; reflexivity.
+                       inversion Hjoin; subst; reflexivity.
+                   *** inversion Hjoin; reflexivity.
+                ++ assert (Hij : i <> j) by congruence.
 
+                   assert (cntj_old : containsThread tp j).
+                   {
+                     eapply cntUpdate'.
+                     exact cntj_upd.
+                   }
+
+                   destruct (Hlocks' l' Hl') as (_ & _ & Hrange_old).
+
+                   pose proof (compat_th tp m Hcompat cntj_old) as Hp_old.
+                   specialize (Hrange_old j cntj_old Hp_old).
+
+                   unfold nonEmptyRangeCur in Hrange_old |- *.
+                   intros z Hz.
+                   specialize (Hrange_old z Hz).
+                   rewrite (restrPermMap_Cur_eq m_global' (getThreadR cntj) Hp
+                              (l'.1) (l'.2 + z)%Z).
+                   rewrite (gLockSetRes _ _ cntj_upd cntj).
+                   erewrite @gsoThreadRes with (cntj := cntj_old); eauto.
+                   rewrite (restrPermMap_Cur_eq m (getThreadR cntj_old) Hp_old
+                              (l'.1) (l'.2 + z)%Z) in Hrange_old.
+                   done.
+                }
+                iPureIntro.
                    
   Admitted.
   
@@ -4817,6 +4871,8 @@ frag_mem_auth            rmap_frag
     iMod (own_update_2 with "Hauth Hfrag") as "[Hauth Hfrag]"; try by apply frac_auth_update_1.
     iModIntro. iFrame.
   Qed.
+
+  
   
 End conc_heap.
 
