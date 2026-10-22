@@ -1139,6 +1139,10 @@ Section conc_heap.
     ∃ σ0 : rmap, ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) p⌝ ∧
       frag_mem_auth m σ0 ∗ rmap_auth γ σ0 ∗ rmap_frag γ q σ ∗ ext_auth z.
 
+  Definition lock_rmap_nonempty_on (ls : gset address) (σ : rmap) : Prop :=
+    forall l' z, l' ∈ ls -> (0 <= z < Z.of_nat (size_chunk_nat Mptr))%Z ->
+      Mem.perm_order'' (Some Nonempty) ((perm_of_rmap σ) # (l'.1) (l'.2 + z)%Z).
+
   Definition lock_state1 `{!lockGS Σ} `{!inG Σ rmap_authUR} (γ : gname) (m : mem) (ls : gset address) (IR : address -> option access_map) : mpred :=
     ∃ I : gmap address mpred,
       <affine> ⌜dom I = ls ∧ lock_addresses_disjoint ls⌝ ∗
@@ -1148,7 +1152,8 @@ Section conc_heap.
     (∃ (qL : Qp) (σlock : rmap) (l0 : access_map),
         rmap_frag γ qL σlock ∗
         <affine>⌜IR a = Some l0 ∧ mem_equiv.access_map_equiv l0 (perm_of_rmap σlock) ∧
-          Mem_load_unchecked Mptr m a.1 a.2 = Vptrofs Ptrofs.one⌝ ∗ ▷ R) ∨
+          Mem_load_unchecked Mptr m a.1 a.2 = Vptrofs Ptrofs.one ∧
+          lock_rmap_nonempty_on ls σlock⌝ ∗ ▷ R) ∨
       (* locked *)
       (∃ qL : Qp, rmap_frag γ qL (∅ : raw_rmapR) ∗
                   <affine>⌜IR a = Some empty_map ∧ Mem_load_unchecked Mptr m a.1 a.2 = Vptrofs Ptrofs.zero⌝).
@@ -3211,7 +3216,7 @@ Section conc_heap.
     lock_inv sh l R -∗ lock_state1 γ m ls IR  -∗
     resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name heapGS_gen_heapGS) 1 σcur -∗ rmap_auth γ σcur -∗ rmap_frag γ q σ1 ==∗
     ∃ σlock σnew : rmap, ⌜✓ (σ1R ⋅ σlock) ∧
-                           exists l0 : access_map, IR l1 = Some l0 ∧ mem_equiv.access_map_equiv l0 (perm_of_rmap σlock)⌝ ∧
+                           exists l0 : access_map, IR l1 = Some l0 ∧ mem_equiv.access_map_equiv l0 (perm_of_rmap σlock) ∧ lock_rmap_nonempty_on ls σlock⌝ ∧
     ∃ Hlt_store : permMapLt (perm_of_rmap (σ1R ⋅ σlock)) (getMaxPerm m_global'),
       frag_mem_auth (restrPermMap Hlt_store) σnew ∗ rmap_auth γ σnew ∗ rmap_frag γ q (σ1R ⋅ σlock)
       ∗ lock_state1 γ m_global' ls IR' ∗ lock_inv sh l R ∗ ▷ R.
@@ -3236,7 +3241,7 @@ Section conc_heap.
     rewrite (big_sepM_delete _ _ l1); eauto.
     iDestruct "HRs" as "[Hhere Hrest]".
     iDestruct "Hhere" as "[Hhere | Hhere]".
-    - iDestruct "Hhere" as (qL σlock l0) "(Hlockfrag & (%HIRl1 & %Heq_lock & %Hload0) & HR)".
+    - iDestruct "Hhere" as (qL σlock l0) "(Hlockfrag & (%HIRl1 & %Heq_lock & %Hload0 & %Hσlock_locks) & HR)".
       subst Q.
       simpl.
       iAssert (▷ R)%I with "[Heq HR]" as "HR".
@@ -3290,7 +3295,8 @@ Section conc_heap.
             * rewrite Hrepr. done.
             * rewrite Hrepr. done. }
           iDestruct "Hk" as "[Hk | Hk]".
-          - iDestruct "Hk" as (qL0 σlock0 l00) "(Hf & (%HIR0_lock & %Heq0 & %Hone) & Hy)".
+        - iDestruct "Hk" as (qL0 σlock0 l00)
+                              "(Hf & (%HIR0_lock & %Heq0 & %Hone & %Hnonempty0) & Hy)".
             iLeft.
             iExists qL0, σlock0, l00.
             iFrame.
@@ -3371,7 +3377,6 @@ Section conc_heap.
           rewrite !restrPermMap_nextblock in Hge.
           rewrite Hnext_post.
           exact Hge.
-
         - split.
           + unfold contents_cohere, contents_at in Hcontents |- *.
             rewrite !restrPermMap_contents in Hcontents |- *.
@@ -3449,8 +3454,6 @@ Section conc_heap.
     - eexists; reflexivity.
     - eexists; reflexivity.
   Qed.
-
-  Search writable0_share dshare.DfracOwn.
 
   Definition writable_dfrac (dq : dshare.dfrac) : Prop :=
     match dq with
@@ -3985,9 +3988,8 @@ Section conc_heap.
        *)
       iMod (lock_acquire_rmap_update γ q m ls (lockRes tp) l l1 sh R σcur σ1 Hval Ho Hofs Hltσcur Hσcur
              with "Hl Hls Hrs Hauth Hfrag") as "Hacquire".
-
       iDestruct "Hacquire" as (σlock σnew) "(%Hσlock & Hacquire)".
-      destruct Hσlock as [Hvalid_join Hlock_holds].
+      destruct Hσlock as (Hvalid_join & Hlock_holds & Hσlock_locks).
       iDestruct "Hacquire" as (Hlt_store) "(Hmem_post & Hauth_post & Hfrag_post &
                                           Hls_store & Hl & HR)".
       set (σpost := σ1R ⋅ σlock).
@@ -4158,7 +4160,7 @@ frag_mem_auth            rmap_frag
         iIntros (a R0 Hlookup) "Ha".
         iDestruct "Ha" as "[Ha | Ha]".
         - iLeft.
-          iDestruct "Ha" as (qL σlock0 l0') "(HfragL & (%HIR0 & %Heq0 & %Hload0) & HR0)".
+          iDestruct "Ha" as (qL σlock0 l0') "(HfragL & (%HIR0 & %Heq0 & %Hload0 & %Hnonempty0) & HR0)".
           iExists qL, σlock0, l0'.
           iFrame "HfragL".
           iSplit.
@@ -4217,9 +4219,6 @@ frag_mem_auth            rmap_frag
             rewrite Hafter in Hafter''. inv Hafter''. done. }
           rewrite H //.
       }
-      Check two_rmap_frags_disjoint.
-
-      
       set (ev := Events.acquire l1' (Some (build_delta_content δ m_global'))).
       iExists tp', m_global', ev, σnew2.
       rewrite /lock_state1.
@@ -4253,7 +4252,7 @@ frag_mem_auth            rmap_frag
         iDestruct "H" as "[Hlocked | Hunlocked]"; try by iRight.
         - (* unlocked *)
           iLeft.
-          iDestruct "Hlocked" as (qL σlock0 l2) "(Hfrag & (%HIR & %Heq_lock & %Hload) & HR)".
+          iDestruct "Hlocked" as (qL σlock0 l2) "(Hfrag & (%HIR & %Heq_lock & %Hload & %Hnonempty) & HR)".
           iExists qL, σlock0, l2.
           iFrame.
           iPureIntro; auto.
@@ -4308,10 +4307,11 @@ frag_mem_auth            rmap_frag
           eapply Mem.mkmem_ext; simpl; reflexivity.
         - unfold permMapJoin.
           intros b ofs.
-          destruct Hlock_holds as (l0' & Hl0' & Heq_lock).
-          assert (Hl0eq : l0' = l0) by congruence.
-          subst l0'.
-          assert (Hlock : forall b ofs,
+          destruct Hσlock_locks as (Hlock_eq & Heq_lock & Hσlock_locks).
+          assert (Hl0eq : Hlock_holds = l0) by congruence.
+          subst Hlock_holds.
+          assert (Hlock :
+                   forall b ofs,
                      l0 # b ofs = (perm_of_rmap σlock) # b ofs).
           {
             intros b0 ofs0.
@@ -4321,7 +4321,8 @@ frag_mem_auth            rmap_frag
           }
           rewrite (Hlock b ofs).
           assert (Hthread : (getThreadR cnti) # b ofs = (perm_of_rmap σ1R) # b ofs).
-          { unfold σ1R.
+          {
+            unfold σ1R.
             unfold mem_equiv.access_map_equiv in Heq1.
             specialize (Heq1 b).
             exact (f_equal (fun f => f ofs) (eq_sym Heq1)).
@@ -4342,35 +4343,34 @@ frag_mem_auth            rmap_frag
               split; auto.
             * rewrite gsoThreadCode; auto.
               apply Htp_wf.
-          + assert (Hjoin_rmap :
-                     permMapJoin
-                       (perm_of_rmap σlock)
-                       (perm_of_rmap σ1)
-                       (perm_of_rmap σpost)).
+          + assert (Hjoin_rmap:
+                     permMapJoin (perm_of_rmap σlock) (perm_of_rmap σ1) (perm_of_rmap σpost)).
             {
               unfold σpost, σ1R.
               apply perm_of_rmap_op_permMapJoin.
               exact Hvalid_join.
             }
+            destruct Hσlock_locks as
+              [Hlock_eq [Heq_lock Hσlock_nonempty]].
+            assert (Hl0eq : Hlock_holds = l0) by congruence.
+            subst Hlock_holds.
+            unfold lock_rmap_nonempty_on in Hσlock_nonempty.
+
             split.
-            destruct Hlock_holds as [l0' [Hlock_eq Heq_lock]].
+
             assert (Hjoin_acq :
-                     permMapJoin l0' (getThreadR cnti) newThreadPerm).
+                     permMapJoin l0 (getThreadR cnti) newThreadPerm).
             {
               unfold permMapJoin in *.
               intros b ofs.
               specialize (Hjoin_rmap b ofs).
-
-              unfold mem_equiv.access_map_equiv in
-                Heq_lock, Heq, Heq_acq.
-
+              unfold mem_equiv.access_map_equiv in Heq_lock, Heq_acq.
               specialize (Heq_lock b).
-              specialize (Heq b).
               specialize (Heq_acq b).
 
-              rewrite Heq_lock.
-              rewrite <- Heq.
-              rewrite <- Heq_acq.
+              rewrite (f_equal (fun f => f ofs) Heq_lock).
+              rewrite <- (f_equal (fun f => f ofs) (Heq1 b)).
+              rewrite <- (f_equal (fun f => f ofs) Heq_acq).
               exact Hjoin_rmap.
             }
             assert (HinvL : invariant (updLockSet tp l1' empty_map)).
@@ -4462,7 +4462,7 @@ frag_mem_auth            rmap_frag
               rewrite Hl1' in Hres.
               destruct (eq_dec l2 l1) as [Heq2 | Hneq2].
               ** subst l2.
-                 pose proof (locks_data_lock_coh tp Hinvariant l1 l0' Hlock_eq) as [Hthr Hlocks].
+                 pose proof (locks_data_lock_coh tp Hinvariant l1 l0 Hlock_eq) as [Hthr Hlocks].
                  eapply permjoin_nonempty_bound; eauto.
               ** assert (Hres0 : lockRes tp l2 = Some rmap).
                  { rewrite gsoLockRes in Hres; auto. }
@@ -4525,15 +4525,6 @@ frag_mem_auth            rmap_frag
                    rewrite restrPermMap_Cur_eq.
                    rewrite (gLockSetRes _ _ cntj_upd cntj).
                    rewrite (gssThreadRes cnti (Kresume c Vundef) newThreadPerm cntj_upd).
-                   assert (Hσlock_locks :
-                            forall l' z,
-                              l' ∈ ls ->
-                              (0 <= z < Z.of_nat (size_chunk_nat Mptr))%Z ->
-                              Mem.perm_order'' (Some Nonempty)
-                                ((perm_of_rmap σlock) # (l'.1) (l'.2 + z)%Z)).
-                   {
-                     admit.
-                   }
                    pose proof (Hlocks' l' Hl') as (_ & _ & Hrange).
                    pose proof (Hrange i cnti (compat_th tp m Hcompat cnti)) as Hold.
                    unfold nonEmptyRangeCur in Hold.
@@ -4544,15 +4535,16 @@ frag_mem_auth            rmap_frag
                      specialize (Heq1 l'.1).
                      by rewrite Heq1.
                    }
-                   pose proof (Hσlock_locks l' z Hl' Hz) as Hlock.
+                   pose proof (Hσlock_nonempty l' z Hl' Hz) as Hlock.
                    pose proof (Hjoin_rmap l'.1 (l'.2 + z)%Z) as Hjoin.
+
                    unfold mem_equiv.access_map_equiv in Heq_acq.
                    specialize (Heq_acq l'.1).
-                   rewrite <- Heq_acq.
+                   rewrite <- (f_equal (fun f => f (l'.2 + z)%Z) Heq_acq).
                    rewrite Hσ1 in Hjoin.
                    destruct ((perm_of_rmap σlock) # (l'.1) (l'.2 + z)%Z) as [p |] eqn:HpL.
                    *** destruct p; simpl in Hlock; try contradiction;
-                       rewrite HpL in Hlock; inv Hlock.
+                         rewrite HpL in Hlock; inv Hlock.
                        inversion Hjoin; subst; reflexivity.
                        inversion Hjoin; subst; reflexivity.
                    *** inversion Hjoin; reflexivity.
@@ -4584,7 +4576,7 @@ frag_mem_auth            rmap_frag
       split; [apply H4|].
       split; [apply H5|].
       apply H. 
-  Admitted.
+  Qed.
   
   Lemma rmap_auth_init_frag 
     (γ : gname) (σ : resource_map.rmapUR share address (leibnizO resource)) :
@@ -4841,7 +4833,7 @@ Proof.
         iIntros (a R Ha) "H".
         iDestruct "H" as "[Hunlocked | Hlocked]".
         - iLeft.
-          iDestruct "Hunlocked" as (qL σlock l0) "(Hfrag & (%HIR & %Heq & %Hload) & HR)".
+          iDestruct "Hunlocked" as (qL σlock l0) "(Hfrag & (%HIR & %Heq & %Hload & %Hnonempty) & HR)".
           iExists qL, σlock, l0.
           iFrame "Hfrag HR".
           iPureIntro.
