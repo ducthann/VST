@@ -3817,10 +3817,7 @@ Section conc_heap.
 
   Lemma acquire_safe (γ : gname) (tp : dtp) (m : mem) (ls : gset address) (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp) (Hcompat : mem_compatible tp m)
     (Hlocks : locks_coherent tp m ls)
-    (Hlockdom :
-      forall a r,
-        lockRes tp a = Some r ->
-        a ∈ ls)
+    (Hlockdom : forall a r, lockRes tp a = Some r -> a ∈ ls)
     (cnti : containsThread tp i)
     (Hlt : permMapLt (perm_of_rmap σ1) (getMaxPerm m))
     (Heq1 : mem_equiv.access_map_equiv (perm_of_rmap σ1) (getThreadR cnti))
@@ -3836,10 +3833,8 @@ Section conc_heap.
     |={⊤}[∅]▷=>
       ∃ (tp' : t) (m' : mem) (ev : Events.sync_event) (σnew : rmap),
         ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-          locks_coherent tp' m' ls ∧ 
-          (forall a r,
-              lockRes tp' a = Some r ->
-              a ∈ ls) ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
+          locks_coherent tp' m' ls ∧ (forall a r, lockRes tp' a = Some r -> a ∈ ls) ∧
+          syncStep true cnti Hcompat tp' m' ev⌝ ∧
    ext_auth () ∗ rmap_auth γ σnew ∗ frag_mem_auth m' σnew ∗ threads_safe tp' γ ∗
      lock_state1 γ m' ls (lockRes tp').
   Proof.
@@ -3880,7 +3875,123 @@ Section conc_heap.
     { destruct l1; simpl; by rewrite Hofs. }
     destruct H as [[Ho Hl0_empty] | Ho].
     - (* acquire fails *)
-      admit.
+      assert (Hstep_fail :
+               syncStep true cnti Hcompat tp m
+                 (Events.failacq
+                    (l1.1, Ptrofs.intval (Ptrofs.repr l1.2)))).
+      {
+        eapply step_acqfail with (c := c) (b := l1.1) (ofs := Ptrofs.repr l1.2)
+          (marg := restrPermMap (Hcompat i cnti)); try done.
+        - subst c. rewrite Hl1 //.
+        - unfold unchecked_load; simpl.
+          rewrite Hofs.
+          by f_equal.
+      }
+      iAssert (jsafe_frag γ q ⊤ () c) with "[Hl Hpost]" as "Hjsafe".
+      {
+        rewrite jsafe_frag_unfold /jsafe_frag_pre.
+        iModIntro.
+        (* external-call case again *)
+        iIntros (m0 σ0 p0) "S0".
+        (* keep the state unchanged *)
+        iDestruct "S0" as (σcur0) "(%Heq0 & Hmem0 & Hauth0 & Hfrag0 & Hext0)".
+        iAssert (frag_mem_auth m0 σcur0 ∧
+                   ⌜✓ (σcur0 : resource_map.rmapUR share address (leibnizO resource))⌝)%I
+          with "[Hmem0]" as "[Hmem0 %Hvalid_cur0]".
+        {
+          iSplit; first done.
+          rewrite /frag_mem_auth.
+          iDestruct "Hmem0" as (?) "(_ & Hrs0)".
+          by iDestruct (resource_map.resource_map_auth_valid with "Hrs0") as "(_ & %Hv)".
+        }
+        iDestruct "Hmem0" as "(%Hltσcur0 & %Hσcur0 & Hrs0)".
+        iAssert ((rmap_auth γ σcur0 ∗ rmap_frag γ q σ0) ∧
+                   ⌜✓ σ0 ∧ permMapLt (perm_of_rmap σ0) (perm_of_rmap σcur0)⌝)%I
+          with "[Hauth0 Hfrag0]" as "[(Hauth0 & Hfrag0) %Hfrag_valid]".
+        { iSplit; iFrame.
+          iApply (rmap_auth_frag_permMapLt_valid γ q σcur0 σ0); auto. iFrame. }
+        destruct Hfrag_valid as (Hvalidσ0 & Hσ0_cur0).
+        assert (Hlt1 : permMapLt (perm_of_rmap σ0) (getMaxPerm m0)).
+        { etransitivity; eauto. }
+        iExists Hlt1.
+        iRight; iRight.
+        iExists LOCK, [l], x.
+        iSplit.
+        { iPureIntro. rewrite /c /= //. }
+        (* rebuild thread_state_interp *)
+        iAssert (frag_mem_auth m0 σcur0) with "[Hrs0]" as "Hmem0".
+        { rewrite /frag_mem_auth. iExists Hltσcur0; iSplit; try done. }
+        rewrite /thread_state_interp.
+        iSplitL "Hmem0 Hauth0 Hfrag0 Hext0".
+        { iExists σcur0; iSplit; try done. iFrame. }
+        iSplitL "Hl".
+        - rewrite CEspec_acquire_pre /=.
+          iExists (l, sh, R).
+          iSplit; try done.
+          rewrite /funspec2pre' /=.
+          iSplit; try iPureIntro; rewrite Hl1 //.
+          rewrite /PROPx /PARAMSx /GLOBALSx /LOCALx /SEPx /=.
+          monPred.unseal.
+          repeat iSplit; try iPureIntro; try done.
+        - iNext.
+          rewrite /c.
+          setoid_rewrite CEspec_acquire_post. iFrame.
+      }
+      iAssert (threads_safe tp γ) with "[Hsafe Hjsafe Hfrag]" as "Hthreads".
+      { rewrite /threads_safe.
+        iApply "Hsafe".
+        - (* every non-selected thread: unchanged *)
+          iIntros "!>" (k0 y) "%Hlookup %Hneq Hy". iFrame.
+        - (* selected thread i: still blocked at c *)
+          iExists q, σ1, cnti.
+          iFrame.
+          iSplitR "Hjsafe"; try iPureIntro; try done.
+          rewrite /thread_safe.
+          iExists cnti.
+          rewrite Hi. done.
+      }
+      rewrite step_fupd_fupd.
+      iApply step_fupd_intro; first done.
+      iNext.
+      iExists tp, m, (Events.failacq (l1.1, Ptrofs.intval (Ptrofs.repr l1.2))), σcur.
+      iModIntro.
+      iSplit.
+      + iPureIntro.
+        repeat split.      
+        * apply Htp_wf.
+        * apply Hinvariant.
+        * intros; eapply no_race_lr; eauto.
+        * intros; eapply no_race; eauto.
+        * intros j cntj.
+          destruct (locks_data_lock_coh tp Hinvariant laddr rmap Hres) as (Hthreads & Hlocks).
+          apply (Hthreads j cntj).
+        * intros.
+          destruct (locks_data_lock_coh tp Hinvariant laddr rmap Hres) as (_ & Hlocks).
+          eapply Hlocks; eauto.
+        * apply lockRes_valid; done.
+        * intros. apply Hcompat.
+        * intros l2 pmaps Hres.
+          apply (compat_lp tp m Hcompat l2 pmaps Hres).
+        * intros l2 rmap Hres.
+          apply (lockRes_blocks tp m Hcompat l2 rmap Hres).
+        * destruct (Hlocks' l2 H) as (Hnonempty & _); try done.
+        * destruct (Hlocks' l2 H) as (_ & Hstate & _). done.
+        * destruct (Hlocks' l2 H) as (_ & _ & Hrange). done.
+        * intros a r Hr. eapply Hlockdom; eauto.
+        * apply Hstep_fail.
+     + iFrame.
+       rewrite /lock_state1.
+       iDestruct "Hls" as (I) "(Hdom & Hown & Hmap)".
+       iExists I.
+       iFrame.
+       iApply (big_sepM_mono with "Hmap").
+       iIntros (a R0 Hlookup) "Ha".
+       iDestruct "Ha" as "[Ha | Ha]".
+       * iLeft.
+         iDestruct "Ha" as (qL σlock l2) "(HfragL & Hpure & HR)".
+         iExists qL, σlock, l2.
+         iFrame. done.
+       * iRight; try done.
     - (* acquire succeeds *)
       iDestruct "Hmem" as "(%Hltσcur & %Hσcur & Hrs)".
       set (ret := (None : option val)).
@@ -4079,8 +4190,15 @@ frag_mem_auth            rmap_frag
         - iRight.
           iExact "Ha".
       }
-      (* iPoseProof (lock_resources_post_disjoint γ m_global' ls IRpost σnew2 σpost q newThreadPerm
-           Hvalid_new Heq_acq with "[$Hauth_post $Hfrag_post $Hls_store]") as "%Hnr_locks". *)
+      iPoseProof (lock_resources_post_disjoint γ m_global' ls IRpost σnew2 σpost q newThreadPerm
+           Hvalid_new Heq_acq with "[$Hauth_post $Hfrag_post $Hls_store]") as "%Hnr_locks".
+      {
+        intros a r HIR.
+        unfold IRpost in HIR.
+        destruct (decide (a = l1)) as [Heq2 | Hneq2].
+        - subst a. done.
+        - eapply Hlockdom. apply HIR.
+      }
       iAssert (threads_safe tp' γ) with "[Hsafe Hjsafe Hfrag_post]" as "Hthreads".
       { rewrite /threads_safe.
         assert (Hnum : pos.n (OrdinalPool.num_threads tp') = pos.n (OrdinalPool.num_threads tp)).
@@ -4394,6 +4512,17 @@ frag_mem_auth            rmap_frag
              { by unfold locks_coherent. }
              unfold tp'.
              rewrite Hl1eq.
+             split; last first.
+             (* Hlockdom after acquire *)
+             intros a r Hres.
+             destruct (eq_dec a l1) as [Heq2 | Hneq2].
+             { subst a. done. }
+             { simpl in Hres.
+               rewrite OrdinalPool.gsoLockRes in Hres; auto.
+               change (lockRes tp a = Some r) in Hres.
+               eapply Hlockdom; eauto.
+             }
+             (* locks_coherent *)
              eapply locks_coherent_acquire_update with
                (tp := tp) (m := m) (i := i) (cnti := cnti) (c := c)
                (newThreadPerm := newThreadPerm) (l := l1); eauto.
@@ -4408,9 +4537,7 @@ frag_mem_auth            rmap_frag
                 replace (l1.1, Ptrofs.unsigned (Ptrofs.repr l1.2)) with l1; auto.
                 destruct l1 as [b ofs].
                 simpl in *.
-                destruct l' as [b' ofs']; simpl in *.
-                change ((b', ofs') <> (b, Ptrofs.Z_mod_modulus ofs)).
-                rewrite Hofs. done.
+                destruct l' as [b' ofs']; simpl in *. done.
              ** intros l' Hl' j cntj Hp.
                 pose proof (cntUpdateL' _ _ cntj) as cntj_upd.
                 destruct (Nat.eq_dec j i) as [Hji | Hji].
@@ -4452,18 +4579,14 @@ frag_mem_auth            rmap_frag
                        inversion Hjoin; subst; reflexivity.
                    *** inversion Hjoin; reflexivity.
                 ++ assert (Hij : i <> j) by congruence.
-
                    assert (cntj_old : containsThread tp j).
                    {
                      eapply cntUpdate'.
                      exact cntj_upd.
                    }
-
                    destruct (Hlocks' l' Hl') as (_ & _ & Hrange_old).
-
                    pose proof (compat_th tp m Hcompat cntj_old) as Hp_old.
                    specialize (Hrange_old j cntj_old Hp_old).
-
                    unfold nonEmptyRangeCur in Hrange_old |- *.
                    intros z Hz.
                    specialize (Hrange_old z Hz).
