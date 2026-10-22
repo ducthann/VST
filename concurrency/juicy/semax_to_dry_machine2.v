@@ -3823,8 +3823,8 @@ Section conc_heap.
     (Heq1 : mem_equiv.access_map_equiv (perm_of_rmap σ1) (getThreadR cnti))
     (argsty : typelist) (retty : type) (cc : calling_convention) (k : cont) (args : list val)
     (Hi : getThreadC cnti = Kblocked (Callstate (Ctypes.External LOCK argsty retty cc) args k))
-    (Hcoh : coherent (restrPermMap Hlt) σ1)
-    (Hlt0 : permMapLt (perm_of_rmap σ1) (getMaxPerm (restrPermMap Hlt)))
+    (* (Hcoh : coherent (restrPermMap Hlt) σ1) *)
+    (* (Hlt0 : permMapLt (perm_of_rmap σ1) (getMaxPerm (restrPermMap Hlt))) *)
     (x : Jext_spec_type (concurrent_ext_spec CS ext_link) LOCK):
   ⊢ other_threads_safe γ tp i -∗
     Jext_spec_pre (concurrent_ext_spec CS ext_link) LOCK x (genv_symb_injective ge) (sig_args (ef_sig LOCK)) args -∗
@@ -3877,19 +3877,16 @@ Section conc_heap.
     - (* acquire fails *)
       assert (Hstep_fail :
                syncStep true cnti Hcompat tp m
-                 (Events.failacq
-                    (l1.1, Ptrofs.intval (Ptrofs.repr l1.2)))).
+                 (Events.failacq (l1.1, Ptrofs.intval (Ptrofs.repr l1.2)))).
       {
         eapply step_acqfail with (c := c) (b := l1.1) (ofs := Ptrofs.repr l1.2)
           (marg := restrPermMap (Hcompat i cnti)); try done.
         - subst c. rewrite Hl1 //.
         - unfold unchecked_load; simpl.
-          rewrite Hofs.
-          by f_equal.
+          rewrite Hofs. by f_equal.
       }
       iAssert (jsafe_frag γ q ⊤ () c) with "[Hl Hpost]" as "Hjsafe".
-      {
-        rewrite jsafe_frag_unfold /jsafe_frag_pre.
+      { rewrite jsafe_frag_unfold /jsafe_frag_pre.
         iModIntro.
         (* external-call case again *)
         iIntros (m0 σ0 p0) "S0".
@@ -3955,32 +3952,13 @@ Section conc_heap.
       iNext.
       iExists tp, m, (Events.failacq (l1.1, Ptrofs.intval (Ptrofs.repr l1.2))), σcur.
       iModIntro.
-      iSplit.
+      iSplit; try iFrame.
       + iPureIntro.
-        repeat split.      
-        * apply Htp_wf.
-        * apply Hinvariant.
-        * intros; eapply no_race_lr; eauto.
-        * intros; eapply no_race; eauto.
-        * intros j cntj.
-          destruct (locks_data_lock_coh tp Hinvariant laddr rmap Hres) as (Hthreads & Hlocks).
-          apply (Hthreads j cntj).
-        * intros.
-          destruct (locks_data_lock_coh tp Hinvariant laddr rmap Hres) as (_ & Hlocks).
-          eapply Hlocks; eauto.
-        * apply lockRes_valid; done.
-        * intros. apply Hcompat.
-        * intros l2 pmaps Hres.
-          apply (compat_lp tp m Hcompat l2 pmaps Hres).
-        * intros l2 rmap Hres.
-          apply (lockRes_blocks tp m Hcompat l2 rmap Hres).
-        * destruct (Hlocks' l2 H) as (Hnonempty & _); try done.
-        * destruct (Hlocks' l2 H) as (_ & Hstate & _). done.
-        * destruct (Hlocks' l2 H) as (_ & _ & Hrange). done.
-        * intros a r Hr. eapply Hlockdom; eauto.
-        * apply Hstep_fail.
-     + iFrame.
-       rewrite /lock_state1.
+        split; [apply Htp_wf|].
+        split; [apply Hinvariant|].
+        split; [apply Hcompat|].
+        split; try done.
+     + rewrite /lock_state1.
        iDestruct "Hls" as (I) "(Hdom & Hown & Hmap)".
        iExists I.
        iFrame.
@@ -4598,8 +4576,14 @@ frag_mem_auth            rmap_frag
                               (l'.1) (l'.2 + z)%Z) in Hrange_old.
                    done.
                 }
-                iPureIntro.
-                   
+      iPureIntro.
+      destruct Hstep as (? & ? & ? & ? & ? & ?).
+      split; [apply H1|].
+      split; [apply H2|].
+      split; [apply H3|].
+      split; [apply H4|].
+      split; [apply H5|].
+      apply H. 
   Admitted.
   
   Lemma rmap_auth_init_frag 
@@ -4633,8 +4617,6 @@ frag_mem_auth            rmap_frag
     iFrame.
     rewrite big_sepM_empty. done.
   Qed.
-
-  
   
 End conc_heap.
 
@@ -5006,6 +4988,21 @@ Proof.
     destruct (ef_inline ext); inv Hat_ext.
     destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
     + (* acquire *)
+      iApply (acquire_safe with "Hsafe Hpre Hpost locks S"); auto.
+    + 
+
+
+
+
+
+
+
+
+
+
+
+
+      
       
 
     
