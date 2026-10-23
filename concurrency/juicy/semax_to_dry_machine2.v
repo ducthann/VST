@@ -853,29 +853,7 @@ Proof.
   rewrite fmap_empty.
   iSplitL => //.
 Qed.  
-
-Lemma init_conc_VST: forall Z `{!VSTGpreS Z Σ} `{!inG Σ (gmap_view.gmap_viewR address (laterO (iPropO Σ)))} m (z : Z),
-  ⊢ |==> ∀ _ : invGS_gen HasNoLc Σ, ∃ HH : conc_gen_heapGS Σ, ∃ _ : funspecGS Σ, ∃ _ : externalGS Z Σ, ∃ HL : lockGS Σ, ∃ γ0 γl γm,
-    let H : conc_VSTGS Z Σ := ConcVSTGS _ _ (ConcHeapGS _ _ _ _) _ _ in
-    (thread_state_interp γ0 Mem.empty z ∗ funspec_auth ∅ ∗ has_ext z) ∗
-    ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta(gen_heapGpreS := conc_gen_heap_inG)) (@conc_gen_meta_name _ HH) 1 ∅ ∗
-    lock_state γl m ∅ ∗ thread_mem_auth γl Mem.empty ∗
-    ghost_map.ghost_map_auth(H0 := gen_heapGpreS_meta(gen_heapGpreS := conc_gen_heap_inG)) γm 1 ∅.
-Proof.
-  intros; iIntros.
-  iMod gen_heap_init_names_empty as (??) "(? & ?)".
-  iMod (own_alloc(A := gmap_view.gmap_viewR address (@funspecO' Σ)) (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) ∅)) as (γf) "?".
-  { apply gmap_view.gmap_view_auth_valid. }
-  iMod (ext_alloc z) as (?) "(? & ?)".
-  iMod gen_heap_init_names_empty as (γl ?) "(? & ?)".
-  iMod (locks_init) as (?) "HL".
-  iIntros "!>" (?).
-  iExists (ConcGenHeapGS _ _ γm), (FunspecG _ _ γf), _, _, γh, γl, γm0.
-  iFrame.
-  pose proof (empty_coherent Mem.empty); repeat iSplit => //.
-Qed.
-(* end concurrency setup *)
-*)
+ *)
 
 Ltac absurd_ext_link_naming :=
   exfalso;
@@ -4271,15 +4249,11 @@ frag_mem_auth            rmap_frag
       }
       iPureIntro.
       destruct Hstep as (? & ? & ? & ? & ? & ?).
-      split; [apply H1|].
-      split; [apply H2|].
-      split; [apply H3|].
-      split; [apply H4|].
-      split; [apply H5|].
-      apply H. 
+      split; done.
   Qed.
   
-  Lemma rmap_auth_init_frag  (γ : gname) (σ : resource_map.rmapUR share address (leibnizO resource)) :
+  Lemma rmap_auth_init_frag (γ : gname)
+    (σ : resource_map.rmapUR share address (leibnizO resource)) :
     ✓ σ → rmap_auth γ (∅ : rmap) ∗ rmap_frag γ 1 (∅ : rmap) ==∗ rmap_auth γ σ ∗ rmap_frag γ 1 σ.
   Proof.
     iIntros (Hvalid) "[Hauth Hfrag]".
@@ -4299,8 +4273,7 @@ frag_mem_auth            rmap_frag
     { apply map_empty.
       intros a.
       apply not_elem_of_dom.
-      rewrite Hdom. done.
-    }
+      rewrite Hdom. done. }
     iExists (∅ : gmap address mpred).
     rewrite fmap_empty big_sepM_empty.
     iSplit; auto.
@@ -4309,7 +4282,6 @@ frag_mem_auth            rmap_frag
   Qed.
 
   (** release **)
-
   Lemma rmap_frag_equiv_local `{!inG Σ rmap_authUR} (γ : gname) (q : Qp)
     (σ1 σ2 : resource_map.rmapUR share address (leibnizO resource)) :
     σ1 ≡ σ2 -> rmap_frag γ q σ1 ⊣⊢ rmap_frag γ q σ2.
@@ -4332,7 +4304,7 @@ frag_mem_auth            rmap_frag
   Qed.
 
   Definition rmap_entry_nonempty (x : address * shared.sharedR (leibnizO resource)) : Prop :=
-  perm_of_res (resR_to_resource (Some x.2)) = Some Nonempty.
+    perm_of_res (resR_to_resource (Some x.2)) = Some Nonempty.
 
   Local Instance rmap_entry_nonempty_dec (x : address * sresR) : Decision (rmap_entry_nonempty x).
   Proof.
@@ -4395,44 +4367,6 @@ frag_mem_auth            rmap_frag
     rewrite Heq. done.
   Qed.
 
-  Lemma rmap_lock_part_nonempty_on (ls : gset address) (σ : rmap)
-    (Hexact :forall l z, l ∈ ls -> (0 <= z < Z.of_nat (size_chunk_nat Mptr))%Z ->
-         (perm_of_rmap σ) # (l.1) (l.2 + z)%Z = Some Nonempty) :
-    lock_rmap_nonempty_on ls (rmap_lock_part σ).
-  Proof.
-    unfold lock_rmap_nonempty_on.
-    intros l z Hl Hz.
-    specialize (Hexact l z Hl Hz).
-    rewrite perm_of_rmap_lookup in Hexact |- *.
-    unfold resource_at in Hexact |- *.
-    destruct (σ !! (l.1, (l.2 + z)%Z)) as [r |] eqn:Hloc.
-    - assert (Hentry : rmap_entry_nonempty ((l.1, (l.2 + z)%Z), r)).
-      { unfold rmap_entry_nonempty; by rewrite Hloc in Hexact. }
-      unfold rmap_lock_part.
-      rewrite perm_of_rmap_lookup /resource_at map_lookup_filter Hloc /=.
-      rewrite option_guard_True; try done.
-      rewrite /rmap_entry_nonempty // in Hentry.
-      rewrite Hentry.
-      apply perm_refl.
-    - rewrite Hloc /= in Hexact.
-      repeat if_tac in Hexact; try done.
-  Qed.
-
-  Lemma release_rmap_split (tp : dtp) (m : mem) (ls : gset address)
-    (Hcompat : mem_compatible tp m) (Hlocks : locks_coherent tp m ls) (i : nat)
-    (cnti : containsThread tp i) (σ : resource_map.rmapUR share address (leibnizO resource))
-    (Heq : mem_equiv.access_map_equiv (perm_of_rmap σ) (getThreadR cnti)) :
-    exists (σkeep σlock : resource_map.rmapUR share address (leibnizO resource)),
-      σ ≡ σkeep ⋅ σlock /\ lock_rmap_nonempty_on ls σlock.
-  Proof.
-    pose proof (thread_rmap_lock_bytes_nonempty tp m ls Hcompat Hlocks i cnti σ Heq) as Hnonempty.
-    exists (rmap_keep_part σ), (rmap_lock_part σ).
-    split.
-    - eapply rmap_nonempty_partition.
-    - apply rmap_lock_part_nonempty_on.
-      apply Hnonempty.
-  Qed.
-
   Lemma rmap_keep_part_nonempty_on (ls : gset address) (σ : rmap)
     (Hexact : forall l z, l ∈ ls -> (0 <= z < Z.of_nat (size_chunk_nat Mptr))%Z ->
          (perm_of_rmap σ) # (l.1) (l.2 + z)%Z = Some Nonempty) :
@@ -4451,21 +4385,7 @@ frag_mem_auth            rmap_frag
       simpl; if_tac; try done.
     - rewrite /rmap_keep_part perm_of_rmap_lookup /resource_at map_lookup_filter Hloc /=.
       if_tac; try done.
-  Qed.
-  
-  Lemma release_rmap_split_for_release (tp : dtp) (m : mem) (ls : gset address)
-    (Hcompat : mem_compatible tp m) (Hlocks : locks_coherent tp m ls) (i : nat)
-    (cnti : containsThread tp i) (σ : resource_map.rmapUR share address (leibnizO resource))
-    (Heq : mem_equiv.access_map_equiv (perm_of_rmap σ) (getThreadR cnti)) :
-    exists (σthread σlock : resource_map.rmapUR share address (leibnizO resource)),
-      (σ : raw_rmapR) ≡ (σthread ⋅ σlock : raw_rmapR) /\ lock_rmap_nonempty_on ls σlock.
-  Proof.
-    pose proof (thread_rmap_lock_bytes_nonempty tp m ls Hcompat Hlocks i cnti σ Heq) as Hnonempty.
-    exists (rmap_lock_part σ), (rmap_keep_part σ).
-    split.
-    - rewrite comm; apply rmap_nonempty_partition.
-    - apply rmap_keep_part_nonempty_on; auto. 
-  Qed.
+  Qed. 
 
   Lemma Mem_load_unchecked_store_unchecked_lock_addresses_disjoint_val
     (m : mem) (ls : gset address) (b b1 : Values.block) (o o1 : Z) (v : val) :
@@ -4488,8 +4408,130 @@ frag_mem_auth            rmap_frag
       exfalso. by apply Hbad.
     - rewrite Maps.PMap.gso; congruence.
   Qed.
+
+  Lemma lock_release_rmap_update `{!VSTGS () Σ} `{!lockGS Σ} `{!inG Σ rmap_authUR}
+    (γ : gname) (q : Qp) (m : mem) (ls : gset address) (IR : address -> option access_map)
+    (l : val) (l1 : address) (sh : share) (R : oFunctor_car (dependent_type_functor_rec Mpred) (iProp Σ) (iProp Σ)) (σcur σ1 σthread σlock : resource_map.rmapUR share address (leibnizO resource)) (Hval : val2adr l l1) (Hl1mem : l1 ∈ ls)
+    (Hload0 : Mem_load_unchecked Mptr m l1.1 l1.2 = Vptrofs Ptrofs.zero)
+    (Hsplit : (σ1 : raw_rmapR) ≡ (σthread ⋅ σlock : raw_rmapR))
+    (Hσlock_nonempty : lock_rmap_nonempty_on ls σlock) :
+    let m_global' := Mem_store_unchecked Mptr m l1.1 l1.2 (Vptrofs Ptrofs.one) in
+    let IRpost : address -> option access_map :=
+      fun a => if decide (a = l1) then Some (perm_of_rmap σlock) else IR a in
+    lock_inv sh l R -∗ R -∗ lock_state1 γ m ls IR -∗ frag_mem_auth m σcur -∗ rmap_frag γ q σ1 ==∗      ⌜IR l1 = Some empty_map ∧ Mem_load_unchecked Mptr m_global' l1.1 l1.2 = Vptrofs Ptrofs.one ∧
+      (forall a : address, a ∈ ls -> a <> l1 ->
+         Mem_load_unchecked Mptr m_global' a.1 a.2 = Mem_load_unchecked Mptr m a.1 a.2)⌝ ∧
+    frag_mem_auth m_global' σcur ∗ rmap_frag γ q σthread ∗ lock_state1 γ m_global' ls IRpost ∗
+      lock_inv sh l R.
+  Proof.
+    intros m_global' IRpost.
+    iIntros "Hl HR Hls Hmem Hfrag".
+    iDestruct "Hls" as (I) "((%Hdom & %Hldisj) & HI & Hmap)".
+    iDestruct "Hl" as (a) "(%Hva & Hlk & Hinv)".
+    assert (Ha : a = l1).
+    { unfold val2adr in Hva, Hval. destruct l; try contradiction; congruence. }
+    subst a.
+    assert (HinI : l1 ∈ dom I).
+    { by rewrite Hdom. }
+    apply elem_of_dom in HinI.
+    destruct HinI as (R0 & HIlookup).
+    iDestruct (own_valid_2 (A := gmap_view.gmap_viewR address (laterO (iPropO Σ)))
+                with "HI Hinv") as "#Hvalid".
+    iDestruct (algebra.gmap_view_both_validI with "[$Hvalid]") as "(_ & #HeqR)".
+    rewrite lookup_fmap HIlookup option_equivI /= later_equivI.
+    iDestruct (big_sepM_delete _ _ l1 R0 HIlookup with "Hmap") as "[Hhere Hrest]".
+    iDestruct "Hhere" as "[Hfree | Hheld]".
+    { iDestruct "Hfree" as (qL σL pL) "(HfragL & (%HIR & %Hperm & %Hone & %Hnonempty) & HRold)".
+      rewrite Hload0 in Hone.
+      inv Hone.
+    }
+    iDestruct "Hheld" as (qL) "(HemptyL & (%HIRempty & %Hzero))".
+    iDestruct (rmap_frag_lock_split γ q qL σ1 σthread σlock Hsplit with "[$Hfrag $HemptyL]")
+      as "[Hfrag_thread Hfrag_lock]".
+    (* Prepare the memory assertion expected by the store lemma. *)
+    iDestruct "Hmem" as (Hltσcur) "(%Hcohσcur & Hrs)".
+    pose proof (mem_equiv.useful_permMapLt_trans Hltσcur Hltσcur) as Hlt_pre.
+    iAssert (frag_mem_auth (restrPermMap Hltσcur) σcur) with "[Hrs]" as "Hmem_pre".
+    { rewrite /frag_mem_auth.
+      iExists Hlt_pre.
+      iFrame "Hrs".
+      iPureIntro.
+      rewrite (restrPermMap_idem Hlt_pre).
+      replace (restrPermMap (permMapLt_restr Hlt_pre)) with (restrPermMap Hltσcur); auto.
+      apply restr_proof_irr.
+    }
+    (* Store 1; the global rmap remains σcur. *)
+    iMod (frag_mem_auth_store_unchecked_lock_zero_restr m σcur Hltσcur sh l1.1 l1.2 (Vptrofs Ptrofs.one) with "Hmem_pre Hlk") as (Hlt_store) "[Hmem_store Hlk]".
+    iPoseProof (frag_mem_auth_restr_to_global
+                  (Mem_store_unchecked Mptr (restrPermMap Hltσcur) l1.1 l1.2 (Vptrofs Ptrofs.one)) (perm_of_rmap σcur) Hlt_store σcur with "Hmem_store") as "Hmem_local".
+    assert (Hlt_global : permMapLt (perm_of_rmap σcur) (getMaxPerm m_global')).
+    { rewrite /m_global' getMaxPerm_store_unchecked //. }
+    assert (Hstore_restr : Mem_store_unchecked Mptr (restrPermMap Hltσcur) l1.1 l1.2 (Vptrofs Ptrofs.one) = restrPermMap Hlt_global).
+    { unfold m_global'; apply Mem.mkmem_ext; reflexivity. }
+    rewrite Hstore_restr.
+    iPoseProof (frag_mem_auth_restr_to_global m_global' (perm_of_rmap σcur) Hlt_global σcur
+                 with "Hmem_local") as "Hmem".
+    (* The released lock now contains 1. *)
+    assert (Hload1' : Mem_load_unchecked Mptr m_global' l1.1 l1.2 = Vptrofs Ptrofs.one).
+    { rewrite /m_global' /Mem_load_unchecked /Mem_store_unchecked /Mem_store_unchecked_contents /= Maps.PMap.gss /=.
+      rewrite <- (encode_val_length Mptr (Vptrofs Ptrofs.one)).
+      rewrite Mem.getN_setN_same.
+      pose proof (decode_encode_val_general (Vptrofs Ptrofs.one) Mptr Mptr) as Hdecode.
+      unfold Mptr, Vptrofs, decode_encode_val in Hdecode |- *.
+      destruct Archi.ptr64; simpl in *; auto.
+    }
+    (* Other lock values are preserved. *)
+    assert (Hload_other :
+             forall a, a ∈ ls -> a <> l1 -> Mem_load_unchecked Mptr m_global' a.1 a.2 = Mem_load_unchecked Mptr m a.1 a.2).
+    { intros (b1 & o1) Hin Hneq.
+      unfold m_global'.
+      destruct l1 as [b o]; simpl in *.
+      apply (Mem_load_unchecked_store_unchecked_lock_addresses_disjoint_val
+               m ls b b1 o o1 (Vptrofs Ptrofs.one) Hldisj Hin Hl1mem Hneq).
+    }
+    (* Put the transferred fragment and invariant into the lock. *)
+    iAssert (lock_state1 γ m_global' ls IRpost) with "[HI Hrest Hfrag_lock HR]" as "Hls_store".
+    { rewrite /lock_state1.
+      iExists I.
+      iFrame "HI".
+      iSplit.
+      { iPureIntro. split; assumption. }
+      rewrite (big_sepM_delete _ _ l1 R0 HIlookup).
+      iSplitL "Hfrag_lock HR".
+      - iLeft.
+        iExists qL, σlock, (perm_of_rmap σlock).
+        iFrame "Hfrag_lock".
+        iSplit.
+        + iPureIntro.
+          split.
+          { unfold IRpost; destruct (decide (l1 = l1)) as [_ | Hneq]; auto. done. }
+          split; try intro b; done.
+        + iNext.
+          iRewrite "HeqR"; done.
+      - iApply (big_sepM_mono with "Hrest").
+        iIntros (a Q Hlookup) "Ha".
+        apply lookup_delete_Some in Hlookup.
+        destruct Hlookup as [Hneq Hlookup].
+        assert (Hin : a ∈ ls).
+        { rewrite <- Hdom. eapply elem_of_dom_2; eauto. }
+        assert (HIRsame : IRpost a = IR a).
+        { unfold IRpost. destruct (decide (a = l1)) as [Heqa | Hneqa]; auto. done. }
+        assert (Hsame : Mem_load_unchecked Mptr m_global' a.1 a.2 =
+                          Mem_load_unchecked Mptr m a.1 a.2).
+        { apply Hload_other; done. }
+        rewrite HIRsame Hsame. iFrame.
+    }
+    (* Rebuild the lock assertion required by the release postcondition. *)
+    iAssert (lock_inv sh l R) with "[Hlk Hinv]" as "Hl".
+    { rewrite /lock_inv. iExists l1. iSplit; auto. }
+    iModIntro.
+    iFrame.
+    iPureIntro. split; done.
+  Qed.
   
-  Lemma release_safe (γ : gname) (tp : dtp) (m : mem) (ls : gset address) (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
+  Lemma release_safe (γ : gname) (tp : dtp) (m : mem) (ls : gset address) (i : nat) (q : Qp)
+    (σ1 : resource_map.rmapUR share address (leibnizO resource))
+    (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
     (Hcompat : mem_compatible tp m) (Hlocks : locks_coherent tp m ls)
     (Hlockdom : forall a r, lockRes tp a = Some r -> a ∈ ls) (cnti : containsThread tp i)
     (Hlt : permMapLt (perm_of_rmap σ1) (getMaxPerm m))
@@ -4508,9 +4550,6 @@ frag_mem_auth            rmap_frag
   Proof.
     iIntros "Hsafe Hpre Hpost Hls S".
     iDestruct "S" as (σcur) "(%Heq & Hmem & Hauth & Hfrag & Hext)".
-    (* Split the selected thread's rmap for release. *)
-    destruct (release_rmap_split_for_release tp m ls Hcompat Hlocks i cnti σ1 Heq1)
-      as (σthread & σlock & Hsplit & Hσlock_nonempty).
     rewrite CEspec_release_pre /=.
     iDestruct "Hpre" as (x' Heqx) "Hpre".
     destruct x' as ((l, sh), R).
@@ -4550,7 +4589,6 @@ frag_mem_auth            rmap_frag
     2: { exfalso. apply HlockRes; done. }
     destruct Hlockstate as [[Hload0 Hempty] | Hload1].
     - (* the actual release case: lock is held *)
-       clear σthread σlock Hsplit Hσlock_nonempty.
        set (σthread := rmap_lock_part σ1).
        set (σlock := rmap_keep_part σ1).
        assert (Hsplit : (σ1 : raw_rmapR) ≡ (σthread ⋅ σlock : raw_rmapR)).
@@ -4563,123 +4601,18 @@ frag_mem_auth            rmap_frag
          apply rmap_keep_part_nonempty_on.
          apply (thread_rmap_lock_bytes_nonempty tp m ls Hcompat Hlocks i cnti σ1 Heq1).
        }
-       iDestruct "Hls" as (I) "((%Hdom & %Hldisj) & HI & Hmap)".
-       iDestruct "Hl" as (a) "(%Hva & Hlk & Hinv)".
-       assert (Ha : a = l1).
-       { unfold val2adr in Hva, Hval. destruct l; try contradiction; congruence. }
-       subst a.
-       assert (HinI : l1 ∈ dom I).
-       { by rewrite Hdom. }
-       apply elem_of_dom in HinI.
-       destruct HinI as (R0 & HIlookup).
-       iDestruct (own_valid_2 (A := gmap_view.gmap_viewR address (laterO (iPropO Σ)))
-                   with "HI Hinv") as "#Hvalid".
-       iDestruct (algebra.gmap_view_both_validI with "[$Hvalid]") as "(_ & #HeqR)".
-       rewrite lookup_fmap HIlookup option_equivI /= later_equivI.
-       iDestruct (big_sepM_delete _ _ l1 R0 HIlookup with "Hmap") as "[Hhere Hrest]".
-       iDestruct "Hhere" as "[Hfree | Hheld]".
-       { iDestruct "Hfree" as (qL σL pL) "(HfragL & (%HIR & %Hperm & %Hone & %Hnonempty) & HRold)".
-         rewrite Hload0 in Hone.
-         inv Hone.
-       }
-       iDestruct "Hheld" as (qL) "(HemptyL & (%HIRempty & %Hzero))".
-       iDestruct (rmap_frag_lock_split γ q qL σ1 σthread σlock Hsplit with "[$Hfrag $HemptyL]")
-         as "[Hfrag_thread Hfrag_lock]".
        set (m_global' := Mem_store_unchecked Mptr m l1.1 l1.2 (Vptrofs Ptrofs.one)).
        set (IRpost := fun a : address =>
                         if decide (a = l1) then Some (perm_of_rmap σlock) else lockRes tp a).
-    (* Prepare the memory assertion expected by the store lemma. *)
-       iDestruct "Hmem" as (Hltσcur) "(%Hcohσcur & Hrs)".
+       iMod (lock_release_rmap_update
+               γ q m ls (lockRes tp) l l1 sh R σcur σ1 σthread σlock
+               Hval Hl1mem Hload0 Hsplit Hσlock_nonempty
+              with "Hl HR Hls Hmem Hfrag")
+         as "Hrelease_result".
 
-       pose proof (mem_equiv.useful_permMapLt_trans Hltσcur Hltσcur) as Hlt_pre.
-       iAssert (frag_mem_auth (restrPermMap Hltσcur) σcur) with "[Hrs]" as "Hmem_pre".
-       { rewrite /frag_mem_auth.
-         iExists Hlt_pre.
-         iFrame "Hrs".
-         iPureIntro.
-         rewrite (restrPermMap_idem Hlt_pre).
-         replace (restrPermMap (permMapLt_restr Hlt_pre)) with (restrPermMap Hltσcur); auto.
-         apply restr_proof_irr.
-       }
-       (* Store 1; the global rmap remains σcur. *)
-       iMod (frag_mem_auth_store_unchecked_lock_zero_restr m σcur Hltσcur sh l1.1 l1.2 (Vptrofs Ptrofs.one) with "Hmem_pre Hlk") as (Hlt_store) "[Hmem_store Hlk]".
-       iPoseProof (frag_mem_auth_restr_to_global
-                     (Mem_store_unchecked Mptr (restrPermMap Hltσcur) l1.1 l1.2 (Vptrofs Ptrofs.one)) (perm_of_rmap σcur) Hlt_store σcur with "Hmem_store") as "Hmem_local".
-       assert (Hlt_global : permMapLt (perm_of_rmap σcur) (getMaxPerm m_global')).
-       {
-         unfold m_global'.
-         rewrite getMaxPerm_store_unchecked //. }
-       assert (Hstore_restr : Mem_store_unchecked Mptr (restrPermMap Hltσcur) l1.1 l1.2 (Vptrofs Ptrofs.one) = restrPermMap Hlt_global).
-       { unfold m_global'.
-         apply Mem.mkmem_ext; reflexivity. }
-       rewrite Hstore_restr.
-       iPoseProof (frag_mem_auth_restr_to_global m_global' (perm_of_rmap σcur) Hlt_global σcur
-                    with "Hmem_local") as "Hmem".
-       (* The released lock now contains 1. *)
-       assert (Hload1' : Mem_load_unchecked Mptr m_global' l1.1 l1.2 = Vptrofs Ptrofs.one).
-       { unfold m_global'.
-         rewrite /Mem_load_unchecked /Mem_store_unchecked
-           /Mem_store_unchecked_contents /=.
-         rewrite Maps.PMap.gss /=.
-         rewrite <- (encode_val_length Mptr (Vptrofs Ptrofs.one)).
-         rewrite Mem.getN_setN_same.
-         pose proof (decode_encode_val_general
-                       (Vptrofs Ptrofs.one) Mptr Mptr) as Hdecode.
-         unfold Mptr, Vptrofs, decode_encode_val in Hdecode |- *.
-         destruct Archi.ptr64; simpl in *; auto.
-       }
-       (* Other lock values are preserved. *)
-       assert (Hload_other : forall a, a ∈ ls -> a <> l1 ->
-           Mem_load_unchecked Mptr m_global' a.1 a.2 = Mem_load_unchecked Mptr m a.1 a.2).
-       {
-         intros (b1 & o1) Hin Hneq.
-         unfold m_global'.
-         destruct l1 as [b o]; simpl in *.
-         assert (Hrepr : Ptrofs.unsigned (Ptrofs.repr o) = o).
-         { change (Ptrofs.Z_mod_modulus o = o); auto. }
-         apply (Mem_load_unchecked_store_unchecked_lock_addresses_disjoint_val
-                  m ls b b1 o o1 (Vptrofs Ptrofs.one) Hldisj Hin Hl1mem Hneq).
-       }
-       (* Put the transferred fragment and invariant into the lock. *)
-       iAssert (lock_state1 γ m_global' ls IRpost) with "[HI Hrest Hfrag_lock HR]" as "Hls_store".
-       { rewrite /lock_state1.
-         iExists I.
-         iFrame "HI".
-         iSplit.
-         { iPureIntro. split; assumption. }
-         rewrite (big_sepM_delete _ _ l1 R0 HIlookup).
-         iSplitL "Hfrag_lock HR".
-         - iLeft.
-           iExists qL, σlock, (perm_of_rmap σlock).
-           iFrame "Hfrag_lock".
-           iSplit.
-           + iPureIntro.
-             split.
-             { unfold IRpost.
-               destruct (decide (l1 = l1)) as [_ | Hneq]; auto. contradiction. }
-             split; try intro b; done.
-           + iNext.
-             iRewrite "HeqR".
-             iExact "HR".
-         - iApply (big_sepM_mono with "Hrest").
-           iIntros (a Q Hlookup) "Ha".
-           apply lookup_delete_Some in Hlookup.
-           destruct Hlookup as [Hneq Hlookup].
-           assert (Hin : a ∈ ls).
-           { rewrite <- Hdom. eapply elem_of_dom_2; eauto. }
-           assert (HIRsame : IRpost a = lockRes tp a).
-           { unfold IRpost.
-             destruct (decide (a = l1)) as [Heqa | Hneqa]; auto. done. }
-           assert (Hsame : Mem_load_unchecked Mptr m_global' a.1 a.2 =
-                             Mem_load_unchecked Mptr m a.1 a.2).
-           { apply Hload_other; auto. }
-           rewrite HIRsame Hsame. iFrame.
-       }
-           (* Rebuild the lock assertion required by the release postcondition. *)
-       iAssert (lock_inv sh l R) with "[Hlk Hinv]" as "Hl".
-       { rewrite /lock_inv.
-         iExists l1.
-         iSplit; auto. }
+       iDestruct "Hrelease_result" as "[Hrelease_facts [Hmem [Hfrag_thread [Hls_store Hl]]]]".
+       iDestruct "Hrelease_facts" as %Hrelease.
+       destruct Hrelease as (HIRempty & Hload1' & Hload_other).
        (* Obtain a bound for the remaining thread permissions. *)
        iDestruct "Hmem" as (Hlt0) "(%Hcoh0 & Hrs)".
        iDestruct (resource_map.resource_map_auth_valid with "Hrs") as %(_ & Hvcur).
@@ -4692,7 +4625,7 @@ frag_mem_auth            rmap_frag
        }
        destruct Hbounds as [Hvthread Hlt_thread_cur].
        assert (Hlt_thread : permMapLt (perm_of_rmap σthread) (getMaxPerm m_global')).
-       { eapply permMapLt_trans; eauto. }
+       { eapply permMapLt_trans with (q := perm_of_rmap σcur); done. }
        set (m_thread' := restrPermMap Hlt_thread).
        pose proof (mem_equiv.useful_permMapLt_trans Hlt_thread Hlt0) as Hlt_inner.
        iAssert (frag_mem_auth m_thread' σcur) with "[Hrs]" as "Hmem_thread".
@@ -4722,8 +4655,7 @@ frag_mem_auth            rmap_frag
        { iPureIntro. split; auto. done. }
        iMod "Hpost" as "Hpost".
        iDestruct ("Hpost" with "Hstate [Hl]") as (c') "(%Hafter & Hstate & Hjsafe)".
-       {
-         rewrite CEspec_release_post /=.
+       { rewrite CEspec_release_post /=.
          iExists (l, sh, R).
          iSplit.
          { iPureIntro. exact Heqx. }
@@ -5223,6 +5155,7 @@ frag_mem_auth            rmap_frag
         Unshelve.
         done.
   Qed.
+  
 End conc_heap.
 
 Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
@@ -5396,8 +5329,6 @@ Proof.
       eapply HybridMachineSig.suspend_step; eauto.
     + (* corestep: HybridMachineSig.thread_step *)
       rewrite jsafe_frag_unfold /jsafe_frag_pre.
-      (* iAssert (⌜coherent (restrPermMap Hlt) σ1⌝) with "[Hfragi]" as "%Hcoh".
-      { by iDestruct "Hfragi" as "((? & ?) & ?)". } *)
       iMod "Hsafei" as "Hsafei".
       iDestruct ("Hsafei" $! m σ1 (getThreadR cnti) with "[$Hmem $Hauth $Hfragi $Hext]") as (Hlt) "[Hhalt | [Hstep | Hext]]".
       { iSplit; auto. }
@@ -5587,74 +5518,9 @@ Proof.
       iApply (acquire_safe with "Hsafe Hpre Hpost locks S"); auto.
     + (* release *)
       iApply (release_safe with "Hsafe Hpre Hpost locks S"); auto.
-    + 
-
-
-
-
-
-
-
-
-
-
-
-
-      
-      
-
-    
-
-      iDestruct "Hhalt" as (i0 Hhalt') "_". destruct s. done. }
-
-    
-    iAssert (⌜coherent (restrPermMap Hlt) σ1⌝) with "[Hfragi]" as "%Hcoh".
-    { by iDestruct "Hfragi" as "((? & ?) & ?)". }
-    iMod "Hsafei" as "Hsafei".
-    iDestruct ("Hsafei" $! (restrPermMap Hlt) σ1
-                  with "[$Hfragi $Hext]") as (Hlt0) "[Hhalt | [Hstep | Hext]]".
-    { iDestruct "Hhalt" as (? Hhalt') "?"; destruct s; done. }
-    { iMod "Hstep" as (??? Hstep) "?"; apply cl_corestep_not_at_external in Hstep; done. }
-    (* cl_at_external s = Some (e, args) *)
-    iDestruct "Hext" as (???? Hat_ext) "(S & Hpre & Hpost)".
-    simpl in Hat_ext.
-    iAssert (|={⊤}[∅]▷=> ∃ (tp' : t(ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev,
-                ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-                 locks_coherent tp' m' ls ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
-                  (*(∃ (σ : rmap) (Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm m')),
-                      frag_state_interp q (restrPermMap Hlt) σ0 ()) *)
-                  ext_auth () ∗
-                  threads_safe tp' m' ∗ lock_state m' ls )
-        with "[Hpost Hsafe locks Hpre S]" as "Hsafe".
-      2 : {
-        iMod "Hsafe".
-        iIntros "!> !>".
-        iMod "Hsafe" as (??? (? & ? & ? & ? & ?)) "(Hext & Hth & locks)".
-        iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
-        { rewrite step_fupdN_plain_forall //.
-          iIntros.
-          iApply ("IH" $! x0 (tr ++ [Events.external i ev]) tp' m' n ls
-              with "[%] [%] [%] [%] Hext Hth locks"); try done.
-        }
-        iApply (step_fupdN_mono with "H"); iPureIntro.
-        intros Hsafe.
-        eapply HybridMachineSig.HybridCoarseMachine.AngelSafe; simpl; last apply Hsafe.
-        eapply HybridMachineSig.sync_step; eauto. 
-   }
-   (* consider each of the concurrency functions *)
-   clear Hwfi.
-   destruct s as [|f ? k|]; try done; simpl in Hat_ext.
-   destruct f as [|ext argsty retty cc]; try done.
-   destruct (ef_inline ext); inv Hat_ext.
-   destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
-   + (* acquire *)
-     
-      (* iApply (acquire_safe with "Hsafe Hpost locks"). *) admit.
-   + (* release *) admit.
-   + (* makelock *) admit.
-   + (* freelock *) admit.
-   + (* spawn *) admit.
-
+    + (* makelock *) admit.
+    + (* freelock *) admit.
+    + (* spawn *) admit.
   - (* Kresume: HybridMachineSig.resume_step *)
     pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
     destruct s; try done.
