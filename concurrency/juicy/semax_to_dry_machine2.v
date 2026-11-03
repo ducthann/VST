@@ -30,6 +30,7 @@ Require Import VST.veric.juicy_extspec.
 Require Import VST.veric.tycontext.
 Require Import VST.veric.res_predicates.
 Require Import VST.veric.SequentialClight.
+Require Import VST.veric.semax_call.
 Require Import VST.floyd.coqlib3.
 Require Import VST.floyd.canon.
 Require Import VST.sepcomp.step_lemmas.
@@ -3705,7 +3706,10 @@ Section conc_heap.
     (argsty : typelist) (retty : type) (cc : calling_convention) (k : cont) (args : list val)
     (Hi : getThreadC cnti = Kblocked (Callstate (Ctypes.External CREATE argsty retty cc) args k))
     (x : Jext_spec_type (concurrent_ext_spec CS ext_link) CREATE) :
-  ⊢ code_ctx mcode -∗ other_threads_safe γ tp i -∗
+    ⊢ (* Add believe *)
+      □ believe (CS := CS) (concurrent_ext_spec CS ext_link)
+      (nofunc_tycontext V G) ge (nofunc_tycontext V G) -∗
+    code_ctx mcode -∗ other_threads_safe γ tp i -∗
     Jext_spec_pre (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge)(sig_args (ef_sig CREATE)) args -∗
     ▷ post_safe γ q x argsty retty cc args k -∗ lock_state1 γ m ls (lockRes tp) -∗
     thread_state_interp γ (getThreadR cnti) q m σ1 () -∗
@@ -3715,7 +3719,7 @@ Section conc_heap.
         ext_auth () ∗ rmap_auth γ σnew ∗ frag_mem_auth m' σnew ∗ threads_safe tp' γ ∗
         lock_state1 γ m' ls (lockRes tp').
   Proof.
-    iIntros "#Hcode Hsafe Hpre Hpost Hls S".
+    iIntros "#Hbelieve #Hcode Hsafe Hpre Hpost Hls S".
     iDestruct "S" as (σcur) "(%Heq & Hmem & Hauth & Hfrag & Hext)".
     rewrite /locks_coherent in Hlocks.
     rewrite CEspec_spawn_pre /=.
@@ -3807,6 +3811,37 @@ Section conc_heap.
     destruct Hsig_child as [Hfsig_child Hcc_child].
     subst fsig_child cc_child.
 
+    iPoseProof ("Hbelieve" $! (Vptr fblock Ptrofs.zero)
+                  ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid)
+                  cc_default Achild Echild Pchild Qchild with "[]") as "Hbelieve_child".
+    { iPureIntro.
+      exists id_child.
+      split.
+      - simpl; rewrite find_id_maketycontext_s //.
+      - exists fblock; split; [done | reflexivity].
+    }
+    set (gargsC := (filter_genv (symb2genv (genv_symb_injective ge)), [b])).
+    assert (HargsC :
+             seplog.argsHaveTyps [b] ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid).1).
+    { rewrite /seplog.argsHaveTyps /=.
+      constructor; last constructor.
+      intros _.
+      destruct b; simpl in Hb |- *; unfold Tptr; destruct Archi.ptr64; simpl in *; auto.
+    }
+    iAssert (▷ |={E0 xchild}=> ∃ (xC : dtfr Achild) (FC : iPropI Σ),
+               ⌜Echild xC ⊆ E0 xchild⌝ ∧ (FC ∗ Pchild xC gargsC) ∧
+           ∀ rho' : environ, ■ (⌜ve_of rho' = Map.empty (Values.block * type)⌝ ∧
+                                  FC ∗ Qchild xC rho' -∗ Q0 xchild rho'))%I
+      with "[Hsub_child HP0]" as "Hpre_child".
+    {
+      iNext.
+      iMod (fupd_plainly_elim with "Hsub_child") as "Hsub_child".
+      iSpecialize ("Hsub_child" $! xchild gargsC with "[HP0]").
+      { iSplit; try iPureIntro; try done. }
+      iFrame.
+    }
+    
+
     iDestruct "Hmem" as (Hlt0) "(%Hcoh0 & Hrs)".
     set (m_parent := restrPermMap Hlt).
     pose proof (mem_equiv.useful_permMapLt_trans Hlt Hlt0) as Hlt_inner.
@@ -3857,25 +3892,256 @@ Section conc_heap.
     iAssert (rmap_frag γ qh σ1 ∗ rmap_frag γ qh (ε : raw_rmapR))%I
       with "[Hfrag]" as "[Hfrag_parent Hfrag_child]".
     { rewrite -rmap_frag_op /qh -Qp.mul_add_distr_r Qp.half_half Qp.mul_1_l right_id. iFrame. }
-    iAssert ((jsafe_frag γ qh ⊤ () c') ∗
-               (∃ q_new : CC_core,
-                   ⌜cl_initial_core ge (Vptr fblock Ptrofs.zero) [b] = Some q_new⌝ ∧
-                     ▷ jsafe_frag γ qh ⊤ () q_new))%I
-      with "[Hjsafe_parent Hsub_child Hmatch_child HF HP0 HQ0]" as "Hsafety_pair".
+
+    assert (Hchild_spec_ctx :
+             (make_tycontext_s G !! id_child)%maps =
+               Some (mk_funspec ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid) cc_default Achild Echild Pchild Qchild)).
+    { rewrite find_id_maketycontext_s //. }
+
+    assert (Hchild_spec_delta :
+             (seplog.glob_specs (nofunc_tycontext V G) !! id_child)%maps =
+               Some (mk_funspec ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid) cc_default Achild Echild Pchild Qchild)) by auto.
+
+    iPoseProof (believe_exists_fundef (CS := CS) (psi := ge) (Delta := nofunc_tycontext V G)
+         Hchild_symbol Hchild_spec_delta with "Hbelieve") as "%Hfundef_child".
+
+    destruct Hfundef_child as (ff_child & Hff_child & Hff_type_child).
+
+    set (q_new := Callstate ff_child [b] Kstop).
+
+    assert (Hinit_child : cl_initial_core ge (Vptr fblock Ptrofs.zero) [b] = Some q_new).
     {
-      iSplitL "Hjsafe_parent".
-      (* Although qh = (1/2) * q, jsafe_frag has no weakening/splitting lemma:
-jsafe_frag γ q ... ⊢ jsafe_frag γ qh ...     
-Splitting Hfrag : rmap_frag γ q σ1 does not split jsafe_frag; they are different predicates. *)
-      admit.
-      (* The existing bridge:
-         jsafe_jsafe_frag only produces: jsafe_frag γ 1 ... not jsafe_frag γ qh .... *)
-      unfold cl_initial_core. simpl.
-      admit.
+      unfold q_new, cl_initial_core.
+      destruct (Ptrofs.eq_dec Ptrofs.zero Ptrofs.zero) as [_ | Hneq]; try contradiction.
+      rewrite Hff_child //.
     }
 
-    iDestruct "Hsafety_pair" as "[Hjsafe_parent_half Hspawn_child]".
+    iAssert ((jsafe_frag γ qh ⊤ () c') ∗
+               ∃ q_child : CC_core,
+                 ⌜cl_initial_core ge (Vptr fblock Ptrofs.zero) [b] = Some q_child⌝ ∧
+                   ▷ jsafe_frag γ qh ⊤ () q_child)%I
+      with "[Hjsafe_parent Hpre_child Hmatch_child HF HQ0]" as "Hsafety_pair".
+    {
+      iSplitL "Hjsafe_parent".
+      - (* Parent q -> qh *)
+        admit.
 
+      - iExists q_new.
+        iSplit; try iPureIntro; try done.
+        iDestruct "Hbelieve_child" as "[HBE_child | HBI_child]".
+        + (* External child. *)
+          iUnfold believe_external in "HBE_child".
+          rewrite Genv.find_funct_find_funct_ptr Hff_child.
+          destruct ff_child as [fchild | ef sigargs sigret cc_child].
+          { simpl; iDestruct "HBE_child" as "[]". }
+          simpl.
+          iDestruct "HBE_child" as "(%Hext_info & Hsemext_child & #Htc_child)".
+          destruct Hext_info as (Hsig_child & Hcc_child & Hef_child & Hinline_child).
+          (* Move the forall across the later,
+so the same iNext opens both the child precondition and semax_external. *)    
+          iSpecialize ("Hsemext_child" $! ge).
+          rewrite -bi.later_forall.
+          iNext.
+          rewrite jsafe_frag_unfold /jsafe_frag_pre.
+          iMod (fupd_mask_subseteq (E0 xchild)) as "Hclose0". set_solver.
+          iMod "Hpre_child" as (xC FC) "(%HmaskC & (HFC & HPC) & HQC)".
+          iSpecialize ("Hsemext_child" $! xC).
+          iMod (fupd_mask_subseteq (Echild xC)) as "HcloseC". done.
+          iMod ("Hsemext_child" $! FC (sig_args (ef_sig ef)) [b]
+                 with "[HPC HFC]") as "Hrun_ext".
+          {
+            iSplit; iFrame.
+            iPureIntro.
+            rewrite Hef_child /=.
+            destruct b; simpl in Hb |- *; unfold AST.Tptr; destruct Archi.ptr64; auto.
+          }
+          iMod "HcloseC" as "_".
+          iMod "Hclose0" as "_".
+          assert (Hinline0 : ef_inline ef = false).
+          { destruct Hinline_child as [Hinline0 | Hempty]; auto.
+            exfalso. done.
+          }
+          iModIntro.
+          iIntros (mC σC pC) "HstateC".
+          iUnfold thread_state_interp in "HstateC".
+          iDestruct "HstateC" as (σglob) "(%HeqC & HmemC & HauthC & HfragC & HextC)".
+          iDestruct "HmemC" as (HltGlob) "(%HcohGlob & HheapC)".
+          iDestruct (resource_map.resource_map_auth_valid with "HheapC") as %HvGlob.
+          destruct HvGlob as (_ & Hvσglob).
+          iDestruct (rmap_auth_frag_permMapLt_valid γ qh σglob σC Hvσglob
+                      with "[$HauthC $HfragC]") as %(HvσC & HltLocal).
+          assert (HltChild : permMapLt (perm_of_rmap σC) (getMaxPerm mC)).
+          { etransitivity; eauto. }
+          iDestruct ("Hrun_ext" $! (restrPermMap HltGlob) σglob ()
+                      with "[HheapC HextC]") as (xext) "(HstdC & HpreC & HpostC)".
+          { rewrite /state_interp /mem_rmap_auth.
+            iFrame. iPureIntro. auto.
+          }
+          iDestruct "HstdC" as "((%HcohStd & HheapC) & HextC)".
+          iExists HltChild.
+          iRight; iRight.
+          iExists ef, [b], xext.
+          iSplit.
+          {
+            iPureIntro.
+            change (cl_at_external q_new = Some (ef, [b])).
+            rewrite /q_new /cl_at_external Hinline0 //.
+          }
+          iSplitL "HheapC HauthC HfragC HextC".
+          { rewrite /thread_state_interp.
+            iExists σglob.
+            iSplit; first done.
+            iSplitL "HheapC"; iFrame.
+            rewrite /frag_mem_auth.
+            iExists HltGlob.
+            iPureIntro. done.
+          }
+          iSplitL "HpreC". iFrame.
+          iNext.
+          iIntros (ret m' σC' z') "%Htypes".
+          iIntros "!> HstateC' HpostC'".
+          iUnfold thread_state_interp in "HstateC'".
+          iDestruct "HstateC'" as (σglob') "(%HeqC' & HmemC' & HauthC' & HfragC' & HextC')".
+          iDestruct "HmemC'" as (HltGlob') "(%HcohGlob' & HheapC')".
+
+          iSpecialize ("HpostC" $! (sig_res (ef_sig ef)) ret (restrPermMap HltGlob') σglob' z').
+          iAssert ( |={⊤}=> state_interp (restrPermMap HltGlob') σglob' z' ∗
+                  Qchild xC (make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret) ∗ FC)%I
+            with "[HpostC HheapC' HextC' HpostC']" as "Hpost_inner".
+          {
+            iMod (fupd_mask_subseteq (Echild xC)) as "HclosePost". set_solver.
+            iMod "HpostC" as "HpostC".
+            iDestruct ("HpostC" with "[HheapC' HextC'] HpostC'") as "(HstdC' & HQchild & HFC')".
+            { rewrite /state_interp /mem_rmap_auth. iFrame. done. }
+            iMod "HclosePost" as "_".
+            iModIntro.
+            iFrame.
+          }
+          iAssert (state_interp (restrPermMap HltGlob') σglob' z' ∗
+                Qchild xC (make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret) ∗ FC)%I
+            with "[Hpost_inner]" as "Hpost_result".
+          { admit. }
+          iDestruct "Hpost_result" as "(HstdC' & HQchild & HFC')".
+          iDestruct "HstdC'" as "((%HcohStd' & HheapC') & HextC')".
+          set (rhoC := make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret).
+          assert (HveC : ve_of rhoC = Map.empty (Values.block * type)).
+          { subst rhoC. rewrite Hef_child /=. destruct ret; auto. }
+          rewrite bi.affinely_elim.
+          iSpecialize ("HQC" $! rhoC).
+          rewrite plainly_elim.
+          iAssert (|={⊤}=> Q0 xchild rhoC) with "[HQC HFC' HQchild]" as "HQ0ret_inner".
+          { iMod (fupd_plainly_elim with "HQC") as "HQC".
+            iModIntro.
+            iApply "HQC".
+            iSplit; first done.
+            iFrame.
+          }
+          iAssert (Q0 xchild rhoC)%I with "[HQ0ret_inner]" as "HQ0ret".
+          { (* Need inner fupd. |={E}=> ∃ c', ... external  *)
+            admit.
+          }
+          rewrite bi.affinely_elim.
+          iSpecialize ("HQ0" $! rhoC).
+          iAssert (|={⊤}=>
+                     (PROP ( )
+                          (monpred.monPred_defs.monPred_and_def (seplog.local (liftx True%type))
+                      (monpred.monPred_defs.monPred_embed_def emp))) rhoC)%I
+            with "[HQ0 HF HQ0ret]" as "Hdone_inner".
+          { iMod (fupd_plainly_elim with "HQ0") as "HQ0".
+            iModIntro.
+            iApply "HQ0".
+            iSplit; first done.
+            iFrame.
+          }
+          iAssert (
+              (PROP ( )
+                 (monpred.monPred_defs.monPred_and_def
+                    (seplog.local (liftx True%type))
+                    (monpred.monPred_defs.monPred_embed_def emp))) rhoC
+            )%I with "[Hdone_inner]" as "Hdone".
+          {
+            admit.
+          }
+          rewrite /PROPx.
+          iDestruct "Hdone" as "(_ & (_ & _))".
+          iAssert (thread_state_interp γ (getCurPerm m') qh m' σC' z')%I
+            with "[HheapC' HauthC' HfragC' HextC']" as "Hstate_final".
+          {
+            rewrite /thread_state_interp.
+            iExists σglob'.
+            iSplit; auto.
+            iSplitL "HheapC'".
+            {
+              rewrite /frag_mem_auth.
+              iExists HltGlob'.
+              iSplit; done.
+            }
+            iFrame.
+          }
+          set (vret := match ret with | Some v => v | None => Vundef end).
+          iExists (Returnstate vret Kstop).
+          iSplit.
+          { iPureIntro; rewrite /q_new /vret /= //. }
+          iFrame.
+          rewrite jsafe_frag_unfold /jsafe_frag_pre.
+          iModIntro.
+          iIntros (mR σR pR) "HstateR".
+          iUnfold thread_state_interp in "HstateR".
+          iDestruct "HstateR" as (σglobR) "(%HeqR & HmemR & HauthR & HfragR & HextR)".
+          iDestruct "HmemR" as (HltGlobR) "(%HcohR & HheapR)".
+          iDestruct (resource_map.resource_map_auth_valid with "HheapR") as %(_ & HvGlobR).
+          iDestruct (rmap_auth_frag_permMapLt_valid γ qh σglobR σR HvGlobR
+                      with "[$HauthR $HfragR]") as "%HvalidR".
+          destruct HvalidR as (_ & HltLocalR).
+          assert (HltR : permMapLt (perm_of_rmap σR) (getMaxPerm mR)).
+          { etransitivity; eauto. }
+          iExists HltR.
+          iLeft.
+          iExists Int.zero.
+          iSplit.
+          iPureIntro. simpl. done. done.
+        + (* Internal child. *)
+          iUnfold believe_internal in "HBI_child".
+          iDestruct "HBI_child" as (bI fI (HvI & HfindI & HcompleteI & HnorepI & HnorepVarsI & HvarsI & HparamsI & HretI & HccI)) "HbodyI".
+          injection HvI as <-.
+          assert (HffI : ff_child = Ctypes.Internal fI) by congruence.
+          subst ff_child.
+          iSpecialize ("HbodyI" $! (nofunc_tycontext V G) CS with "[%] [%]").
+          { intros f0. apply expr.tycontext_sub_refl. }
+          { apply expr.cenv_sub_refl. }
+          (*
+            HbodyI + Hpre_child can establish standard safety:
+
+            jsafe
+              (genv_symb := genv_symb_injective)
+              (cl_core_sem ge)
+              (concurrent_ext_spec CS ext_link)
+              ge ⊤ () q_new
+
+            But the required goal is:
+
+            jsafe_frag γ qh ⊤ () q_new
+          *)
+
+          iAssert (▷ jsafe (genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge ⊤ () q_new)%I with "[-]" as "Hsafe_standard".
+          {
+            (* Provable from HbodyI, Hpre_child, and Hbelieve
+               by the internal-call/semax soundness argument. *)
+            admit.
+          }
+          iNext.
+          iPoseProof (jsafe_jsafe_frag γ with "Hsafe_standard") as "Hsafe_full".
+
+          (*
+            Hsafe_full : jsafe_frag γ 1 ⊤ () q_new
+            goal       : jsafe_frag γ qh ⊤ () q_new
+
+            There is no valid weakening 1 -> qh.
+          *)
+
+          admit.
+    }
+    iDestruct "Hsafety_pair" as "[Hjsafe_parent_half Hspawn_child]".
     iAssert (threads_safe tp_test γ)%I
       with "[Hsafe Hfrag_parent Hfrag_child Hjsafe_parent_half Hspawn_child]" as "Hthreads_test".
     {
@@ -3948,14 +4214,13 @@ Splitting Hfrag : rmap_frag γ q σ1 does not split jsafe_frag; they are differe
         iExists qh, (ε : raw_rmapR), cntC.
         iSplit.
         { iPureIntro. rewrite gssAddRes. done. done. }
-        iDestruct "Hspawn_child" as (q_new) "(%Hinit_child & Hsafe_child)".
-        iSplitL "Hsafe_child".
-        + rewrite /thread_safe.
-          iExists cntC.
-          rewrite gssAddCode.
-          iExists q_new.
-          iSplit; iFrame. done. done.
-        + iExact "Hfrag_child".
+        iDestruct "Hspawn_child" as (q_child) "(%Hinit_child1 & Hsafe_child1)".
+        iSplitL "Hsafe_child1"; iFrame.
+        rewrite /thread_safe.
+        iExists cntC.
+        rewrite gssAddCode.
+        iExists q_child.
+        iSplit; try iFrame; try done. done.
     }
 
   Admitted. *)
