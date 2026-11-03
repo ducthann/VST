@@ -76,14 +76,107 @@ Set Bullet Behavior "Strict Subproofs".
 Definition funspec_auth `{!funspecGS Σ} m :=
   own (inG0 := funspec_inG) funspec_name (gmap_view.gmap_view_auth (dfrac.DfracOwn 1) m).
 
+(*Added*)
+
+Definition codeN : namespace := nroot .@ "N"%string.
+Section funspec_auth_fractional.
+  Context {Σ : gFunctors} `{!heapGS Σ}.
+
+  Lemma gmap_view_both_dfrac_validI_local {K : Type} `{Countable K} {V0 : ofe}
+    (dp : dfrac) (M : gmap K V0) (k : K) (dq : dfrac) (v : V0) :
+    (✓ (gmap_view.gmap_view_auth dp M ⋅ gmap_view.gmap_view_frag k dq v :
+         gmap_view.gmap_viewR K V0) : iProp Σ)
+    ⊢ ⌜✓ dp⌝ ∧ ⌜✓ dq⌝ ∧ M !! k ≡ Some v.
+  Proof.
+    rewrite /gmap_view.gmap_view_auth /gmap_view.gmap_view_frag.
+    apply algebra.view_both_dfrac_validI_1.
+    intros n a.
+    ouPred.unseal.
+    apply gmap_view.gmap_view_rel_lookup.
+  Qed.
+
+  Definition funspec_auth_q (q : Qp) (M : gmap address (@funspecO' Σ)) : iProp Σ :=
+    own (inG0 := funspec_inG) funspec_name (gmap_view.gmap_view_auth (dfrac.DfracOwn q) M).
+
+  (* 	Splits fraction q into two halves: one is retained, one is consumed by spawn. *)
+  Lemma funspec_auth_q_split (q : Qp) (M : gmap address (@funspecO' Σ)) :
+    funspec_auth_q q M ⊣⊢ funspec_auth_q ((1/2) * q)%Qp M ∗ funspec_auth_q ((1/2) * q)%Qp M.
+  Proof.
+    rewrite /funspec_auth_q -own_op -gmap_view.gmap_view_auth_dfrac_op dfrac.dfrac_op_own.
+    f_equiv.
+    rewrite -Qp.mul_add_distr_r Qp.half_half Qp.mul_1_l //.
+  Qed.
+  
+  (* 	Converts the original full funspec_auth M into two initial fractional copies. *)
+  Lemma funspec_auth_to_two_halves (M : gmap address (@funspecO' Σ)) :
+    seplog.funspec_auth M ⊣⊢ funspec_auth_q (1/2)%Qp M ∗ funspec_auth_q (1/2)%Qp M.
+  Proof.
+    rewrite /seplog.funspec_auth /funspec_auth_q -own_op -gmap_view.gmap_view_auth_dfrac_op
+               dfrac.dfrac_op_own Qp.half_half //.
+  Qed.
+
+  (* 	Combines fractional authority with func_at fs l to prove M !! l = Some fs. *)
+  Lemma funspec_auth_q_lookup (q : Qp) (M : gmap address (@funspecO' Σ))
+    (l : address) (fs : funspec) :
+    ⊢ funspec_auth_q q M -∗ seplog.func_at fs l -∗ ((M !! l)%stdpp ≡ Some (funspec_unfold fs)).
+  Proof.
+    rewrite /funspec_auth_q.
+    iIntros "Hauth #Hfunc".
+    rewrite /seplog.func_at /seplog.know_funspec.
+    iDestruct "Hfunc" as "(_ & #Hfrag)".
+    iPoseProof (own_valid_2 with "Hauth Hfrag") as "#Hvalid".
+    iDestruct (gmap_view_both_dfrac_validI_local with "Hvalid") as "(_ & _ & #Hlookup)". done.
+  Qed.
+
+  (* Specializes that lookup to init_funspecs m ge G, producing matchfunspecs ge G. *)
+  Lemma init_funspecs_matchfunspecs_q (ge0 : genv) (G0 : funspecs) (q : Qp) (m0 : mem) :
+    funspec_auth_q q (init_funspecs m0 ge0 G0) ⊢ matchfunspecs ge0 G0.
+  Proof.
+    rewrite /matchfunspecs.
+    iIntros "Hauth" (b fs) "#Hfunc".
+    iPoseProof (funspec_auth_q_lookup q (init_funspecs m0 ge0 G0) (b, 0%Z) fs
+                 with "Hauth Hfunc") as "Hlookup".
+    rewrite option_equivI init_funspecs_lookup /funspec_of_loc /=.
+    destruct (Pos.ltb_spec0 b (Mem.nextblock m0)); last done.
+    destruct (Genv.invert_symbol ge0 b) as [id |] eqn:Hinv.
+    2: { rewrite Hinv //. }
+    rewrite Hinv /=.
+    apply Genv.invert_find_symbol in Hinv.
+    destruct (find_id id G0) as [fs0 |] eqn:Hfind; try done.
+    iExists id, fs0.
+    iSplit.
+    - iPureIntro. split; done.
+    - by iApply seplog.funspec_sub_si_ne.
+  Qed.
+
+End funspec_auth_fractional.
+  
+
+(*Added*)
+
 Section semax_prog_with_rmap.
   Context `{!VSTGS OK_ty Σ} (OK_spec : Jext_spec Σ).
 
   Definition state_interp_with_rmap (m : mem) (z : OK_ty) (σ : rmap) : iProp Σ :=
     frag_mem_auth m σ ∗ ext_auth z.
-
-  Check state_interp.
   
+  (*
+    Before: jsafeN ... ∧ matchfunspecs ge G
+    After return: jsafeN ... ∗ funspec_auth_q (1/2)%Qp (...) ∗ initial_core m ge G
+
+    Reason: We cannot separate this into: jsafeN ... ∗ matchfunspecs ge G
+    Therefore, after taking jsafeN, no independently owned matchfunspecs remains for spawn.
+
+
+    In dry_safety, Hsafe : jsafeN ... ∧ matchfunspecs ge G
+
+    It could extract jsafeN, but couldn't also retain reusable code information for spawn.
+    After, it receives:
+    Hsafe   : jsafeN ...
+    Hfcode  : funspec_auth_q (1/2)%Qp (...)
+    Hcore   : initial_core mcode ge G
+
+   *)
   Lemma semax_prog_rule_with_rmap {CS : compspecs} :
     forall V G prog m h z (σ0 : rmap),
       postcondition_allows_exit OK_spec Ctypesdefs.tint ->
@@ -98,8 +191,9 @@ Section semax_prog_with_rmap.
        ⊢ |==> ∃ σ : rmap,
            state_interp_with_rmap m z σ ∗
              ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝ ∗
-           (jsafeN OK_spec (globalenv prog) ⊤ z q ∧
-            matchfunspecs (globalenv prog) G))
+             (jsafeN OK_spec (globalenv prog) ⊤ z q ∗
+                funspec_auth_q (1/2)%Qp (init_funspecs m (globalenv prog) G) ∗
+                initial_world.initial_core m (F := Clight.function) (globalenv prog) G))
     } }%type.
   Proof.
     intros until σ0.
@@ -155,25 +249,36 @@ Section semax_prog_with_rmap.
     clear Hinit.
     iIntros "((Hm & Hext) & Hf & Hz)".
     iMod (initialize_mem_with_rmap' with "[$Hm $Hf]")
-      as "((%σ & Hσ & %Hperm) & Hm & Hcore & Hmatch)"; [done.. |].
+      as "((%σ & Hσ & %Hperm) & Hm & Hcore & Hboth)";
+      [done.. |].
+
+    iDestruct (bi.and_elim_l with "Hboth") as "Hf".
+    (* First half 1/2, Hfmain, is consumed to derive matchfunspecs for initial-main safety.
+       Second half 1/2, Hfcode, is stored in code_bank for future spawns.
+     *)
+    rewrite funspec_auth_to_two_halves.
+    iDestruct "Hf" as "(Hfmain & Hfcode)".
+    iPoseProof (init_funspecs_matchfunspecs_q (globalenv prog) G (1/2)%Qp m with "Hfmain") as "Hmatch".
+    iDestruct "Hcore" as "#Hcore".
     iModIntro.
     iExists σ.
     iSplitL "Hσ Hext".
-    { rewrite /state_interp_with_rmap; iFrame. }
-    iSplit.
-    { iPureIntro; done. }
-    iSplit; last done.
-    destruct H4 as [post [H4 H4']].
-    unfold main_spec_ext' in H4'.
-    injection H4' as -> HP HQ.
-    apply inj_pair2 in HP as ->.
-    apply inj_pair2 in HQ as ->.
-    iApply (Hsafe (initialize.globals_of_genv (filter_genv (globalenv prog)))).
-    iCombine "Hcore Hmatch" as "Hcore".
-    rewrite (initial_core_funassert _ V _ _ (Map.empty _) (Map.empty _)) //; iFrame.
-    iIntros "!>".
-    iSplit; first done.
-    iApply global_initializers; eauto.
+    { rewrite /state_interp_with_rmap. iFrame. }
+    iSplit; try done.
+    iSplitL "Hm Hmatch Hz".
+    - destruct H4 as [post [H4 H4']].
+      unfold main_spec_ext' in H4'.
+      injection H4' as -> HP HQ.
+      apply inj_pair2 in HP as ->.
+      apply inj_pair2 in HQ as ->.
+      iApply (Hsafe (initialize.globals_of_genv (filter_genv (globalenv prog)))).
+      iCombine "Hcore Hmatch" as "Hcore_main".
+      rewrite (initial_core_funassert _ V _ _ (Map.empty _) (Map.empty _)) //.
+      iFrame.
+      iIntros "!>".
+      iSplit; first done.
+      iApply global_initializers; eauto.
+    - iFrame "Hcore Hfcode".
   Qed.
  
 End semax_prog_with_rmap.
@@ -2669,7 +2774,7 @@ Section conc_heap.
       | Kinit v1 v2 =>
           ∃ q_new,
     ⌜cl_initial_core ge v1 (v2 :: nil) = Some q_new⌝ ∧
-      jsafe_frag γ q ⊤ tt q_new
+      ▷ jsafe_frag γ q ⊤ tt q_new
   end%I.
 
   Definition threads_safe `{rmap_inG : inG Σ rmap_authUR}
@@ -3520,6 +3625,340 @@ Section conc_heap.
         unfold Mem.valid_block in *.
         simpl. done.
   Qed.
+
+  (*
+    Each time spawn needs matchfunspecs. code_bank doesn't store matchfunspecs directly.
+    It stores a splittable fractional auth. 
+    Each spawn can:
+    - Open the invariant and obtain funspec_auth_q q M, the split it into
+       funspec_auth_q (q/2) M ∗ funspec_auth_q (q/2) M
+    - Push back into the invariant
+    - Convert the other half using: funspec_auth_q q M ⊢ matchfunspecs ge G
+    - Therefore, every call to code_ctx_take_matchfunspecs produces a fresh linear matchfunspecs,
+      while keeping a smaller positive fraction for future calls.
+    Idea is
+    code_bank -> repeatedly produces matchfunspecs
+    initial_core -> helps construct the child fungassert
+    code_ctx -> persistent package available through iLöb
+   *)
+
+  (* 	Stores ∃ q, funspec_auth_q q M in an invariant.
+     It is necessary because q becomes smaller after each spawn. *)
+  Definition code_bank (m0 : mem) : iProp Σ :=
+    inv codeN (∃ q : Qp, funspec_auth_q q (init_funspecs m0 ge G)).
+
+  (* 	Packages code_bank with initial_core, which is needed to build the child’s fungassert. *)
+  Definition code_ctx (m0 : mem) : iProp Σ :=
+    code_bank m0 ∗ initial_world.initial_core m0 (F := Clight.function) ge G.
+
+  (* Creates persistent invariant from initial half-auth. *)
+  Lemma code_ctx_alloc (m0 : mem) :
+    funspec_auth_q (1/2)%Qp (init_funspecs m0 ge G) ∗
+      initial_world.initial_core m0 (F := Clight.function) ge G ={⊤}=∗ code_ctx m0.
+  Proof.
+    iIntros "(Hauth & #Hcore)".
+    iMod (inv_alloc codeN ⊤ (∃ q : Qp, funspec_auth_q q (init_funspecs m0 ge G))
+           with "[Hauth]") as "#Hbank".
+    { iNext; by iExists (1/2)%Qp. }
+    rewrite /code_ctx /code_bank.
+    iFrame "#"; done.
+  Qed.
+  
+  Global Instance code_ctx_persistent m0 : Persistent (code_ctx m0) := _.
+  Global Instance code_ctx_affine m0 : Affine (code_ctx m0) := _.
+
+  (* Opens the bank, splits q, returns half, and converts other half into fresh matchfunspecs. *)
+  Lemma code_ctx_take_matchfunspecs (m0 : mem) : code_ctx m0 -∗ |={⊤}=> ▷ matchfunspecs ge G.
+  Proof.
+    iIntros "#Hctx".
+    rewrite /code_ctx /code_bank.
+    iDestruct "Hctx" as "(#Hbank & #Hcore)".
+    iInv codeN as "Hbody" "Hclose".
+    iAssert (▷ ((∃ q : Qp, funspec_auth_q q (init_funspecs m0 ge G)) ∗
+                  (∃ q : Qp, funspec_auth_q q (init_funspecs m0 ge G))))%I
+      with "[Hbody]" as "Hsplit".
+    { iNext.
+      iDestruct "Hbody" as (q) "Hauth".
+      rewrite funspec_auth_q_split.
+      iDestruct "Hauth" as "(Hkeep & Htake)".
+      iSplitL "Hkeep".
+      - by iExists (((1/2) * q)%Qp).
+      - by iExists (((1/2) * q)%Qp).
+    }
+    rewrite bi.later_sep.
+    iDestruct "Hsplit" as "(Hkeep & Htake)".
+    iMod ("Hclose" with "Hkeep") as "_".
+    iModIntro.
+    iNext.
+    iDestruct "Htake" as (q) "Hauth".
+    iApply (init_funspecs_matchfunspecs_q with "Hauth").
+  Qed.
+
+  (* SPAWN *)
+  Lemma spawn_safe (mcode : mem) (Hinitcode : Genv.init_mem prog = Some mcode)
+    (γ : gname) (tp : dtp) (m : mem) (ls : gset address)
+    (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
+    (Hcompat : mem_compatible tp m) (Hlocks : locks_coherent tp m ls)
+    (Hlockdom : forall a r, lockRes tp a = Some r -> a ∈ ls)
+    (cnti : containsThread tp i) (Hlt : permMapLt (perm_of_rmap σ1) (getMaxPerm m))
+    (Heq1 : mem_equiv.access_map_equiv (perm_of_rmap σ1) (getThreadR cnti))
+    (argsty : typelist) (retty : type) (cc : calling_convention) (k : cont) (args : list val)
+    (Hi : getThreadC cnti = Kblocked (Callstate (Ctypes.External CREATE argsty retty cc) args k))
+    (x : Jext_spec_type (concurrent_ext_spec CS ext_link) CREATE) :
+  ⊢ code_ctx mcode -∗ other_threads_safe γ tp i -∗
+    Jext_spec_pre (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge)(sig_args (ef_sig CREATE)) args -∗
+    ▷ post_safe γ q x argsty retty cc args k -∗ lock_state1 γ m ls (lockRes tp) -∗
+    thread_state_interp γ (getThreadR cnti) q m σ1 () -∗
+    |={⊤}[∅]▷=>
+      ∃ (tp' : t) (m' : mem) (ev : Events.sync_event) (σnew : rmap),
+        ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧ locks_coherent tp' m' ls ∧ (forall a r, lockRes tp' a = Some r -> a ∈ ls) ∧ syncStep true cnti Hcompat tp' m' ev⌝ ∧
+        ext_auth () ∗ rmap_auth γ σnew ∗ frag_mem_auth m' σnew ∗ threads_safe tp' γ ∗
+        lock_state1 γ m' ls (lockRes tp').
+  Proof.
+    iIntros "#Hcode Hsafe Hpre Hpost Hls S".
+    iDestruct "S" as (σcur) "(%Heq & Hmem & Hauth & Hfrag & Hext)".
+    rewrite /locks_coherent in Hlocks.
+    rewrite CEspec_spawn_pre /=.
+    iDestruct "Hpre" as (x' Heqx) "Hpre".
+    destruct x' as ((f, b), (A, ((gv, w), pre))); rewrite /funspec2pre' /=.
+    set (c := Callstate (Ctypes.External CREATE argsty retty cc) args k).
+    iDestruct "Hpre" as (Hty (Hb & _) Hargs) "Hpre"; simpl in Hargs; subst.
+    rewrite /SEPx /GLOBALSx /LOCALx; monPred.unseal.
+    iDestruct "Hpre" as "(%Hglobals & Hfun & Harg & _)".
+    iDestruct (bi.and_elim_r with "Harg") as "Hchild".
+    (*
+      - Hfun : func_ptr child_spec f
+      Proves f points to executable code satisfying the expected child-thread specification.
+      - Hchild : pre w b
+      Resource transferred to the new child thread. It establishes the child function's precondition for b.
+     *)
+    clear Hty.
+    rewrite /post_safe /other_threads_safe.
+    setoid_rewrite CEspec_spawn_post.
+    iUnfold SeparationLogic.func_ptr, seplog.func_ptr_si in "Hfun".
+    iDestruct "Hfun" as (fblock Hf) "Hfun".
+    subst f.
+    iDestruct "Hfun" as (fs_actual) "(Hsub & #Hfunc)".
+    
+    
+    (*
+      f = Vptr fblock Ptrofs.zero
+      Hfunc : func_at fs_actual (fblock, 0), which actual function specification is stored at that code address.
+      Hsub : funspec_sub_si fs_actual child_spec.
+      Actual function can be called using the spawn-required spec
+     *)
+    
+    (* At spawn, we have: Hfun: func_at fs_actual (fblock, 0) and Hsub  : funspec_sub_si fs_actual child_spec
+       But Hfun only says some spec exists at the addr, but doesn't prove that fblock coresponds to a function declared in G. So we need
+       ∃ id fs_child, Genv.find_symbol ge id = Some fblock ∧
+         find_id id G = Some fs_child ∧ funspec_sub_si fs_child fs_actual.
+
+       That bridge requires matchfunspecs ge G.
+       But matchfunspecs is not sufficient.
+       One copy resolves Hfunc to the func in G. another copy is combined with initial_core by initial_core_funassert to build the child's fungassert.
+       Later recursive spawn steps need it again.
+       But matchfunspecs is linear, not Persistent, so it cannot be duplicated through the Löb induction.
+       Solution: code_bank stores splittable funspec_auth_q inside an invariant and
+                 generates a fresh matchfunspecs whenever spawn needs one.
+      
+     *)
+    destruct fs_actual as [fsig0 cc0 A0 E0 P0 Q0].
+    iUnfold seplog.funspec_sub_si in "Hsub".
+    iUnfold NDmk_funspec in "Hsub".
+    iDestruct "Hsub" as "(%Hsigcc & Hsub)".
+    destruct Hsigcc as [Hsig Hcc].
+    subst fsig0 cc0.
+    rewrite step_fupd_fupd.
+    iMod (code_ctx_take_matchfunspecs mcode with "Hcode") as "Hmatch_fun".
+    iMod (code_ctx_take_matchfunspecs mcode with "Hcode") as "Hmatch_child".
+    rewrite /code_ctx.
+    iDestruct "Hcode" as "(#Hbank & #Hcore)".
+    iApply step_fupd_intro; first done.
+    iNext.
+    iSpecialize ("Hsub" $! (b, w) (filter_genv (symb2genv (genv_symb_injective ge)), [b])).
+    iMod (fupd_plainly_elim with "Hsub") as "Hsub".
+    iSpecialize ("Hsub" with "[Hchild]").
+    { iSplit.
+      - iPureIntro.
+        rewrite /seplog.argsHaveTyps /=.
+        constructor; last constructor.
+        intros _.
+        destruct b; simpl in Hb |- *; unfold AST.Tptr; destruct Archi.ptr64; simpl in *; auto.
+      - rewrite /PROPx /PARAMSx /GLOBALSx /LOCALx /SEPx /=.
+        monPred.unseal.
+        repeat iSplit; try iPureIntro; try done.
+        unfold_lift in Hglobals. tauto.
+    }
+    iMod "Hsub" as (xchild F Hmask) "Hsubout".
+    iDestruct "Hsubout" as "((HF & HP0) & HQ0)".
+    (*
+      xchild: existential witness for actual child spec.
+      HP0: actual precondition required to start the child.
+      HQ0: converts actual child postcondition back to the empty spawn postcondition.
+     *)
+    
+    iSpecialize ("Hmatch_fun" $! fblock (mk_funspec ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid) cc_default A0 E0 P0 Q0) with "Hfunc").
+    iDestruct "Hmatch_fun" as (id_child fs_child) "(%Hchild_find & Hsub_child)".
+    destruct Hchild_find as [Hchild_symbol Hchild_spec].
+    iMod "Hsub_child" as "Hsub_child".
+    destruct fs_child as [fsig_child cc_child Achild Echild Pchild Qchild].
+    iUnfold seplog.funspec_sub_si in "Hsub_child".
+    iDestruct "Hsub_child" as "(%Hsig_child & Hsub_child)".
+    destruct Hsig_child as [Hfsig_child Hcc_child].
+    subst fsig_child cc_child.
+
+    iDestruct "Hmem" as (Hlt0) "(%Hcoh0 & Hrs)".
+    set (m_parent := restrPermMap Hlt).
+    pose proof (mem_equiv.useful_permMapLt_trans Hlt Hlt0) as Hlt_inner.
+    iAssert (frag_mem_auth m_parent σcur) with "[Hrs]" as "Hmem_parent".
+    { rewrite /frag_mem_auth.
+      iExists Hlt_inner.
+      iFrame.
+      iPureIntro.
+      rewrite (restrPermMap_idem Hlt_inner).
+      replace (restrPermMap (permMapLt_restr Hlt_inner)) with (restrPermMap Hlt0); auto.
+      apply restr_proof_irr.
+    }
+    iAssert (thread_state_interp γ (getCurPerm m_parent) q m_parent σ1 ())
+      with "[Hmem_parent Hauth Hfrag Hext]" as "Hstate".
+    { rewrite /thread_state_interp.
+      iExists σcur.
+      iSplit; iFrame.
+      iPureIntro.
+      pose proof (mem_equiv.getCur_restr (perm_of_rmap σ1) m Hlt) as Hcur. done.
+    }
+
+    (* CREATE returns void. *)
+    iSpecialize ("Hpost" $! (None : option val) m_parent σ1 () with "[]").
+    { iPureIntro; repeat split; simpl.
+      destruct b; simpl in Hb |- *; unfold Tptr; destruct Archi.ptr64; auto. }
+    iMod "Hpost" as "Hpost".
+    iDestruct ("Hpost" with "Hstate []") as (c') "(%Hafter & Hstate & Hjsafe_parent)".
+    { simpl.
+      iExists (Vptr fblock Ptrofs.zero, b, existT A (gv, w, pre)).
+      iSplit; auto.
+      rewrite /funspec2post' /PROPx /LOCALx /SEPx /=.
+      monPred.unseal.
+      iSplit; first done.
+      iSplit; done. 
+    }
+    (* Recover the parent resources returned by Hpost. *)
+    iUnfold thread_state_interp in "Hstate".
+    iDestruct "Hstate" as (σnew) "(%Heq_parent & Hmem_parent & Hauth & Hfrag & Hext)".
+    (* Return from the restricted parent memory to global memory m. *)
+    iPoseProof (frag_mem_auth_restr_to_global m (perm_of_rmap σ1) Hlt σnew
+                 with "Hmem_parent") as "Hmem".
+    set (tp_upd_test := updThread cnti (Kresume c Vundef) (getThreadR cnti)).
+    set (tp_test := addThread tp_upd_test (Vptr fblock Ptrofs.zero) b (empty_map : access_map)).
+    set (child_id := pos.n (OrdinalPool.num_threads tp_upd_test)).
+
+    set (qh := ((1/2) * q)%Qp).
+
+    iAssert (rmap_frag γ qh σ1 ∗ rmap_frag γ qh (ε : raw_rmapR))%I
+      with "[Hfrag]" as "[Hfrag_parent Hfrag_child]".
+    { rewrite -rmap_frag_op /qh -Qp.mul_add_distr_r Qp.half_half Qp.mul_1_l right_id. iFrame. }
+    iAssert ((jsafe_frag γ qh ⊤ () c') ∗
+               (∃ q_new : CC_core,
+                   ⌜cl_initial_core ge (Vptr fblock Ptrofs.zero) [b] = Some q_new⌝ ∧
+                     ▷ jsafe_frag γ qh ⊤ () q_new))%I
+      with "[Hjsafe_parent Hsub_child Hmatch_child HF HP0 HQ0]" as "Hsafety_pair".
+    {
+      iSplitL "Hjsafe_parent".
+      (* Although qh = (1/2) * q, jsafe_frag has no weakening/splitting lemma:
+jsafe_frag γ q ... ⊢ jsafe_frag γ qh ...     
+Splitting Hfrag : rmap_frag γ q σ1 does not split jsafe_frag; they are different predicates. *)
+      admit.
+      (* The existing bridge:
+         jsafe_jsafe_frag only produces: jsafe_frag γ 1 ... not jsafe_frag γ qh .... *)
+      unfold cl_initial_core. simpl.
+      admit.
+    }
+
+    iDestruct "Hsafety_pair" as "[Hjsafe_parent_half Hspawn_child]".
+
+    iAssert (threads_safe tp_test γ)%I
+      with "[Hsafe Hfrag_parent Hfrag_child Hjsafe_parent_half Hspawn_child]" as "Hthreads_test".
+    {
+      rewrite /threads_safe /tp_test /tp_upd_test.
+      rewrite seq_S big_sepL_app big_sepL_singleton.
+
+      iSplitL "Hsafe Hfrag_parent Hjsafe_parent_half".
+      - iApply "Hsafe".
+        + iIntros "!>" (k0 y (-> & Hk)%lookup_seq Hki) "Hy".
+          replace (0 + k0) with k0 in * by lia.
+          assert (Hik : i ≠ k0) by lia.
+          iDestruct "Hy" as (q0 σ0 cnty) "(%Hperm & Hsafe_y & Hfrag_y)".
+          set (cnty_u := @cntUpdate _ _ _ i k0 tp (Kresume c Vundef) (getThreadR cnti) cnti cnty).
+          set (cnty_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty_u).
+          iExists q0, σ0, cnty_n.
+          iSplit.
+          {
+            iPureIntro.
+            assert (Hres : getThreadR cnty_n = getThreadR cnty).
+            { subst cnty_n cnty_u.
+              rewrite gsoAddRes gsoThreadRes; auto. }
+            by rewrite Hres.
+          }
+          iSplitL "Hsafe_y".
+          {
+            rewrite /thread_safe.
+            iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
+            set (cnty0_u := @cntUpdate _ _ _ i k0 tp (Kresume c Vundef) (getThreadR cnti) cnti cnty0).
+            set (cnty0_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty0_u).
+            iExists cnty0_n.
+            assert (Hcode : getThreadC cnty0_n = getThreadC cnty0).
+            { subst cnty0_n cnty0_u.
+              rewrite gsoAddCode gsoThreadCode; auto. }
+            rewrite Hcode. iFrame.
+          }
+          iFrame.
+        + set (cnti_u := @cntUpdate _ _ _ i i tp (Kresume c Vundef) (getThreadR cnti) cnti cnti).
+
+          set (cnti_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) i _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnti_u).
+
+          iExists qh, σ1, cnti_n.
+          iSplit.
+          {
+            iPureIntro.
+            assert (Hres : getThreadR cnti_n = getThreadR cnti).
+            { subst cnti_n cnti_u.
+              rewrite gsoAddRes gssThreadRes //. }
+            by rewrite Hres.
+          }
+          iSplitL "Hjsafe_parent_half".
+          { rewrite /thread_safe.
+            iExists cnti_n.
+            assert (Hcode : getThreadC cnti_n = Kresume c Vundef).
+            { subst cnti_n cnti_u.
+              rewrite gsoAddCode gssThreadCode //. }
+            rewrite Hcode /=.
+            iIntros (c0) "%Hafter0".
+            replace c0 with c'.
+            - iExact "Hjsafe_parent_half".
+            - simpl in Hafter0, Hafter. congruence.
+          }
+          iFrame.
+      - assert (Hchild_latest : 0 + pos.n (OrdinalPool.num_threads tp_upd_test) =
+                                  OrdinalPool.latestThread tp_upd_test).
+        { rewrite /OrdinalPool.latestThread. lia. }
+        assert (cntC : containsThread tp_test (0 + pos.n (OrdinalPool.num_threads tp_upd_test))).
+        { subst tp_test.
+          rewrite Hchild_latest.
+          apply OrdinalPool.cntAddLatest. }
+        iExists qh, (ε : raw_rmapR), cntC.
+        iSplit.
+        { iPureIntro. rewrite gssAddRes. done. done. }
+        iDestruct "Hspawn_child" as (q_new) "(%Hinit_child & Hsafe_child)".
+        iSplitL "Hsafe_child".
+        + rewrite /thread_safe.
+          iExists cntC.
+          rewrite gssAddCode.
+          iExists q_new.
+          iSplit; iFrame. done. done.
+        + iExact "Hfrag_child".
+    }
+
+  Admitted. *)
 
   Lemma acquire_safe (γ : gname) (tp : dtp) (m : mem) (ls : gset address) (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp) (Hcompat : mem_compatible tp m)
     (Hlocks : locks_coherent tp m ls)
@@ -5156,6 +5595,7 @@ frag_mem_auth            rmap_frag
         done.
   Qed.
   
+  
 End conc_heap.
 
 Existing Instance HybridMachine.DryHybridMachine.DryHybridMachineSig.
@@ -5181,7 +5621,12 @@ Proof.
                 heapGS_gen_heapGS := HG;
                 heapGS_funspecGS := FS |} : heapGS Σ) ES).
   destruct (spr HHfrag HL σ) as (b & q & (? & ? & Hinit) & Hsafe); [| done..].
-  iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as (?) "(S & Heq & Hsafe)".
+  iMod (Hsafe with "[$Hstate $Hfunspec $Hext]") as (?) "(S & Heq & Hsafe & Hfcode & Hcore)".
+  pose (mcode := proj1_sig init_mem).
+  assert (Hinitcode : Genv.init_mem prog = Some mcode).
+  { apply (proj2_sig init_mem). }
+  iMod (code_ctx_alloc (HH := HHfrag) mcode with "[$Hfcode $Hcore]") as "#Hcode".
+  clearbody mcode.
   iDestruct "Heq" as "%Heq".
   iUnfold state_interp_with_rmap, frag_mem_auth in "S".
   iDestruct "S" as "((%Hlt & %Hcoh& Hmem) & Hext)".
@@ -5198,7 +5643,6 @@ Proof.
        iPureIntro. intros.
        eexists. eexists. split; first done; split; first apply Hinit; done. }
   clear Hinit Hsafe.
-  rewrite bi.and_elim_l.
   set (tp := initial_machine _ _).
   assert (invariant tp) as Hinvariant by apply ThreadPoolWF.initial_invariant0.
   assert (HybridMachineSig.mem_compatible tp (`init_mem)) as Hcompat
@@ -5485,14 +5929,16 @@ Proof.
     (* external case *)
     iDestruct "Hext" as (e args x) "(%Hat_ext & S & Hpre & Hpost)".
     simpl in Hat_ext.
-    iAssert (|={⊤}[∅]▷=> ∃ (tp' : t (ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev σnew,
+    iAssert (∃ ls' : gset address,
+                |={⊤}[∅]▷=> ∃ (tp' : t (ThreadPool := OrdinalPool.OrdinalThreadPool)) m' ev σnew,
                ⌜threads_wellformed tp' ∧ invariant tp' ∧ mem_compatible tp' m' ∧
-                locks_coherent tp' m' ls ∧
-                 (forall a r, lockRes tp' a = Some r -> a ∈ ls) ∧
+                locks_coherent tp' m' ls' ∧
+                 (forall a r, lockRes tp' a = Some r -> a ∈ ls') ∧
                  syncStep true cnti Hcompat tp' m' ev⌝ ∧
             ext_auth () ∗ rmap_auth γ σnew ∗ frag_mem_auth m' σnew ∗ threads_safe tp' γ ∗
-              lock_state1 γ m' ls (lockRes tp')) with "[Hpost Hsafe locks Hpre S]" as "Hsafe".
+              lock_state1 γ m' ls' (lockRes tp')) with "[Hpost Hsafe locks Hpre S]" as "Hsafe".
     2 : {
+      iDestruct "Hsafe" as (ls') "Hsafe".
       iMod "Hsafe".
       iIntros "!> !>".
       iMod "Hsafe" as (tp' m' ev σnew) "(%Hsync & Hext & Hauth & Hmem & Hth & locks)".
@@ -5500,7 +5946,7 @@ Proof.
       iAssert (|={⊤}[∅]▷=>^n ∀ U'', ⌜HybridMachineSig.HybridCoarseMachine.csafe (U'', tr ++ [Events.external i ev], tp') m' n⌝) with "[-]" as "H".
       { rewrite step_fupdN_plain_forall //.
         iIntros.
-        iApply ("IH" $! x0 (tr ++ [Events.external i ev]) tp' m' n ls
+        iApply ("IH" $! x0 (tr ++ [Events.external i ev]) tp' m' n ls'
                  with "[] [] [] [] [] Hext Hauth Hth locks Hmem"); try done.
       }
       iApply (step_fupdN_mono with "H").
@@ -5515,12 +5961,15 @@ Proof.
     destruct (ef_inline ext); inv Hat_ext.
     destruct (CEspec_cases _ x) as [-> | [-> | [-> | [-> | ->]]]].
     + (* acquire *)
+      iExists ls.
       iApply (acquire_safe with "Hsafe Hpre Hpost locks S"); auto.
     + (* release *)
+      iExists ls.
       iApply (release_safe with "Hsafe Hpre Hpost locks S"); auto.
     + (* makelock *) admit.
     + (* freelock *) admit.
-    + (* spawn *) admit.
+    + iExists ls.
+      (* spawn *) admit.
   - (* Kresume: HybridMachineSig.resume_step *)
     pose proof (Htp_wf _ cnti) as Hwfi; rewrite Hi in Hwfi; destruct Hwfi as (? & ->).
     destruct s; try done.
