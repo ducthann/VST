@@ -3840,8 +3840,6 @@ Section conc_heap.
       { iSplit; try iPureIntro; try done. }
       iFrame.
     }
-    
-
     iDestruct "Hmem" as (Hlt0) "(%Hcoh0 & Hrs)".
     set (m_parent := restrPermMap Hlt).
     pose proof (mem_equiv.useful_permMapLt_trans Hlt Hlt0) as Hlt_inner.
@@ -4124,21 +4122,214 @@ so the same iNext opens both the child precondition and semax_external. *)
           *)
 
           iAssert (▷ jsafe (genv_symb := genv_symb_injective) (cl_core_sem ge) (concurrent_ext_spec CS ext_link) ge ⊤ () q_new)%I with "[-]" as "Hsafe_standard".
-          {
-            (* Provable from HbodyI, Hpre_child, and Hbelieve
-               by the internal-call/semax soundness argument. *)
-            admit.
+          { rewrite -bi.later_forall.
+            iNext.
+            iApply fupd_jsafe.
+            iMod (fupd_mask_subseteq (E0 xchild)) as "Hclose0". set_solver.
+            iMod "Hpre_child" as (xC FC HmaskC) "((HFC & HPC) & HQC)".
+            iMod "Hclose0" as "_".
+            iSpecialize ("HbodyI" $! xC).
+            pose proof (CSL_all_safe CPROOF HH lockGS0) as Hprog.
+            destruct Hprog as [HnrB [HAL [HGG [[HmatchF [HGC HBelieveProg]] [HGV Hmain]]]]].
+            apply compute_list_norepet_e in HnrB.
+            assert (HCSUB : expr.cenv_sub (@cenv_cs CS) (genv_cenv ge)).
+            { change (genv_cenv ge) with (prog_comp_env prog).
+              clear -HGG.
+              hnf; intros id; hnf.
+              destruct (cenv_cs !! id)%maps eqn:Hid; auto.
+              apply Maps.PTree.elements_complete.
+              unfold prog.
+              rewrite <- HGG.
+              by apply Maps.PTree.elements_correct.
+            }
+            iModIntro.
+            rewrite semax_fold_unfold.
+            iSpecialize("HbodyI" $! ge (func_tycontext' fI (nofunc_tycontext V G)) CS
+                         with "[%] [Hbelieve]").
+            { split3; auto; try by apply expr.tycontext_sub_refl.
+              apply expr.cenv_sub_refl. }
+            { iFrame "Hbelieve". }
+            assert (HtcI : Cop2.tc_vals [Ctypesdefs.tptr Ctypesdefs.tvoid] [b]) by done.
+            pose proof (tc_vals_length _ _ HtcI) as HlenI.
+            change ([Ctypesdefs.tptr Ctypesdefs.tvoid] = map snd (fn_params fI)) in HparamsI.
+            rewrite HparamsI map_length in HlenI.
+            destruct (build_call_temp_env fI [b] HlenI) as (teI & HteI).
+            rewrite /q_new.
+            iApply jsafe_step.
+            rewrite /jstep_ex.
+            iIntros (mI σI) "(HmI & HextI)".
+            iMod (alloc_stackframe mI fI ge teI with "[$HmI]") as (mI' veI [HallocI HvenvI]) "((%HcohI & HmI') & HstackI)"; [try done.. |].
+            { unfold var_sizes_ok in HvarsI.
+              rewrite !Forall_forall in HvarsI, HcompleteI |- *.
+              intros v Hv.
+              specialize (HcompleteI v Hv).
+              specialize (HvarsI v Hv).
+              rewrite (veric.expr_lemmas4.cenv_sub_sizeof HCSUB); auto.
+            }
+            iModIntro.
+            iExists (State fI (fn_body fI) Kstop veI teI), mI', HcohI.
+            iSplit.
+            { apply list_norepet_append_inv in HnorepI as (Hnr_params & Hnr_temps & Hdisjoint).
+              iPureIntro. constructor. constructor; done.
+            }
+            iSplitL "HmI' HextI".
+            { rewrite /state_interp. iFrame. }
+            iNext.
+            set (f0 := mkfunction Ctypesdefs.tvoid cc_default nil nil nil Sskip).
+            set (Fouter := (⎡(F ∗ FC)%I⎤ : assert)).
+            set (rho0 := construct_rho (filter_genv ge) Clight.empty_env (Maps.PTree.empty val)).
+            set (Finner := (emp : assert)).
+            set (Fkeep := (⎡Fouter rho0 ∗ Finner rho0⎤ : assert)).
+            set (R0 := Clight_seplog.normal_ret_assert (maybe_retval (assert_of (Qchild xC)) (Ctypesdefs.tptr Ctypesdefs.tvoid) None)).
+            assert (Hglob0 : seplog.typecheck_glob_environ (filter_genv ge) (seplog.glob_types (nofunc_tycontext V G))).
+            { eapply tc_ge_denote_initial; eauto. }
+            assert (Hguard0 : guard_environ (nofunc_tycontext V G) f0 rho0).
+            { subst rho0 f0.
+              split3; first split3; simpl; auto.
+              - intros ??.
+                by setoid_rewrite Maps.PTree.gempty.
+              - intros ??.
+                rewrite /make_venv /Map.get.
+                setoid_rewrite Maps.PTree.gempty.
+                split; first done.
+                by intros (? & ?).
+              - intros ?. done.
+            }
+            assert (HclosedCall : semax.closed_wrt_modvars (Scall None (Econst_int Int.zero Ctypesdefs.tint) nil) Fouter).
+            { rewrite closed_wrt_modvars_Scall. subst Fouter.
+              intros rho te' Hmodified. monPred.unseal. done.
+            }
+            assert (Hctl0 : ∀ ret0 z',
+               assert_safe (concurrent_ext_spec CS ext_link) ge ⊤ f0 Clight.empty_env
+                 (set_opttemp None (val_lemmas.force_val ret0) (Maps.PTree.empty val))
+                 (exit_cont EK_normal None Kstop)
+                 (construct_rho (filter_genv ge) Clight.empty_env (set_opttemp None (val_lemmas.force_val ret0) (Maps.PTree.empty val))) ⊢ jsafeN (concurrent_ext_spec CS ext_link) ge ⊤ z' (Returnstate (val_lemmas.force_val ret0) Kstop)).
+            { intros ret0 z'; iIntros "?"; by iApply return_stop_safe; try iPureIntro. }
+            assert (Hpost0 : ⊢ ∀ rho' : environ,
+                   ■ ((∃ old : val, substopt None (liftx old) Finner rho' ∗
+                      maybe_retval (assert_of (Qchild xC)) (Ctypesdefs.tptr Ctypesdefs.tvoid) None rho') -∗ RA_normal R0 rho')).
+            { iIntros (rho') "!> H"; by iDestruct "H" as (old) "(_ & Hret)". }
+            iPoseProof Hpost0 as "#Hpost0".
+            assert (Hrguard0 : ⊢ rguard (concurrent_ext_spec CS ext_link) ge ⊤
+                 (nofunc_tycontext V G) f0 (Clight_seplog.frame_ret_assert R0 Fouter) Kstop).
+            {
+              rewrite /rguard /_guard.
+              iIntros (ek vl tx vx).
+              try iModIntro.
+              rewrite Clight_seplog.proj_frame.
+              iIntros "(%Henv0 & (? & Q) & ?)".
+              destruct ek; simpl Clight_seplog.proj_ret_assert; monPred.unseal;
+                try iDestruct "Q" as (->) "Q"; try iDestruct "Q" as "[]".
+              iIntros (??).
+              iApply jsafe_step.
+              rewrite /jstep_ex.
+              iIntros (??) "(Hm & ?)".
+              iMod (free_stackframe _ f0 _ _ vx tx with "[$Hm]") as (???) "?"; try eassumption; try solve [constructor].
+              {
+                destruct Henv0 as (? & Hmatch & ?).
+                split3; auto.
+                split3; simpl; eauto.
+                - intros ??.
+                  by setoid_rewrite Maps.PTree.gempty.
+                - intros ??.
+                  setoid_rewrite Maps.PTree.gempty.
+                  simpl in *.
+                  split; first done.
+                  rewrite /Map.get.
+                  intros (? & Hid).
+                  specialize (Hmatch id).
+                  rewrite Hid // in Hmatch.
+              }
+              { by rewrite /Clight_seplog.stackframe_of /f0 /=. }
+              iIntros "!>".
+              iExists _, _, _.
+              iSplit. iPureIntro; econstructor; eauto.
+              iFrame.
+              by iApply return_stop_safe; try iPureIntro.
+            }
+            iPoseProof Hrguard0 as "#Hrguard0".
+            iAssert (▷ rguard (concurrent_ext_spec CS ext_link) ge ⊤ (nofunc_tycontext V G) f0 (Clight_seplog.frame_ret_assert R0 Fouter) Kstop)%I with "[]" as "#Hrguard0_later"; try done.
+            iPoseProof (semax_call_aux2 (CS' := CS) ⊤ (nofunc_tycontext V G) Achild Qchild xC Finner Fouter None f0 ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid) (Econst_int Int.zero Ctypesdefs.tint) nil R0 ge fI I (fun _ => eq_refl) HclosedCall HCSUB HcompleteI HnorepI HnorepVarsI (conj HparamsI HretI) Clight.empty_env (Maps.PTree.empty val) Kstop rho0 eq_refl Hguard0 Kstop eq_refl Hctl0 with "Hpost0 Hrguard0_later") as "#Haux".
+            iDestruct "Haux" as "(%HclosedBody & #HrguardBody)".
+            iAssert (guard' (concurrent_ext_spec CS ext_link) ge ⊤ (func_tycontext' fI (nofunc_tycontext V G)) fI (Fkeep ∗ Clight_seplog.bind_args (fn_params fI) (argsassert_of (Pchild xC)) ∗ stackframe_of' cenv_cs fI) (Kseq (fn_body fI) Kstop))%I with "[]" as "#HguardI".
+            {
+              iApply ("HbodyI" $! Kstop Fkeep fI ⊤).
+              iIntros "!>".
+              iSplit.
+              - iPureIntro.
+                split; auto.
+              - iFrame "HrguardBody".
+            }
+            set (rhoI := construct_rho (filter_genv ge) veI teI).
+            iAssert (stackframe_of' cenv_cs fI rhoI)%I with "[HstackI]" as "HstackI".
+            { simpl. done. }
+            assert (HtcParamsI : Cop2.tc_vals (snd (split (fn_params fI))) [b]).
+            { by rewrite snd_split -HparamsI. }
+            assert (HnrParamsI : list_norepet (map fst (fn_params fI))).
+            { by apply list_norepet_app in HnorepI as [Hparams_nr [_ _]]. }
+            assert (HevalParamsI : map (fun xt => eval_id (fst xt) rhoI) (fn_params fI) = [b]).
+            { subst rhoI.
+              clear -HnrParamsI HteI.
+              remember [b] as args eqn:Hargs in HteI |- *.
+              clear Hargs.
+              remember (create_undef_temps (fn_temps fI)) as te0 eqn:Hte0 in HteI.
+              clear Hte0.
+              revert args te0 teI HteI HnrParamsI.
+              induction (fn_params fI) as [|a l IH]; destruct args;
+                intros; auto; try discriminate.
+              - destruct a.
+                inv HteI.
+              - destruct a as [id ty].
+                simpl in HteI.
+                inv HnrParamsI.
+                rewrite <- (IH _ _ _ HteI); auto.
+                simpl.
+                f_equal.
+                unfold eval_id, construct_rho.
+                simpl.
+                erewrite pass_params_ni; try eassumption.
+                rewrite Maps.PTree.gss. done.
+            }
+            assert (HguardEnvI : guard_environ (func_tycontext' fI (nofunc_tycontext V G)) fI rhoI).
+            { unfold guard_environ.
+              split3; try done. subst rhoI. eapply semax_call_typecheck_environ; eauto. }
+            iPoseProof (initial_core_funassert (CSL_prog CPROOF) V G
+                 mcode (make_venv veI) (make_tenv teI) HnrB HmatchF Hinitcode
+                with "[$Hcore $Hmatch_child]") as "HfunN".
+            assert (HsameGlobI : ∀ id,
+                       (seplog.glob_specs (nofunc_tycontext V G) !! id)%maps =
+                         (seplog.glob_specs
+                            (func_tycontext' fI (nofunc_tycontext V G)) !! id)%maps).
+            { intros id; reflexivity. }
+            assert (HsameEnvI : ge_of (mkEnviron (filter_genv (globalenv (CSL_prog CPROOF)))
+                                         (make_venv veI) (make_tenv teI)) = ge_of rhoI).
+            { subst rhoI; reflexivity. }
+            iPoseProof (same_glob_funassert'
+                 (nofunc_tycontext V G) (func_tycontext' fI (nofunc_tycontext V G))
+                 (mkEnviron (filter_genv (globalenv (CSL_prog CPROOF)))
+                    (make_venv veI) (make_tenv teI)) rhoI HsameGlobI HsameEnvI
+                         with "HfunN") as "HfunI".
+            iAssert (Clight_seplog.funassert (func_tycontext' fI (nofunc_tycontext V G)) rhoI)%I with "[HfunI]" as "HfunI'".
+            { rewrite - same_glob_funassert'; auto. }
+            assert (HfilterGenv : filter_genv (symb2genv (genv_symb_injective ge)) = filter_genv ge).
+            { by apply functional_extensionality. }
+            rewrite /gargsC HfilterGenv.
+            iApply ("HguardI" with "[-]"); last first; try done.
+            iSplit; try done.
+            iFrame "HstackI HfunI'".
+            iSplitL "HF HFC".
+            + rewrite /Fkeep /Fouter /Finner.
+              monPred.unseal. iFrame.
+            + rewrite /Clight_seplog.bind_args.
+              monPred.unseal.
+              iSplit.
+              * iPureIntro.
+                rewrite /Clight_seplog.tc_formals.
+                by rewrite -HparamsI HevalParamsI.
+              * iApply (make_args_close_precondition (fn_params fI) [b] ge (create_undef_temps (fn_temps fI)) veI teI (argsassert_of (Pchild xC)) with "HPC"); auto.
+                apply (tc_vals_Vundef HtcI).
           }
-          iNext.
-          iPoseProof (jsafe_jsafe_frag γ with "Hsafe_standard") as "Hsafe_full".
-
-          (*
-            Hsafe_full : jsafe_frag γ 1 ⊤ () q_new
-            goal       : jsafe_frag γ qh ⊤ () q_new
-
-            There is no valid weakening 1 -> qh.
-          *)
-
+          (* Child: standard jsafe → fraction 1 → qh *)
           admit.
     }
     iDestruct "Hsafety_pair" as "[Hjsafe_parent_half Hspawn_child]".
@@ -4147,7 +4338,6 @@ so the same iNext opens both the child precondition and semax_external. *)
     {
       rewrite /threads_safe /tp_test /tp_upd_test.
       rewrite seq_S big_sepL_app big_sepL_singleton.
-
       iSplitL "Hsafe Hfrag_parent Hjsafe_parent_half".
       - iApply "Hsafe".
         + iIntros "!>" (k0 y (-> & Hk)%lookup_seq Hki) "Hy".
@@ -4158,16 +4348,13 @@ so the same iNext opens both the child precondition and semax_external. *)
           set (cnty_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty_u).
           iExists q0, σ0, cnty_n.
           iSplit.
-          {
-            iPureIntro.
+          { iPureIntro.
             assert (Hres : getThreadR cnty_n = getThreadR cnty).
-            { subst cnty_n cnty_u.
-              rewrite gsoAddRes gsoThreadRes; auto. }
+            { subst cnty_n cnty_u. rewrite gsoAddRes gsoThreadRes; auto. }
             by rewrite Hres.
           }
           iSplitL "Hsafe_y".
-          {
-            rewrite /thread_safe.
+          { rewrite /thread_safe.
             iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
             set (cnty0_u := @cntUpdate _ _ _ i k0 tp (Kresume c Vundef) (getThreadR cnti) cnti cnty0).
             set (cnty0_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty0_u).
@@ -4179,24 +4366,19 @@ so the same iNext opens both the child precondition and semax_external. *)
           }
           iFrame.
         + set (cnti_u := @cntUpdate _ _ _ i i tp (Kresume c Vundef) (getThreadR cnti) cnti cnti).
-
           set (cnti_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) i _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnti_u).
-
           iExists qh, σ1, cnti_n.
           iSplit.
-          {
-            iPureIntro.
+          { iPureIntro.
             assert (Hres : getThreadR cnti_n = getThreadR cnti).
-            { subst cnti_n cnti_u.
-              rewrite gsoAddRes gssThreadRes //. }
+            { subst cnti_n cnti_u. rewrite gsoAddRes gssThreadRes //. }
             by rewrite Hres.
           }
           iSplitL "Hjsafe_parent_half".
           { rewrite /thread_safe.
             iExists cnti_n.
             assert (Hcode : getThreadC cnti_n = Kresume c Vundef).
-            { subst cnti_n cnti_u.
-              rewrite gsoAddCode gssThreadCode //. }
+            { subst cnti_n cnti_u. rewrite gsoAddCode gssThreadCode //. }
             rewrite Hcode /=.
             iIntros (c0) "%Hafter0".
             replace c0 with c'.
@@ -4208,9 +4390,7 @@ so the same iNext opens both the child precondition and semax_external. *)
                                   OrdinalPool.latestThread tp_upd_test).
         { rewrite /OrdinalPool.latestThread. lia. }
         assert (cntC : containsThread tp_test (0 + pos.n (OrdinalPool.num_threads tp_upd_test))).
-        { subst tp_test.
-          rewrite Hchild_latest.
-          apply OrdinalPool.cntAddLatest. }
+        { subst tp_test. rewrite Hchild_latest. apply OrdinalPool.cntAddLatest. }
         iExists qh, (ε : raw_rmapR), cntC.
         iSplit.
         { iPureIntro. rewrite gssAddRes. done. done. }
