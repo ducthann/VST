@@ -1354,8 +1354,8 @@ Section conc_heap.
             ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
             |={E}=> thread_state_interp γ (getCurPerm m') q m' σ' z' -∗
             Jext_spec_post (concurrent_ext_spec CS ext_link) e x (genv_symb_injective ge)
-              (sig_res (ef_sig e)) ret -∗
-            ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧
+              (sig_res (ef_sig e)) ret -∗ (* already added an extra inner fupd *)
+                                          |={E}=> ∃ c', ⌜after_external (cl_core_sem ge) ret c m' = Some c'⌝ ∧
                     thread_state_interp γ (getCurPerm m') q m' σ' z' ∗ jsafe E z' c')).
 
   Local Instance jsafe_frag_pre_contractive γ q : Contractive (jsafe_frag_pre γ q).
@@ -1782,6 +1782,7 @@ Section conc_heap.
       assert (Hcoh2_restr : coherent (restrPermMap Hlt2) σ').
       { by apply coherent_restrPermMap. }
       iExists c'.
+      iModIntro.
       iSplit; first done.
       iFrame.
       iSplit; last first; try by iApply "IH".
@@ -3945,10 +3946,8 @@ so the same iNext opens both the child precondition and semax_external. *)
           iMod "Hpre_child" as (xC FC) "(%HmaskC & (HFC & HPC) & HQC)".
           iSpecialize ("Hsemext_child" $! xC).
           iMod (fupd_mask_subseteq (Echild xC)) as "HcloseC". done.
-          iMod ("Hsemext_child" $! FC (sig_args (ef_sig ef)) [b]
-                 with "[HPC HFC]") as "Hrun_ext".
-          {
-            iSplit; iFrame.
+          iMod ("Hsemext_child" $! FC (sig_args (ef_sig ef)) [b] with "[HPC HFC]") as "Hrun_ext".
+          { iSplit; iFrame.
             iPureIntro.
             rewrite Hef_child /=.
             destruct b; simpl in Hb |- *; unfold AST.Tptr; destruct Archi.ptr64; auto.
@@ -3956,9 +3955,7 @@ so the same iNext opens both the child precondition and semax_external. *)
           iMod "HcloseC" as "_".
           iMod "Hclose0" as "_".
           assert (Hinline0 : ef_inline ef = false).
-          { destruct Hinline_child as [Hinline0 | Hempty]; auto.
-            exfalso. done.
-          }
+          { destruct Hinline_child as [Hinline0 | Hempty]; auto; exfalso; done. }
           iModIntro.
           iIntros (mC σC pC) "HstateC".
           iUnfold thread_state_interp in "HstateC".
@@ -3972,16 +3969,13 @@ so the same iNext opens both the child precondition and semax_external. *)
           { etransitivity; eauto. }
           iDestruct ("Hrun_ext" $! (restrPermMap HltGlob) σglob ()
                       with "[HheapC HextC]") as (xext) "(HstdC & HpreC & HpostC)".
-          { rewrite /state_interp /mem_rmap_auth.
-            iFrame. iPureIntro. auto.
-          }
+          { rewrite /state_interp /mem_rmap_auth. iFrame. iPureIntro. auto. }
           iDestruct "HstdC" as "((%HcohStd & HheapC) & HextC)".
           iExists HltChild.
           iRight; iRight.
           iExists ef, [b], xext.
           iSplit.
-          {
-            iPureIntro.
+          { iPureIntro.
             change (cl_at_external q_new = Some (ef, [b])).
             rewrite /q_new /cl_at_external Hinline0 //.
           }
@@ -4001,13 +3995,12 @@ so the same iNext opens both the child precondition and semax_external. *)
           iUnfold thread_state_interp in "HstateC'".
           iDestruct "HstateC'" as (σglob') "(%HeqC' & HmemC' & HauthC' & HfragC' & HextC')".
           iDestruct "HmemC'" as (HltGlob') "(%HcohGlob' & HheapC')".
-
           iSpecialize ("HpostC" $! (sig_res (ef_sig ef)) ret (restrPermMap HltGlob') σglob' z').
           iAssert ( |={⊤}=> state_interp (restrPermMap HltGlob') σglob' z' ∗
                   Qchild xC (make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret) ∗ FC)%I
             with "[HpostC HheapC' HextC' HpostC']" as "Hpost_inner".
           {
-            iMod (fupd_mask_subseteq (Echild xC)) as "HclosePost". set_solver.
+            iMod (fupd_mask_subseteq (Echild xC)) as "HclosePost". clear. set_solver.
             iMod "HpostC" as "HpostC".
             iDestruct ("HpostC" with "[HheapC' HextC'] HpostC'") as "(HstdC' & HQchild & HFC')".
             { rewrite /state_interp /mem_rmap_auth. iFrame. done. }
@@ -4015,68 +4008,33 @@ so the same iNext opens both the child precondition and semax_external. *)
             iModIntro.
             iFrame.
           }
-          iAssert (state_interp (restrPermMap HltGlob') σglob' z' ∗
-                Qchild xC (make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret) ∗ FC)%I
-            with "[Hpost_inner]" as "Hpost_result".
-          { admit. }
-          iDestruct "Hpost_result" as "(HstdC' & HQchild & HFC')".
+          iMod "Hpost_inner" as "(HstdC' & HQchild & HFC')".
           iDestruct "HstdC'" as "((%HcohStd' & HheapC') & HextC')".
           set (rhoC := make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret).
           assert (HveC : ve_of rhoC = Map.empty (Values.block * type)).
           { subst rhoC. rewrite Hef_child /=. destruct ret; auto. }
           rewrite bi.affinely_elim.
           iSpecialize ("HQC" $! rhoC).
-          rewrite plainly_elim.
-          iAssert (|={⊤}=> Q0 xchild rhoC) with "[HQC HFC' HQchild]" as "HQ0ret_inner".
-          { iMod (fupd_plainly_elim with "HQC") as "HQC".
-            iModIntro.
-            iApply "HQC".
-            iSplit; first done.
-            iFrame.
-          }
-          iAssert (Q0 xchild rhoC)%I with "[HQ0ret_inner]" as "HQ0ret".
-          { (* Need inner fupd. |={E}=> ∃ c', ... external  *)
-            admit.
-          }
+          iMod (fupd_plainly_elim with "HQC") as "HQC".
+          iAssert (Q0 xchild rhoC) with "[HQC HFC' HQchild]" as "HQ0ret".
+          { iApply "HQC". iSplit; first done. iFrame. }
           rewrite bi.affinely_elim.
           iSpecialize ("HQ0" $! rhoC).
-          iAssert (|={⊤}=>
-                     (PROP ( )
-                          (monpred.monPred_defs.monPred_and_def (seplog.local (liftx True%type))
-                      (monpred.monPred_defs.monPred_embed_def emp))) rhoC)%I
-            with "[HQ0 HF HQ0ret]" as "Hdone_inner".
-          { iMod (fupd_plainly_elim with "HQ0") as "HQ0".
-            iModIntro.
-            iApply "HQ0".
-            iSplit; first done.
-            iFrame.
-          }
-          iAssert (
-              (PROP ( )
-                 (monpred.monPred_defs.monPred_and_def
-                    (seplog.local (liftx True%type))
-                    (monpred.monPred_defs.monPred_embed_def emp))) rhoC
-            )%I with "[Hdone_inner]" as "Hdone".
-          {
-            admit.
-          }
+          iMod (fupd_plainly_elim with "HQ0") as "HQ0".
+          iAssert ((PROP ( ) (monpred.monPred_defs.monPred_and_def (seplog.local (liftx True%type))
+                   (monpred.monPred_defs.monPred_embed_def emp))) rhoC)%I
+            with "[HQ0 HF HQ0ret]" as "Hdone".
+          { iApply "HQ0". iSplit; iFrame; iPureIntro; exact HveC. }
           rewrite /PROPx.
           iDestruct "Hdone" as "(_ & (_ & _))".
           iAssert (thread_state_interp γ (getCurPerm m') qh m' σC' z')%I
             with "[HheapC' HauthC' HfragC' HextC']" as "Hstate_final".
-          {
-            rewrite /thread_state_interp.
-            iExists σglob'.
-            iSplit; auto.
-            iSplitL "HheapC'".
-            {
-              rewrite /frag_mem_auth.
-              iExists HltGlob'.
-              iSplit; done.
-            }
-            iFrame.
+          { rewrite /thread_state_interp.
+            iExists σglob'. iSplit; auto. iFrame.
+            iExists HltGlob'; iSplit; done.
           }
           set (vret := match ret with | Some v => v | None => Vundef end).
+          iModIntro.
           iExists (Returnstate vret Kstop).
           iSplit.
           { iPureIntro; rewrite /q_new /vret /= //. }
@@ -4096,8 +4054,7 @@ so the same iNext opens both the child precondition and semax_external. *)
           iExists HltR.
           iLeft.
           iExists Int.zero.
-          iSplit.
-          iPureIntro. simpl. done. done.
+          iSplit; iPureIntro; try done.
         + (* Internal child. *)
           iUnfold believe_internal in "HBI_child".
           iDestruct "HBI_child" as (bI fI (HvI & HfindI & HcompleteI & HnorepI & HnorepVarsI & HvarsI & HparamsI & HretI & HccI)) "HbodyI".
@@ -4138,16 +4095,14 @@ so the same iNext opens both the child precondition and semax_external. *)
               hnf; intros id; hnf.
               destruct (cenv_cs !! id)%maps eqn:Hid; auto.
               apply Maps.PTree.elements_complete.
-              unfold prog.
-              rewrite <- HGG.
+              rewrite /prog -HGG.
               by apply Maps.PTree.elements_correct.
             }
             iModIntro.
             rewrite semax_fold_unfold.
             iSpecialize("HbodyI" $! ge (func_tycontext' fI (nofunc_tycontext V G)) CS
                          with "[%] [Hbelieve]").
-            { split3; auto; try by apply expr.tycontext_sub_refl.
-              apply expr.cenv_sub_refl. }
+            { split3; auto; try by apply expr.tycontext_sub_refl. apply expr.cenv_sub_refl. }
             { iFrame "Hbelieve". }
             assert (HtcI : Cop2.tc_vals [Ctypesdefs.tptr Ctypesdefs.tvoid] [b]) by done.
             pose proof (tc_vals_length _ _ HtcI) as HlenI.
@@ -4186,14 +4141,11 @@ so the same iNext opens both the child precondition and semax_external. *)
             assert (Hguard0 : guard_environ (nofunc_tycontext V G) f0 rho0).
             { subst rho0 f0.
               split3; first split3; simpl; auto.
-              - intros ??.
-                by setoid_rewrite Maps.PTree.gempty.
-              - intros ??.
-                rewrite /make_venv /Map.get.
+              - intros ??; by setoid_rewrite Maps.PTree.gempty.
+              - intros ??; rewrite /make_venv /Map.get.
                 setoid_rewrite Maps.PTree.gempty.
-                split; first done.
-                by intros (? & ?).
-              - intros ?. done.
+                split; first done; by intros (? & ?).
+              - intros ?; done.
             }
             assert (HclosedCall : semax.closed_wrt_modvars (Scall None (Econst_int Int.zero Ctypesdefs.tint) nil) Fouter).
             { rewrite closed_wrt_modvars_Scall. subst Fouter.
@@ -4333,10 +4285,8 @@ so the same iNext opens both the child precondition and semax_external. *)
           admit.
     }
     iDestruct "Hsafety_pair" as "[Hjsafe_parent_half Hspawn_child]".
-    iAssert (threads_safe tp_test γ)%I
-      with "[Hsafe Hfrag_parent Hfrag_child Hjsafe_parent_half Hspawn_child]" as "Hthreads_test".
-    {
-      rewrite /threads_safe /tp_test /tp_upd_test.
+    iAssert (threads_safe tp_test γ)%I with "[Hsafe Hfrag_parent Hfrag_child Hjsafe_parent_half Hspawn_child]" as "Hthreads_test".
+    { rewrite /threads_safe /tp_test /tp_upd_test.
       rewrite seq_S big_sepL_app big_sepL_singleton.
       iSplitL "Hsafe Hfrag_parent Hjsafe_parent_half".
       - iApply "Hsafe".
@@ -4348,44 +4298,36 @@ so the same iNext opens both the child precondition and semax_external. *)
           set (cnty_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty_u).
           iExists q0, σ0, cnty_n.
           iSplit.
-          { iPureIntro.
-            assert (Hres : getThreadR cnty_n = getThreadR cnty).
+          { assert (Hres : getThreadR cnty_n = getThreadR cnty).
             { subst cnty_n cnty_u. rewrite gsoAddRes gsoThreadRes; auto. }
             by rewrite Hres.
           }
-          iSplitL "Hsafe_y".
-          { rewrite /thread_safe.
-            iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
-            set (cnty0_u := @cntUpdate _ _ _ i k0 tp (Kresume c Vundef) (getThreadR cnti) cnti cnty0).
-            set (cnty0_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty0_u).
-            iExists cnty0_n.
-            assert (Hcode : getThreadC cnty0_n = getThreadC cnty0).
-            { subst cnty0_n cnty0_u.
-              rewrite gsoAddCode gsoThreadCode; auto. }
-            rewrite Hcode. iFrame.
-          }
-          iFrame.
+          iSplitL "Hsafe_y"; iFrame.
+          rewrite /thread_safe.
+          iDestruct "Hsafe_y" as (cnty0) "Hsafe_y".
+          set (cnty0_u := @cntUpdate _ _ _ i k0 tp (Kresume c Vundef) (getThreadR cnti) cnti cnty0).
+          set (cnty0_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) k0 _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnty0_u).
+          iExists cnty0_n.
+          assert (Hcode : getThreadC cnty0_n = getThreadC cnty0).
+          { subst cnty0_n cnty0_u. rewrite gsoAddCode gsoThreadCode; auto. }
+          rewrite Hcode. iFrame.
         + set (cnti_u := @cntUpdate _ _ _ i i tp (Kresume c Vundef) (getThreadR cnti) cnti cnti).
           set (cnti_n := @cntAdd dryResources Sem (@OrdinalPool.OrdinalThreadPool dryResources Sem) i _ (Vptr fblock Ptrofs.zero) b (empty_map : access_map) cnti_u).
           iExists qh, σ1, cnti_n.
           iSplit.
-          { iPureIntro.
-            assert (Hres : getThreadR cnti_n = getThreadR cnti).
+          { assert (Hres : getThreadR cnti_n = getThreadR cnti).
             { subst cnti_n cnti_u. rewrite gsoAddRes gssThreadRes //. }
             by rewrite Hres.
           }
-          iSplitL "Hjsafe_parent_half".
-          { rewrite /thread_safe.
-            iExists cnti_n.
-            assert (Hcode : getThreadC cnti_n = Kresume c Vundef).
-            { subst cnti_n cnti_u. rewrite gsoAddCode gssThreadCode //. }
-            rewrite Hcode /=.
-            iIntros (c0) "%Hafter0".
-            replace c0 with c'.
-            - iExact "Hjsafe_parent_half".
-            - simpl in Hafter0, Hafter. congruence.
-          }
           iFrame.
+          rewrite /thread_safe.
+          iExists cnti_n.
+          assert (Hcode : getThreadC cnti_n = Kresume c Vundef).
+          { subst cnti_n cnti_u. rewrite gsoAddCode gssThreadCode //. }
+          rewrite Hcode /=.
+          iIntros (c0) "%Hafter0".
+          replace c0 with c'. iFrame.
+          simpl in Hafter0, Hafter. congruence.
       - assert (Hchild_latest : 0 + pos.n (OrdinalPool.num_threads tp_upd_test) =
                                   OrdinalPool.latestThread tp_upd_test).
         { rewrite /OrdinalPool.latestThread. lia. }
