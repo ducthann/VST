@@ -3697,6 +3697,10 @@ Section conc_heap.
   Qed.
 
   (* SPAWN *)
+
+  (* Global context:
+     no function-specific locals;
+     individual function contexts are added by func_tycontext'. *)
   Lemma spawn_safe (mcode : mem) (Hinitcode : Genv.init_mem prog = Some mcode)
     (γ : gname) (tp : dtp) (m : mem) (ls : gset address)
     (i : nat) (q : Qp) (σ1 : rmap) (Htp_wf : threads_wellformed tp) (Hinvariant : invariant tp)
@@ -3708,8 +3712,7 @@ Section conc_heap.
     (Hi : getThreadC cnti = Kblocked (Callstate (Ctypes.External CREATE argsty retty cc) args k))
     (x : Jext_spec_type (concurrent_ext_spec CS ext_link) CREATE) :
     ⊢ (* Add believe *)
-      □ believe (CS := CS) (concurrent_ext_spec CS ext_link)
-      (nofunc_tycontext V G) ge (nofunc_tycontext V G) -∗
+      □ believe (CS := CS) (concurrent_ext_spec CS ext_link) (nofunc_tycontext V G) ge (nofunc_tycontext V G) -∗
     code_ctx mcode -∗ other_threads_safe γ tp i -∗
     Jext_spec_pre (concurrent_ext_spec CS ext_link) CREATE x (genv_symb_injective ge)(sig_args (ef_sig CREATE)) args -∗
     ▷ post_safe γ q x argsty retty cc args k -∗ lock_state1 γ m ls (lockRes tp) -∗
@@ -3811,24 +3814,23 @@ Section conc_heap.
     iDestruct "Hsub_child" as "(%Hsig_child & Hsub_child)".
     destruct Hsig_child as [Hfsig_child Hcc_child].
     subst fsig_child cc_child.
-
     iPoseProof ("Hbelieve" $! (Vptr fblock Ptrofs.zero)
                   ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid)
                   cc_default Achild Echild Pchild Qchild with "[]") as "Hbelieve_child".
     { iPureIntro.
       exists id_child.
       split.
-      - simpl; rewrite find_id_maketycontext_s //.
-      - exists fblock; split; [done | reflexivity].
+      - rewrite /= find_id_maketycontext_s //.
+      - exists fblock; split; [done | done].
     }
     set (gargsC := (filter_genv (symb2genv (genv_symb_injective ge)), [b])).
-    assert (HargsC :
-             seplog.argsHaveTyps [b] ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid).1).
+    assert (HargsC : seplog.argsHaveTyps [b] ([Ctypesdefs.tptr Ctypesdefs.tvoid], Ctypesdefs.tptr Ctypesdefs.tvoid).1).
     { rewrite /seplog.argsHaveTyps /=.
       constructor; last constructor.
       intros _.
       destruct b; simpl in Hb |- *; unfold Tptr; destruct Archi.ptr64; simpl in *; auto.
     }
+    Check believe.
     iAssert (▷ |={E0 xchild}=> ∃ (xC : dtfr Achild) (FC : iPropI Σ),
                ⌜Echild xC ⊆ E0 xchild⌝ ∧ (FC ∗ Pchild xC gargsC) ∧
            ∀ rho' : environ, ■ (⌜ve_of rho' = Map.empty (Values.block * type)⌝ ∧
@@ -3996,7 +3998,7 @@ so the same iNext opens both the child precondition and semax_external. *)
           iDestruct "HstateC'" as (σglob') "(%HeqC' & HmemC' & HauthC' & HfragC' & HextC')".
           iDestruct "HmemC'" as (HltGlob') "(%HcohGlob' & HheapC')".
           iSpecialize ("HpostC" $! (sig_res (ef_sig ef)) ret (restrPermMap HltGlob') σglob' z').
-          iAssert ( |={⊤}=> state_interp (restrPermMap HltGlob') σglob' z' ∗
+          iAssert (|={⊤}=> state_interp (restrPermMap HltGlob') σglob' z' ∗
                   Qchild xC (make_ext_rval (filter_genv ge) (sig_res (ef_sig ef)) ret) ∗ FC)%I
             with "[HpostC HheapC' HextC' HpostC']" as "Hpost_inner".
           {
@@ -4024,7 +4026,7 @@ so the same iNext opens both the child precondition and semax_external. *)
           iAssert ((PROP ( ) (monpred.monPred_defs.monPred_and_def (seplog.local (liftx True%type))
                    (monpred.monPred_defs.monPred_embed_def emp))) rhoC)%I
             with "[HQ0 HF HQ0ret]" as "Hdone".
-          { iApply "HQ0". iSplit; iFrame; iPureIntro; exact HveC. }
+          { iApply "HQ0". iSplit; iFrame; iPureIntro; done. }
           rewrite /PROPx.
           iDestruct "Hdone" as "(_ & (_ & _))".
           iAssert (thread_state_interp γ (getCurPerm m') qh m' σC' z')%I
@@ -4056,6 +4058,11 @@ so the same iNext opens both the child precondition and semax_external. *)
           iExists Int.zero.
           iSplit; iPureIntro; try done.
         + (* Internal child. *)
+          (* By definition, only Returnstate _ Kstop is halted, and only Callstate (External ...) _ _ is at_external.
+Since q_new is Callstate (Internal fI) [b] Kstop, both cases are impossible;
+we therefore prove its safety via step_internal_function.
+
+           *)
           iUnfold believe_internal in "HBI_child".
           iDestruct "HBI_child" as (bI fI (HvI & HfindI & HcompleteI & HnorepI & HnorepVarsI & HvarsI & HparamsI & HretI & HccI)) "HbodyI".
           injection HvI as <-.
@@ -4113,6 +4120,16 @@ so the same iNext opens both the child precondition and semax_external. *)
             iApply jsafe_step.
             rewrite /jstep_ex.
             iIntros (mI σI) "(HmI & HextI)".
+            (* Allocate the child's local variables and obtain the stack-frame resource required to enter its body.
+
+             step_internal_function :
+             function_entry2 ge f vargs m e le m1 ->
+                step ge (Callstate (Internal f) vargs k) m (State f (fn_body f) k e le) m1
+
+               Callstate (Internal fI) [b] Kstop --> State fI (fn_body fI) Kstop veI teI
+               Clight requires function_entry2
+
+             *)
             iMod (alloc_stackframe mI fI ge teI with "[$HmI]") as (mI' veI [HallocI HvenvI]) "((%HcohI & HmI') & HstackI)"; [try done.. |].
             { unfold var_sizes_ok in HvarsI.
               rewrite !Forall_forall in HvarsI, HcompleteI |- *.
@@ -4122,10 +4139,12 @@ so the same iNext opens both the child precondition and semax_external. *)
               rewrite (veric.expr_lemmas4.cenv_sub_sizeof HCSUB); auto.
             }
             iModIntro.
+            (* The child has no caller; returning from its entry function terminates the thread. *)
             iExists (State fI (fn_body fI) Kstop veI teI), mI', HcohI.
             iSplit.
             { apply list_norepet_append_inv in HnorepI as (Hnr_params & Hnr_temps & Hdisjoint).
-              iPureIntro. constructor. constructor; done.
+              iPureIntro.
+              constructor. constructor; done.
             }
             iSplitL "HmI' HextI".
             { rewrite /state_interp. iFrame. }
@@ -4245,27 +4264,27 @@ so the same iNext opens both the child precondition and semax_external. *)
             assert (HguardEnvI : guard_environ (func_tycontext' fI (nofunc_tycontext V G)) fI rhoI).
             { unfold guard_environ.
               split3; try done. subst rhoI. eapply semax_call_typecheck_environ; eauto. }
-            iPoseProof (initial_core_funassert (CSL_prog CPROOF) V G
-                 mcode (make_venv veI) (make_tenv teI) HnrB HmatchF Hinitcode
+            iPoseProof (initial_core_funassert (CSL_prog CPROOF) V G mcode (make_venv veI) (make_tenv teI) HnrB HmatchF Hinitcode
                 with "[$Hcore $Hmatch_child]") as "HfunN".
             assert (HsameGlobI : ∀ id,
                        (seplog.glob_specs (nofunc_tycontext V G) !! id)%maps =
                          (seplog.glob_specs
                             (func_tycontext' fI (nofunc_tycontext V G)) !! id)%maps).
-            { intros id; reflexivity. }
+            { intros id; done. }
             assert (HsameEnvI : ge_of (mkEnviron (filter_genv (globalenv (CSL_prog CPROOF)))
                                          (make_venv veI) (make_tenv teI)) = ge_of rhoI).
-            { subst rhoI; reflexivity. }
+            { subst rhoI; done. }
             iPoseProof (same_glob_funassert'
                  (nofunc_tycontext V G) (func_tycontext' fI (nofunc_tycontext V G))
                  (mkEnviron (filter_genv (globalenv (CSL_prog CPROOF)))
                     (make_venv veI) (make_tenv teI)) rhoI HsameGlobI HsameEnvI
                          with "HfunN") as "HfunI".
             iAssert (Clight_seplog.funassert (func_tycontext' fI (nofunc_tycontext V G)) rhoI)%I with "[HfunI]" as "HfunI'".
-            { rewrite - same_glob_funassert'; auto. }
+            { rewrite -same_glob_funassert'; auto. }
             assert (HfilterGenv : filter_genv (symb2genv (genv_symb_injective ge)) = filter_genv ge).
             { by apply functional_extensionality. }
             rewrite /gargsC HfilterGenv.
+            unfold guard', _guard .
             iApply ("HguardI" with "[-]"); last first; try done.
             iSplit; try done.
             iFrame "HstackI HfunI'".
