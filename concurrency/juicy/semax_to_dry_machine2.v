@@ -252,7 +252,7 @@ Section semax_prog_with_rmap.
     iMod (initialize_mem_with_rmap' with "[$Hm $Hf]")
       as "((%σ & Hσ & %Hperm) & Hm & Hcore & Hboth)";
       [done.. |].
-(*
+
     iDestruct (bi.and_elim_l with "Hboth") as "Hf".
     (* First half 1/2, Hfmain, is consumed to derive matchfunspecs for initial-main safety.
        Second half 1/2, Hfcode, is stored in code_bank for future spawns.
@@ -280,7 +280,7 @@ Section semax_prog_with_rmap.
       iSplit; first done.
       iApply global_initializers; eauto.
     - iFrame "Hcore Hfcode".
-  Qed.*) Admitted.
+  Qed.
  
 End semax_prog_with_rmap.
 
@@ -1710,22 +1710,314 @@ Section conc_heap.
   Qed.
 
   Lemma rmap_auth_equiv_local γ (σ1 σ2 : rmap) : σ1 ≡ σ2 -> rmap_auth γ σ1 ⊣⊢ rmap_auth γ σ2.
-  Proof.
+  Proof. intros Heq; rewrite /rmap_auth; apply own_proper; by f_equiv. Qed.
 
-    intros Heq.
-    rewrite /rmap_auth.
-    apply own_proper.
-    by f_equiv.
+
+  Definition rmap_bound (b : Values.block) (σ : rmap) : Prop :=
+    forall l : address, (l.1 >= b)%positive -> σ !! l = None.
+
+  Definition full_VAL (v : memval) : shared.shared (leibnizO resource) :=
+    shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share share_top))
+      readable_top (to_agree (VAL v)).
+
+  Local Instance resource_shared_unit : Unit (shared.shared (leibnizO resource)) :=
+    shared.NO (V := leibnizO resource) (share_alg.Share share_bot) unreadable_bot.
+
+  (** resource_decay_at nextb l r r' : describes the resource changes allowed
+    at one address l during an ordinary Clight step.
+(nextb :next block before the step, r and r' are the old and new lookups at l).
+
+- In old rmap representation, an empty cell was represented by NO Share.bot ...,
+while an owned cell had the form YES sh Psh k pp.
+
+- In current representation, an empty cell is represented by None before allocation
+  or by Some ε after deletion, and an owned cell has the form 
+  Some (shared.YES (DfracOwn (Share sh)) rsh (to_agree k))
+
+- Predicate payloads such as pp are no longer stored in heap resources;
+    funspecs and lock invariants are maintained separately in ghost state and invariants.
+
+- decay_same leaves the resource unchanged.
+
+- decay_store corresponds to the writable VAL case.
+It preserves the ownership and readable and changes only VAL v to VAL v'.
+
+- decay_alloc corresponds to allocation of a fully owned VAL in a fresh block.
+The old relation obtained empty of the source cell from its global bound; this constructor records it as None.
+
+- decay_free corresponds to replacing a fully owned VAL by the empty resource.
+The current resource-map deletion operation leaves Some ε at the address, corresponding to the old NO Share.bot ... resource.
+
+   *)
+
+  (** Correspondence between the old and current resource representations:
+  - Old: phi @ l ; New: σ !! l
+  - Old: NO Share.bot ...  ; New: None, or the unit cell Some ε
+  - Old: YES sh Psh k pp  ;  New: Some (shared.YES dq rsh (to_agree k))
+  - Old: the ownership share sh  ; New: dshare.DfracOwn (share_alg.Share sh)
+  - Old: the readability proof Psh ; New: rsh of type dshare.readable_dfrac dq
+  - Old: a resource kind such as VAL v ; New: the agreement value to_agree (VAL v)
+  - Old: the predicate payload pp
+      New: no corresponding heap component; funspecs and lock invariants
+           are stored separately in ghost state and invariants
+  - Old: equality after resource_fmap and approximation at level n
+      New: direct equality of resource-map entries *)
+
+  Inductive resource_decay_at (nextb : Values.block) (l : address) :
+    option (shared.shared (leibnizO resource)) → option (shared.shared (leibnizO resource)) → Prop :=
+  | decay_same r : resource_decay_at nextb l r r
+                                     
+  | decay_store sh (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share sh))) v v' :
+    share_writable sh → resource_decay_at nextb l
+                           (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))))
+                           (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))))
+                           
+  | decay_alloc v : (l.1 >= nextb)%positive → resource_decay_at nextb l None (Some (full_VAL v))
+  | decay_free (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share share_top))) v :
+    resource_decay_at nextb l (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share share_top)) rsh (to_agree (VAL v)))) (Some (ε : shared.shared (leibnizO resource))).
+
+  (** Old level φ1 >= level φ2 /\ ∀ l, old_bound nextb φ1 l /\ old_decay_at nextb l φ1 φ2
+lifts resource_decay_at to whole rmaps
+   **)
+
+  Definition resource_decay (nextb : Values.block) (σ σ' : rmap) : Prop :=
+    rmap_bound nextb σ ∧ (∀ l, resource_decay_at nextb l (σ !! l) (σ' !! l)).
+
+  Lemma coherent_rmap_bound m σ : coherent m σ → rmap_bound (Mem.nextblock m) σ.
+  Proof. intros Hcoh l Hl; apply (proj1 (Hcoh l) Hl). Qed.
+
+  Lemma rmap_bound_mono b b' σ : (b <= b')%positive → rmap_bound b σ → rmap_bound b' σ.
+  Proof. intros Hbb Hb l Hl; apply Hb; lia. Qed.
+
+  Lemma rmap_bound_op (b : Values.block)
+    (σ1 σ2 : resource_map.rmapUR share address (leibnizO resource)) :
+    rmap_bound b σ1 → rmap_bound b σ2 → rmap_bound b (σ1 ⋅ σ2).
+  Proof.
+    intros H1 H2 l Hl.
+    unfold rmap_bound in *.
+    specialize (H1 l Hl).
+    specialize (H2 l Hl).
+    assert (Hop : (σ1 ⋅ σ2) !! l ≡ None).
+    { apply equiv_dist; intros n; by rewrite gmap.lookup_op H1 H2. }
+    destruct ((σ1 ⋅ σ2) !! l) as [r |] eqn:Hr; last done. inv Hop.
   Qed.
 
+  Lemma rmap_bound_frame (b : Values.block)
+    (σ0 σ frame : resource_map.rmapUR share address (leibnizO resource)) :
+    rmap_bound b σ0 → σ0 ≡ σ ⋅ frame → rmap_bound b frame.
+  Proof.
+    intros Hb Heq l Hl.
+    pose proof (proj1 (@equiv_dist (resource_map.rmapUR share address (leibnizO resource)) σ0 (σ ⋅ frame)) Heq) as Heqdist.
+    assert (Hlookup : σ0 !! l ≡{0}≡ (σ ⋅ frame) !! l).
+    { eapply (@gmap.lookup_ne address _ _ (shared.sharedR (leibnizO resource)) l 0); eauto. }
+    rewrite (Hb l Hl) in Hlookup.
+    rewrite gmap.lookup_op in Hlookup.
+    destruct (σ !! l) as [x |] eqn:Hx; destruct (frame !! l) as [y |] eqn:Hy;
+      rewrite Hx Hy in Hlookup |- *; simpl in Hlookup |- *; auto.
+    inv Hlookup. inv Hlookup.
+  Qed.
+
+  (** A writable local VAL fragment permits updating the value stored in both the global cell and the local fragment from v to v'
+
+   (Gv, Lv) ~l~> (Gv', Lv')
+   Gv: aggregate resource of the cell in global rmap
+   Lv: fragment of the cell in the current thread
+   *)
+  Lemma resource_decay_store_cell_local_update (sh : share) (dqG : dshare.dfrac)
+    (rshG : dshare.readable_dfrac dqG) (rshL : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share sh))) (v v' : memval) (Hsh : share_writable sh) :
+    @local_update (shared.sharedR (leibnizO resource))
+      ( shared.YES (V := leibnizO resource) dqG rshG (to_agree (VAL v)),
+        shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rshL
+          (to_agree (VAL v)) )
+      (shared.YES (V := leibnizO resource) dqG rshG (to_agree (VAL v')),
+        shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rshL
+          (to_agree (VAL v'))).
+  Proof.
+    intros n mz Hvalid Heq.
+    split; first done.
+    destruct mz as [c|].
+    - rewrite !shared.shared_dist' /= !shared.dfrac_of_op' !shared.val_of_op' in Heq |- *.
+      destruct Heq as [-> Hval].
+      destruct (shared.dfrac_error _) eqn:Herr; try done.
+      destruct c; try done.
+      simpl in *.
+      exfalso.
+      destruct Hvalid as [Hdq_valid _].
+      rewrite comm in Hdq_valid.
+      destruct (dshare.dfrac_valid_own_readable _ _ rsh Hdq_valid) as (? & Hshare & ?).
+      by inv Hshare.
+    - by destruct Heq as [-> ?].
+  Qed.
+
+  Local Definition resource_shared_opM (x : shared.shared (leibnizO resource))
+    (mx : option (shared.shared (leibnizO resource))) : shared.shared (leibnizO resource) :=
+    @OraopM (shared.sharedR (leibnizO resource)) x mx.
+
+  Lemma resource_decay_store_shared_frame_local_update sh
+    (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share sh))) (v v' : memval)
+    (frame : option (shared.shared (leibnizO resource))) (Hsh : share_writable sh) :
+    @local_update (shared.sharedR (leibnizO resource))
+      (resource_shared_opM (shared.YES (V := leibnizO resource)
+         (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))) frame,
+       shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v)))
+      (resource_shared_opM (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))) frame,
+       shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))).
+  Proof.
+    destruct frame as [fr |].
+    - destruct fr as [dqf rshf vf | shf nrshf].
+      + intros n mz Hvalid _.
+        exfalso.
+        simpl in Hvalid.
+        rewrite shared.YES_op' in Hvalid.
+        destruct (shared.readable_dfrac_dec (dshare.DfracOwn (share_alg.Share sh) ⋅ dqf))
+          as [rshG | Hnot_readable] eqn:Hdec; auto.
+        destruct Hvalid as [Hdq_valid _].
+        rewrite comm in Hdq_valid.
+        destruct (dshare.dfrac_valid_own_readable _ _ rshf Hdq_valid) as (? & Hshare & ?).
+        by inv Hshare.
+      + simpl.
+        rewrite /op /shared.shared_op_instance /=.
+        destruct (shared.readable_dfrac_dec (dshare.DfracOwn (share_alg.Share sh) ⋅ dshare.DfracOwn shf)) as [rshG | Hnot_readable]; simpl.
+        * setoid_rewrite (comm op (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v)) : shared.sharedR (leibnizO resource)) _).
+          setoid_rewrite (comm op (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v')) : shared.sharedR (leibnizO resource)) _).
+          rewrite !shared.NO_YES_op'.
+          destruct (shared.readable_dfrac_dec _) as [rshG' | Hnot_readable'] eqn:Hdec'.
+          ++ by apply resource_decay_store_cell_local_update.
+          ++ exfalso.
+             apply Hnot_readable'.
+             by rewrite (comm op (dshare.DfracOwn shf) _).
+        * assert (Herr : shared.dfrac_error (dshare.DfracOwn (share_alg.Share sh) ⋅ dshare.DfracOwn shf) = true).
+          { apply shared.dfrac_op_readable; auto. }
+          intros n mz Hvalid _.
+          simpl in *.
+          destruct (shared.readable_dfrac_dec (dshare.DfracOwn (share_alg.Share sh) ⋅
+                dshare.DfracOwn shf)) as [rshG | Hnot_readable'].
+          ++ by exfalso.
+          ++ simpl in *.
+             exfalso.
+             pose proof (shared.dfrac_error_fail (leibnizO resource) (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))) (shared.NO (V := leibnizO resource) shf nrshf) Herr) as Hop.
+             setoid_rewrite Hop in Hvalid.
+             unfold shared.err in Hvalid. done.
+    - simpl.
+      apply resource_decay_store_cell_local_update; auto.
+  Qed.
+  
+  Local Definition resource_option_frame (r frame : option (shared.shared (leibnizO resource))) : option (shared.shared (leibnizO resource)) :=
+    match r with
+    | None => frame
+    | Some x => Some (resource_shared_opM x frame)
+    end.
+
+  Lemma resource_decay_at_frame_local_update nextb l r r' (frame : option (shared.shared (leibnizO resource))) :
+    ((l.1 >= nextb)%positive → frame = None) → resource_decay_at nextb l r r' →
+    @local_update (cmra.optionR (shared.sharedR (leibnizO resource)))
+      (resource_option_frame r frame, r) (resource_option_frame r' frame, r').
+  Proof.
+    intros Hframe Hdecay.
+    destruct Hdecay; simpl.
+    - intros n mz Hvalid Heq; split; auto.
+    - simpl.
+      apply (option_local_update (A := ora_cmraR (shared.sharedR (leibnizO resource)))
+               (resource_shared_opM (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))) frame)
+               (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))) (resource_shared_opM (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))) frame)
+               (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))) (resource_decay_store_shared_frame_local_update sh rsh v v' frame H)).
+    - specialize (Hframe H).
+      subst frame.
+      apply (alloc_option_local_update (A := ora_cmraR (shared.sharedR (leibnizO resource)))).
+      rewrite /full_VAL.
+      split; done.
+    - apply (option_local_update (A := ora_cmraR (shared.sharedR (leibnizO resource)))).
+      destruct frame as [fr |].
+      + setoid_rewrite (@ucmra_unit_left_id (shared.sharedUC (leibnizO resource)) fr).
+        apply (cancel_local_update_unit (A := shared.sharedUC (leibnizO resource))), _.
+      + simpl.
+        rewrite -{1}(@ucmra_unit_right_id (shared.sharedUC (leibnizO resource)) (shared.YES (V := leibnizO resource)(dshare.DfracOwn (share_alg.Share share_top)) rsh (to_agree (VAL v)))).
+        apply (cancel_local_update_unit (A := shared.sharedUC (leibnizO resource))), _.
+  Qed.
+
+  Lemma rmap_pointwise_local_update
+    (m1 m2 m1' m2' : resource_map.rmapUR share address (leibnizO resource)) :
+    (∀ l, @local_update (cmra.optionR (shared.sharedR (leibnizO resource)))
+       (m1 !! l, m2 !! l) (m1' !! l, m2' !! l)) →
+    @local_update (resource_map.rmapUR share address (leibnizO resource)) (m1, m2) (m1', m2').
+  Proof.
+    intros Hpoint n mf Hvalid Heq.
+    destruct mf as [mf |].
+    - split.
+      + intros l.
+        simpl in *.
+        eapply (proj1 (Hpoint l n (Some (mf !! l)) (Hvalid l) _)).
+        Unshelve. simpl.
+        specialize (Heq l).
+        by rewrite lookup_op in Heq.
+      + intros l.
+        rewrite lookup_op.
+        eapply (proj2 (Hpoint l n (Some (mf !! l)) (Hvalid l) _)).
+        Unshelve. simpl.
+        specialize (Heq l).
+        by rewrite lookup_op in Heq.
+    - split.
+      + intros l.
+        simpl in *.
+        eapply (proj1 (Hpoint l n None (Hvalid l) _)); eauto.
+        Unshelve. simpl.
+        by specialize (Heq l).
+      + intros l.
+        eapply (proj2 (Hpoint l n None (Hvalid l) _)).
+        Unshelve. simpl.
+        by specialize (Heq l).
+  Qed.
+
+  Lemma resource_option_frame_op (r frame : option (shared.shared (leibnizO resource))) :
+    @op (option (shared.shared (leibnizO resource))) (cmra_op (cmra.optionR (shared.sharedR (leibnizO resource)))) r frame = resource_option_frame r frame.
+  Proof. destruct r as [x |]; destruct frame as [y |]; done. Qed.
+
+  Lemma resource_decay_join_local_update (nextb : Values.block)
+    (σ σ' frame σ0 : resource_map.rmapUR share address (leibnizO resource)) :
+    rmap_bound nextb frame → σ0 ≡ σ ⋅ frame →
+    resource_decay nextb σ σ' → rmap_local_update σ0 σ (σ' ⋅ frame) σ'.
+  Proof.
+    intros Hframe Hdecomp [_ Hdecay].
+    unfold rmap_local_update.
+    assert (Hupd : @local_update (resource_map.rmapUR share _ _) (σ ⋅ frame, σ) (σ' ⋅ frame, σ')).
+    { apply rmap_pointwise_local_update.
+      intros l.
+      rewrite !lookup_op !resource_option_frame_op.
+      eapply resource_decay_at_frame_local_update; eauto.
+    }
+    intros n mz Hvalid Heq.
+    simpl in *.
+    pose proof (proj1 (@equiv_dist (resource_map.rmapUR _ _ _) σ0 (σ ⋅ frame)) Hdecomp n) as Hdecomp_n.
+    eapply (Hupd n mz).
+    - apply (ora_validN_ne' n _ (σ ⋅ frame, σ).1); rewrite -Hdecomp_n //.
+    - etransitivity; try symmetry; try apply Hdecomp_n; done.
+  Qed.
+  
   (* This almost follows from what we've already proved about mem steps. But in theory,
      since jsafe knows that it has full ownership of the state interp, it could change the
      contents of a FUN or LK cell. We might need to restrict this somehow in jsafe. *)
-  Lemma corestep_local : forall c m σ c' m' σ',
-    coherent m σ → corestep (cl_core_sem ge) c m c' m' → coherent m' σ' →
-    ∀ σ0, ∃ σ0', rmap_local_update σ0 σ σ0' σ'.
+
+  Lemma corestep_local : forall c m (σ : resource_map.rmapUR share address (leibnizO resource)) c' m'
+                           (σ' : resource_map.rmapUR share address (leibnizO resource)),
+      coherent m σ → corestep (cl_core_sem ge) c m c' m' → coherent m' σ' →
+      resource_decay (Mem.nextblock m) σ σ' →
+      ∀ σ0, rmap_bound (Mem.nextblock m) σ0 → rmap_included σ σ0 →
+        ∃ (σ0' : resource_map.rmapUR share address (leibnizO resource)),
+          rmap_local_update σ0 σ σ0' σ' /\ rmap_bound (Mem.nextblock m') σ0'.
   Proof.
-  Admitted.
+    intros c m σ c' m' σ' Hcoh Hstep Hcoh' Hdecay σ0 Hbound0 Hincluded.
+    destruct Hincluded as (frame & Hdecomp).
+    assert (Hbound_frame : rmap_bound (Mem.nextblock m) frame).
+    { eapply rmap_bound_frame; eauto. }
+    exists (σ' ⋅ frame).
+    split.
+    - eapply resource_decay_join_local_update; eauto.
+    - apply rmap_bound_op.
+      + by apply coherent_rmap_bound.
+      + eapply rmap_bound_mono; eauto.
+        pose proof (CLC_corestep_mem ge c m c' m' Hstep) as Hmemstep.
+        apply (semantics_lemmas.mem_step_nextblock' m m' Hmemstep).
+  Qed.
 
   (* jsafe runs with permissions that are lower-bounded by resource_map_auth. In general, this
      means the combined permissions of all the threads, not the permissions of a single thread.
