@@ -165,11 +165,62 @@ Section initial_world_with_rmap_lemmas.
 
   (** ** Exposing the selected authoritative resource map *)
 
-  Definition frag_mem_auth (m : mem) (σ : rmap) : iProp Σ :=
+  (* Definition frag_mem_auth (m : mem) (σ : rmap) : iProp Σ :=
     ⌜coherent m σ /\ mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝ ∧
       resource_map.resource_map_auth
         (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
-        (gen_heap_name heapGS_gen_heapGS) 1%Qp σ.
+        (gen_heap_name heapGS_gen_heapGS) 1%Qp σ. *)
+
+  Definition frag_mem_auth (m : mem) (σ : rmap) : iProp Σ :=
+    ∃ Hlt : permMapLt (perm_of_rmap σ) (getMaxPerm m),
+      ⌜coherent (restrPermMap Hlt) σ⌝ ∧
+        resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))
+          (gen_heap_name heapGS_gen_heapGS) 1%Qp σ.
+
+  Lemma coherent_restrPermMap m (s : rmap)
+    (Hlt : permMapLt (perm_of_rmap s) (getMaxPerm m)) :
+    coherent m s ->
+    coherent (restrPermMap Hlt) s.
+  Proof.
+    intros Hcoh (b & ofs).
+    destruct (Hcoh (b, ofs)) as (Hnb & Hloc).
+    split.
+    - intros Hge.
+      apply Hnb; auto.
+    - destruct Hloc as (Hcontents & Haccess).
+      split.
+      + intros v Hv.
+        by apply Hcontents.
+      + unfold access_cohere.
+        change
+          (permission_at (restrPermMap Hlt) b ofs Cur =
+             perm_of_res (s @ (b, ofs))).
+        rewrite (restrPermMap_Cur Hlt b ofs).
+        by rewrite perm_of_rmap_lookup.
+  Qed.
+
+  Lemma coherent_restrPermMap_of_coherent m s:
+    coherent m s ->
+    exists (Hlt : permMapLt (perm_of_rmap s) (getMaxPerm m)),
+      coherent (restrPermMap Hlt) s.
+  Proof.
+    intros.
+    assert (Hlt : permMapLt (perm_of_rmap s) (getMaxPerm m)).
+    { intros b ofs.
+      unfold coherent in H.
+      destruct (H (b, ofs)) as [_ Hloc].
+      rewrite perm_of_rmap_lookup.
+      unfold coherent_loc in Hloc.
+      destruct Hloc as [_ Hperm].
+      unfold access_cohere in Hperm.
+      eapply juicy_mem.perm_order''_trans.
+      - apply getCur_Max.
+      - unfold access_at in Hperm; simpl in Hperm.
+        rewrite /getCurPerm PMap.gmap Hperm.
+        apply po_refl. }
+    exists Hlt.
+    by apply coherent_restrPermMap.
+  Qed.
   
   Lemma frag_mem_auth_set (m : mem) (σ : rmap) (Hvalid : ✓ σ)
     (Hnext : forall loc, (loc.1 >= Mem.nextblock m)%positive -> (σ !! loc = None)%stdpp)
@@ -192,10 +243,12 @@ Section initial_world_with_rmap_lemmas.
     iModIntro.
     iFrame "Hfrags".
     rewrite /frag_mem_auth.
-    iSplit; auto.
-    iPureIntro.
-    split; auto.
-    intros loc. split; auto.
+    pose proof Hcoh as Hcoh'.
+    assert (Hcoh_full : coherent m σ).
+    { intros loc; split; try apply Hnext; try apply Hcoh. }
+    destruct (coherent_restrPermMap_of_coherent m σ Hcoh_full) as (Hlt & Hcoh_restr).
+    iExists Hlt.
+    iSplit; done.
   Qed.
 
   Lemma initialize_mem_with_rmap :
@@ -241,6 +294,11 @@ Section initial_world_with_rmap_lemmas.
 
   Notation initial_core_clight m := (initial_world.initial_core m (F := Clight.function)).
 
+  (* Before: initial_core m ge G ∗ matchfunspecs ge G
+     After, it returns:
+     initial_core m ge G ∗ (funspec_auth (init_funspecs m ge G) ∧ matchfunspecs ge G)
+   *)
+
   Lemma initialize_mem_with_rmap' :
     forall (prog : Clight.program) G m (Hnorepet : list_norepet (prog_defs_names prog))
       (Hmatch : match_fdecs (prog_funct prog) G) (Hm : Genv.init_mem prog = Some m),
@@ -250,7 +308,8 @@ Section initial_world_with_rmap_lemmas.
             frag_mem_auth m σ ∗ ⌜mem_equiv.access_map_equiv (perm_of_rmap σ) (getCurPerm m)⌝) ∗
         inflate_initial_mem m (block_bounds prog) (Genv.globalenv prog) G ∗
         initial_core_clight m (Genv.globalenv prog) G ∗
-        matchfunspecs (Clight.globalenv prog) G.
+        (funspec_auth (init_funspecs m (Genv.globalenv prog) G) ∧
+           matchfunspecs (Clight.globalenv prog) G).
   Proof.
     intros.
     assert (HnorepetG : list_norepet (map fst G)).
@@ -325,11 +384,12 @@ Section initial_world_with_rmap_lemmas.
             G Hcover Hfun_bounds Hfun_access with "[$Hmem $Hf]") as "(Hσ & Hf & Hinflate)".
     iPoseProof (initial_mem_initial_core m (block_bounds prog) (Genv.globalenv prog)
                   G Hfun_access Hzero_bounds with "Hinflate") as "(Hinflate & Hcore)".
-    iPoseProof (init_funspecs_matchfunspecs with "Hf") as "Hmatchfunspecs".
     iModIntro.
-    iFrame.
+    iFrame "Hσ Hinflate Hcore".
+    iSplit; iFrame.
+    iApply (init_funspecs_matchfunspecs with "Hf").
   Qed.
-
+  
 End initial_world_with_rmap_lemmas.
 
 Section concurrent_opreations.

@@ -71,7 +71,7 @@ Proof.
   iIntros (tx vx) "!> H".
   iIntros (??).
   iApply jsafe_step.
-  iIntros (m ?) "[Hm ?]".
+  iIntros (m σ) "[Hm Hext]".
   monPred.unseal.
   iDestruct "H" as "(%TC & (F & P) & fun)".
   unfold expr_true, expr_false, Cnot, lift1 in *.
@@ -81,32 +81,73 @@ Proof.
   rewrite (add_and (▷ _) (▷ _)); last by iIntros "[H _]"; iApply (typecheck_expr_sound with "H").
   iDestruct "P" as "[P >%HTCb]".
   assert (cenv_sub (@cenv_cs CS) psi) by (eapply cenv_sub_trans; destruct HGG; auto).
-  iAssert (mem_auth m) with "[$Hm]" as "Hm".
-  iCombine "Hm P" as "H"; rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & H & _)"; iApply (eval_expr_relate(CS := CS) with "[$Hm $H]").
+  (* iAssert (mem_auth m) with "[$Hm]" as "Hm". *)
+  iCombine "Hm P" as "H".
+  rewrite (add_and (mem_rmap_auth m σ ∗ _) (▷ _)).
+  2: {
+    iIntros "H".
+    iNext.
+    iDestruct "H" as "(Hm & Hexpr & _)".
+    iDestruct "Hm" as "(%Hcoh_eval & Hauth)".
+    iApply (eval_expr_relate (CS := CS) Delta psi tx vx rho (Eunop Cop.Onotbool b (Tint I32 Signed noattr)) m H4 eq_refl TYCON_ENV with "[-]").
+    iSplitL "Hauth"; iFrame.
+    iSplit; auto. }
   iDestruct "H" as "(H & >%Heval)".
-  rewrite /tc_expr /typecheck_expr /= denote_tc_assert_andp; fold (typecheck_expr(CS := CS)).
+  rewrite /tc_expr /typecheck_expr /= denote_tc_assert_andp.
+  fold (typecheck_expr (CS := CS)).
   rewrite -assoc (bi.and_elim_r (denote_tc_assert _ _)).
-  rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & H & _)"; iApply (eval_expr_relate(CS := CS) with "[$Hm $H]").
+  rewrite (add_and (mem_rmap_auth m σ ∗ _) (▷ _)).
+  2: {
+    iIntros "H".
+    iNext.
+    iDestruct "H" as "(Hm & Hexpr & _)".
+    iDestruct "Hm" as "(%Hcoh_eval & Hauth)".
+    iApply (eval_expr_relate  (CS := CS) Delta psi tx vx rho b m H4 eq_refl TYCON_ENV with "[-]").
+    iSplitL "Hauth"; iFrame.
+    iSplit; auto. }
   iDestruct "H" as "(H & >%Hb)".
   inv Heval.
-  eapply eval_expr_fun in Hb; last done; subst.
+  eapply eval_expr_fun in Hb; last done.
+  subst.
   rewrite typecheck_expr_sound; last done.
   rewrite bi.later_and.
-  iDestruct "H" as "(Hm & >%TC2 & P)"; simpl in HTCb.
-  unfold liftx, lift, eval_unop in HTCb; simpl in HTCb.
-  destruct (bool_val (typeof b) (eval_expr b _)) as [b'|] eqn: Hb; [|contradiction].
-  iAssert (▷assert_safe OK_spec psi E' f vx tx (Cont (Kseq (if b' then c else d) k)) _) with "[F P fun]" as "Hsafe".
-  { iNext; destruct b'; [iApply "H0" | iApply "H1"]; (iSplit; first done); iFrame; iPureIntro; split; auto;
-      apply bool_val_strict; auto. }
-  simpl in *; unfold Cop.sem_notbool in *.
-  destruct (Cop.bool_val _ _ _) eqn: Hbool_val; inv H10.
+  iDestruct "H" as "(Hm & >%TC2 & P)".
+  simpl in HTCb.
+  unfold liftx, lift, eval_unop in HTCb.
+  simpl in HTCb.
+  destruct (bool_val (typeof b) (eval_expr b _)) as [b' |] eqn:Hb; [| contradiction].
+  iAssert (▷ assert_safe OK_spec psi E' f vx tx (Cont (Kseq (if b' then c else d) k)) _) with "[F P fun]" as "Hsafe".
+  { iNext.
+    destruct b'; [iApply "H0" | iApply "H1"]; (iSplit; first done); iFrame; iPureIntro; split; auto; apply bool_val_strict; auto.
+  }
+  simpl in *.
+  unfold Cop.sem_notbool in *.
+  destruct (Cop.bool_val _ _ _) eqn:Hbool_val; inv H10.
   super_unfold_lift.
-  iDestruct "Hm" as (?) "Hm".
-  iIntros "!>"; iExists _, _, _; iSplit.
-  - iPureIntro; eapply step_ifthenelse; eauto.
-  - iFrame; iNext.
-    eapply bool_val_Cop in Hbool_val; eauto; subst.
-    by iApply assert_safe_jsafe.
+  iDestruct "Hm" as "(%Hcoh & Hauth)".
+  iIntros "!>".
+  iExists _, m, σ.
+  iSplit.
+  - iPureIntro.
+    split.
+    + eapply step_ifthenelse; eauto.
+    + split.
+      * intros l Hl.
+        specialize (Hcoh l).
+        destruct Hcoh as (Hcoh & _).
+        specialize (Hcoh Hl). done.
+      * intros l.
+        apply decay_same.
+  - iSplitL "Hauth Hext".
+    + rewrite /state_interp /mem_rmap_auth.
+      iSplitL "Hauth".
+      * iSplit; first done.
+        iExact "Hauth".
+      * iExact "Hext".
+    + iNext.
+      eapply bool_val_Cop in Hbool_val; eauto.
+      subst.
+      by iApply assert_safe_jsafe.
   - inv H5.
 Qed.
 
@@ -171,50 +212,68 @@ Proof.
   iIntros (??).
   set (rho := construct_rho _ _ _).
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (??) "? !>".
-  iExists (State f body (Kloop1 body incr k) vx tx), _, _; iSplit; first by iPureIntro; constructor.
-  iFrame; iNext.
-  iApply assert_safe_jsafe.
-  rewrite semax_unfold in H.
-  iApply (H with "Prog_OK"); [done..| |done].
-  iIntros "!>"; iSplit.
-  { iPureIntro; split; last done.
-    unfold closed_wrt_modvars, closed_wrt_vars in *; intros ?? Hi; apply Hclosed.
-    intros i; specialize (Hi i); rewrite modifiedvars_Sloop; tauto. }
-  iIntros (??).
-  rewrite semax_unfold in H0.
-  iPoseProof (H0 with "Prog_OK") as "H0"; [done..|].
-  iSpecialize ("IH" with "Prog_OK").
-  assert (closed_wrt_modvars incr F).
-  { unfold closed_wrt_modvars, closed_wrt_vars in *; intros ?? Hi; apply Hclosed.
-    intros i; specialize (Hi i); rewrite modifiedvars_Sloop; tauto. }
-  iAssert (guard' OK_spec psi E' Delta' f (F ∗ Q') (Kseq incr (Kloop2 body incr k))) as "#Hincr".
-  { iApply "H0".
-    iIntros "!>"; iSplit; first done.
-    iIntros (ek2 vl2 tx2 vx2) "!>"; rewrite /loop2_ret_assert proj_frame.
-    destruct ek2; simpl proj_ret_assert; simpl exit_cont; monPred.unseal.
-    * iIntros "(% & (? & % & ?) & ?)"; subst.
-      iApply ("IH" $! _ F); last by destruct POST; iFrame.
-      iIntros "!>"; iSplit; done.
-    * iIntros "(% & (? & % & ?) & ?)"; subst.
+  iIntros (m σ) "Hstate !>".
+  iDestruct "Hstate" as "((%Hcoh & Hauth) & Hext)".
+  iExists (State f body (Kloop1 body incr k) vx tx), m, σ.
+  iSplit.
+  - iPureIntro.
+    split.
+    + constructor.
+    + split.
+      * intros l Hl.
+        specialize (Hcoh l).
+        destruct Hcoh as (Hcoh & _).
+        specialize (Hcoh Hl). done.
+      * intros l.
+        apply decay_same.
+  - iSplitL "Hauth Hext".
+    { rewrite /state_interp /mem_rmap_auth.
+      iSplitL "Hauth".
+      * iSplit; first done.
+        iExact "Hauth".
+      * iExact "Hext". }
+    iNext.
+      iApply assert_safe_jsafe.
+      rewrite semax_unfold in H.
+      iApply (H with "Prog_OK"); [done..| |done].
+      iIntros "!>"; iSplit.
+      { iPureIntro; split; last done.
+        unfold closed_wrt_modvars, closed_wrt_vars in *; intros ?? Hi; apply Hclosed.
+        intros i; specialize (Hi i); rewrite modifiedvars_Sloop; tauto. }
+      iIntros (??).
+      rewrite semax_unfold in H0.
+      iPoseProof (H0 with "Prog_OK") as "H0"; [done..|].
+      iSpecialize ("IH" with "Prog_OK").
+      assert (closed_wrt_modvars incr F).
+      { unfold closed_wrt_modvars, closed_wrt_vars in *; intros ?? Hi; apply Hclosed.
+        intros i; specialize (Hi i); rewrite modifiedvars_Sloop; tauto. }
+      iAssert (guard' OK_spec psi E' Delta' f (F ∗ Q') (Kseq incr (Kloop2 body incr k))) as "#Hincr".
+      { iApply "H0".
+        iIntros "!>"; iSplit; first done.
+        iIntros (ek2 vl2 tx2 vx2) "!>"; rewrite /loop2_ret_assert proj_frame.
+        destruct ek2; simpl proj_ret_assert; simpl exit_cont; monPred.unseal.
+        * iIntros "(% & (? & % & ?) & ?)"; subst.
+          iApply ("IH" $! _ F); last by destruct POST; iFrame.
+          iIntros "!>"; iSplit; done.
+        * iIntros "(% & (? & % & ?) & ?)"; subst.
+          destruct POST; iApply ("rguard" $! EK_normal None); simpl; monPred.unseal; by iFrame.
+        * destruct POST; simpl.
+          iIntros "(% & (? & % & []) & ?)".
+        * destruct POST; simpl.
+          iIntros "(% & (? & ?) & ?)".
+          iApply ("rguard" $! EK_return); simpl; monPred.unseal; by iFrame. }
+      iIntros (??) "!>".
+      destruct ek. 
+    + rewrite proj_frame; simpl proj_ret_assert; monPred.unseal; iIntros "(% & (? & % & ?) & ?)"; subst.
+      iApply (assert_safe_adj _ _ _ _ _ (Kseq incr (Kloop2 body incr k)) (Kseq _ _)); last by iApply "Hincr"; destruct POST; iFrame.
+      intros ?????; iIntros "H"; iApply (jsafe_local_step with "H"); constructor; auto.
+    + simpl proj_ret_assert; monPred.unseal; iIntros "(% & (% & ?) & ?)"; rewrite /loop1_ret_assert.
       destruct POST; iApply ("rguard" $! EK_normal None); simpl; monPred.unseal; by iFrame.
-    * destruct POST; simpl.
-      iIntros "(% & (? & % & []) & ?)".
-    * destruct POST; simpl.
-      iIntros "(% & (? & ?) & ?)".
-      iApply ("rguard" $! EK_return); simpl; monPred.unseal; by iFrame. }
-  iIntros (??) "!>".
-  destruct ek.
-  + rewrite proj_frame; simpl proj_ret_assert; monPred.unseal; iIntros "(% & (? & % & ?) & ?)"; subst.
-    iApply (assert_safe_adj _ _ _ _ _ (Kseq incr (Kloop2 body incr k)) (Kseq _ _)); last by iApply "Hincr"; destruct POST; iFrame.
-    intros ?????; iIntros "H"; iApply (jsafe_local_step with "H"); constructor; auto.
-  + simpl proj_ret_assert; monPred.unseal; iIntros "(% & (% & ?) & ?)"; rewrite /loop1_ret_assert.
-    destruct POST; iApply ("rguard" $! EK_normal None); simpl; monPred.unseal; by iFrame.
-  + simpl exit_cont; simpl proj_ret_assert; monPred.unseal.
-    iIntros "(% & (% & H) & ?)".
-    iApply "Hincr".
-    by destruct POST; simpl frame_ret_assert; monPred.unseal; iDestruct "H" as "[$ $]"; iFrame.
-  + destruct POST; iApply ("rguard" $! EK_return); by iFrame.
+    + simpl exit_cont; simpl proj_ret_assert; monPred.unseal.
+      iIntros "(% & (% & H) & ?)".
+      iApply "Hincr".
+      by destruct POST; simpl frame_ret_assert; monPred.unseal; iDestruct "H" as "[$ $]"; iFrame.
+    + destruct POST; iApply ("rguard" $! EK_return); by iFrame.
 Qed.
 
 Lemma semax_break:

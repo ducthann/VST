@@ -1174,7 +1174,8 @@ Section conc_heap.
    *)
 
   Definition thread_state_interp `{!inG Σ rmap_authUR} γ (q : Qp) m (σ : rmap) z : iProp Σ :=
-    ∃ σ0 : rmap, frag_mem_auth m σ0 ∗ rmap_auth γ σ0 ∗ rmap_frag γ q σ ∗ ext_auth z.
+    ∃ σ0 : rmap, 
+      frag_mem_auth m σ0 ∗ rmap_auth γ σ0 ∗ rmap_frag γ q σ ∗ ext_auth z.
 
   (* Definition frag_state_interp (m : mem) (σ : rmap) z : iProp Σ :=
     frag_mem_auth m σ ∗ ext_auth z. *)
@@ -3729,6 +3730,9 @@ Proof.
       assert (mem_compatible (updThread cnti (Krun c') (getCurPerm m')) m') as Hcompat'.
       { by eapply (CoreLanguageDry.corestep_compatible (Sem := Sem)). }
       iDestruct "S" as (σnew) "(Hmemi & Hauth & Hfragi & Hext)".
+      Print ext_auth.
+      Search rmap_auth rmap_frag.
+      Check rmap_auth_frag_agreeI.
       Print frag_mem_auth .
       
       iSpecialize ("IH" $! _ _ (updThread cnti (Krun c') (getCurPerm m')) m' n ls

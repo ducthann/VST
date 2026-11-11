@@ -1076,8 +1076,11 @@ iAssert (rguard OK_spec psi (E a) Delta f0 (frame_ret_assert (normal_ret_assert 
   destruct ek; simpl proj_ret_assert; monPred.unseal; try iDestruct "Q" as (->) "Q"; try iDestruct "Q" as "[]".
   iIntros (??); simpl.
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (??) "(Hm & ?)".
-  iMod (free_stackframe _ f0  _ _ vx tx with "[$Hm]") as (???) "?"; try eassumption; try solve [constructor].
+  iIntros (m σ) "(Hm & ?)".
+  iAssert ⌜coherent m σ⌝%I as %Hcoh.
+  { iDestruct "Hm" as "[$ _]". }
+  iMod (free_stackframe_decay _ f0 _ _ _ vx tx with "[$Hm]") as (m2 σ2) "((%Hfl & %Hfd) & Hm)";
+    try eassumption; try solve [constructor].
   { destruct H as (? & Hmatch & ?); split3; auto.
     split3; simpl; eauto.
     * intros ??; setoid_rewrite Maps.PTree.gempty; done.
@@ -1087,8 +1090,10 @@ iAssert (rguard OK_spec psi (E a) Delta f0 (frame_ret_assert (normal_ret_assert 
       specialize (Hmatch id); rewrite Hid // in Hmatch. }
   { rewrite /stackframe_of /f0 /=.
     by monPred.unseal. }
-  iIntros "!>"; iExists _, _, _; iSplit.
-  { iPureIntro; econstructor; eauto. }
+  iIntros "!>"; iExists _, m2, σ2; iSplit.
+  { iPureIntro; split.
+    - econstructor; eauto.
+    - apply free_decay_resource_decay; [by apply coherent_rmap_bound | done]. }
   iFrame.
   by iApply return_stop_safe; try iPureIntro. }
 iPoseProof (semax_call_aux0 _ _ _ _ _ _ _ _ P _ _ _ _ _ _ _ True (fun _ => emp) _ _ _ _ (Maps.PTree.empty _) (Maps.PTree.empty _) with "Prog_OK") as "Himp"; try done;

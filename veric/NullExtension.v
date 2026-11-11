@@ -55,11 +55,14 @@ Lemma NullExtension_whole_program_sequential_safety:
             (Clight.Build_genv (Genv.globalenv prog) (Ctypes.prog_comp_env prog)) )
              n tt q m'.
 Proof.
-intros.
-eapply whole_program_sequential_safety_ext in H0 as (? & ? & ?); eauto.
-- intros ?????; apply I.
-- intros; apply ext_spec_entails_refl.
-- intros; exists CS; apply H.
+  intros.
+  eapply (whole_program_sequential_safety_ext Σ
+            (Espec := fun _ => null_Jextspec) (dryspec := extspec)) in H0 as (? & ? & ?); eauto.
+  - intros ? v Hv; apply bi.True_intro.
+  - intros ?; split.
+    + intros e x1; destruct x1.
+    + intros; apply bi.pure_intro; exact I.
+  - intros; exists CS; apply H.
 Qed.
 
 (*Lemma module_sequential_safety : (*TODO*)

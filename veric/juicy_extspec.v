@@ -75,13 +75,15 @@ Definition state_interp m σ z := mem_rmap_auth m σ ∗ ext_auth z.
 (* Do we even need the external ghost state in this model? Could we just share
    arbitrary resources with the external calls? *)
 
+
 (* We could bring this more in line with weakestpre, but weakestpre doesn't give us control over the
    masks, so we can't restrict updates around steps. *)
+  (* just added ⌜resource_decay (Mem.nextblock m) σ σ'⌝ *)
 Program Definition jsafe_pre
     (jsafe : coPset -d> Z -d> C -d> iPropO Σ) : coPset -d> Z -d> C -d> iPropO Σ := λ E z c,
   |={E}=> ∀ m σ, state_interp m σ z -∗
       (∃ i, ⌜halted Hcore c i⌝ ∧ state_interp m σ z ∗ Jext_spec_exit Hspec (Some (Vint i))) ∨
-      (|={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c') ∨
+                  (|={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m' /\ resource_decay (Mem.nextblock m) σ σ'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c') ∨
       (∃ e args x, ⌜at_external Hcore c m = Some (e, args)⌝ ∧ state_interp m σ z ∗ Jext_spec_pre Hspec e x (genv_symb ge) (sig_args (ef_sig e)) args ∗
          ▷ (∀ ret m' σ' z', ⌜Val.has_type_list args (sig_args (ef_sig e)) ∧ Builtins0.val_opt_has_rettype ret (sig_res (ef_sig e))⌝ →
           |={E}=> state_interp m' σ' z' -∗ Jext_spec_post Hspec e x (genv_symb ge) (sig_res (ef_sig e)) ret -∗
@@ -156,6 +158,15 @@ Section proofmode_classes.
 
 End proofmode_classes.
 
+Lemma coherent_resource_decay_refl m (σ : rmap) :
+  coherent m σ → resource_decay (Mem.nextblock m) σ σ.
+Proof.
+  intros Hcoh.
+  split.
+  - intros l Hl; apply (proj1 (Hcoh l) Hl).
+  - intros l; constructor.
+Qed.
+
 Lemma jsafe_local_step:
   forall E ora s1 s2,
   (forall m, corestep Hcore s1 m s2 m) ->
@@ -164,15 +175,22 @@ Lemma jsafe_local_step:
 Proof.
   intros ?????; iIntros "H".
   rewrite (jsafe_unfold _ _ s1) /jsafe_pre.
-  iIntros "!>" (??) "?".
+  iIntros "!>" (??) "Hstate".
+  iDestruct "Hstate" as "((%Hcoh & Hauth) & Hext)".
   iRight; iLeft.
-  iModIntro; iExists _, _, _; iSplit; first done.
-  by iFrame.
+  iModIntro.
+  iExists _, _, _; iSplit.
+  - iPureIntro.
+    split; auto.
+    apply coherent_resource_decay_refl; auto.
+  - by iFrame.
 Qed.
 
-Definition jstep E z c c' := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
+(* added resource_decay (Mem.nextblock m) σ σ' *)
+Definition jstep E z c c' := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ m' σ', ⌜corestep Hcore c m c' m' /\ resource_decay (Mem.nextblock m) σ σ'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
 
-Definition jstep_ex E z c := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
+(* added resource_decay (Mem.nextblock m) σ σ' *)
+  Definition jstep_ex E z c := ∀ m σ, state_interp m σ z -∗ |={E}=> ∃ c' m' σ', ⌜corestep Hcore c m c' m' /\ resource_decay (Mem.nextblock m) σ σ'⌝ ∧ state_interp m' σ' z ∗ ▷ jsafe E z c'.
 
 Lemma jstep_exists : forall E z c c', jstep E z c c' ⊢ jstep_ex E z c.
 Proof.
@@ -187,6 +205,8 @@ Proof.
   intros; rewrite /jstep.
   iIntros "H" (??) "?".
   iMod ("H" with "[$]") as (???) "($ & $)"; eauto.
+  destruct H0 as (Hc & Hd).
+  try iSplit; auto.
 Qed.
 
 Lemma jsafe_step:
@@ -195,11 +215,11 @@ Lemma jsafe_step:
 Proof.
   intros; iIntros "H".
   rewrite jsafe_unfold /jsafe_pre /jstep_ex.
-  iIntros "!>" (m ?) "?"; iRight; iLeft.
-  iMod ("H" with "[$]") as (????) "[??]".
+  iIntros "!>" (m ?) "Hstate"; iRight; iLeft.
+  iMod ("H" with "Hstate") as (c' m' σ') "(%Hstep_decay & Hstate' & Hsafe)".
   iModIntro.
   iExists _, _, _; iSplit; first done.
-  by iFrame.
+  iFrame.
 Qed.
 
 Lemma jsafe_step_forward_ex:
@@ -229,7 +249,7 @@ Proof.
   rewrite /jstep; iIntros "!>" (m1 ?) "?".
   iDestruct ("H" with "[$]") as "[H | [H | H]]".
   { iDestruct "H" as (??) "?"; exfalso; eapply Hhalt; eauto. }
-  iMod "H" as (??? Hstep) "H".
+  iMod "H" as (??? (Hstep & Hdecay)) "H".
   rewrite -(Hc1 _ _ _ Hstep).
   iIntros "!>"; iExists _, _; iSplit; done.
   { iDestruct "H" as (??? H) "?".
@@ -302,8 +322,8 @@ Qed.
     iMod "H"; iIntros "!>" (??) "?"; iDestruct ("H" with "[$]") as "[H | [H | H]]".
     - rewrite Hhalted; auto.
     - iRight; iLeft.
-      iMod "H" as (??? H) "($ & $)".
-      apply Hstep in H; eauto.
+      iMod "H" as (??? (Hc & Hd)) "($ & $)".
+      apply Hstep in Hc; eauto.
     - rewrite Hat_ext; iDestruct "H" as (????) "(S & Hpre & H)".
       iRight; iRight; iExists _, _, _; iFrame "S Hpre".
       iSplit => //.

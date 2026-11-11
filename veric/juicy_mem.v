@@ -919,6 +919,123 @@ Section mpred.
   (* coherence between logical state (rmap) and physical state (mem) *)
   Definition rmap := gmap address (shared (leibnizO resource)).
 
+  Definition rmap_bound (b : Values.block) (σ : rmap) : Prop :=
+  forall l : address, (l.1 >= b)%positive -> σ !! l = None.
+
+  Definition full_VAL (v : memval) : shared.shared (leibnizO resource) :=
+    shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share share_top))
+      readable_top (to_agree (VAL v)).
+
+  Local Instance resource_shared_unit : Unit (shared.shared (leibnizO resource)) :=
+    shared.NO (V := leibnizO resource) (share_alg.Share share_bot) unreadable_bot.
+
+  Inductive resource_decay_at (nextb : Values.block) (l : address) :
+    option (shared.shared (leibnizO resource)) → option (shared.shared (leibnizO resource)) → Prop :=
+  | decay_same r : resource_decay_at nextb l r r
+                                     
+  | decay_store sh (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share sh))) v v' :
+    share_writable sh → resource_decay_at nextb l
+                           (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v))))
+                           (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh)) rsh (to_agree (VAL v'))))
+                           
+  | decay_alloc v : (l.1 >= nextb)%positive → resource_decay_at nextb l None (Some (full_VAL v))
+  | decay_free (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share share_top))) v :
+    resource_decay_at nextb l (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share share_top)) rsh (to_agree (VAL v)))) (Some (ε : shared.shared (leibnizO resource)))
+(* resource-map lookup exposes cells only up to OFE equivalence. *)
+ | decay_equiv (r1 r1' r2' r2 : ofe_car (optionO (shared.sharedO (leibnizO resource)))) :
+  r1 ≡ r1' → resource_decay_at nextb l r1' r2' → r2' ≡ r2 → resource_decay_at nextb l r1 r2.
+
+  (** Old level φ1 >= level φ2 /\ ∀ l, old_bound nextb φ1 l /\ old_decay_at nextb l φ1 φ2
+lifts resource_decay_at to whole rmaps
+   **)
+
+  Definition resource_decay (nextb : Values.block) (σ σ' : rmap) : Prop :=
+    rmap_bound nextb σ ∧ (∀ l, resource_decay_at nextb l (σ !! l) (σ' !! l)).
+
+  Definition free_decay (σ σ' : rmap) : Prop :=
+    (∀ l, σ' !! l ≡ σ !! l ∨
+            ∃ (rsh : dshare.readable_dfrac (dshare.DfracOwn (share_alg.Share share_top))) v,
+              σ !! l ≡ Some (shared.YES (V := leibnizO resource)
+                               (dshare.DfracOwn (share_alg.Share share_top)) rsh (to_agree (VAL v))) ∧
+                σ' !! l ≡ Some (ε : shared.shared (leibnizO resource)))%type.
+
+  Lemma free_decay_refl σ : free_decay σ σ.
+  Proof. intros l; left; done. Qed.
+
+  Lemma free_decay_trans σ1 σ2 σ3 : free_decay σ1 σ2 → free_decay σ2 σ3 → free_decay σ1 σ3.
+  Proof.
+    intros H12 H23 l.
+    destruct (H12 l) as [E12 | (rsh & v & E1 & E2)], (H23 l) as [E23 | (rsh' & v' & E2' & E3)]; auto.
+    - left; by rewrite E23 E12.
+    - right; exists rsh', v'; split; last done. by rewrite -E12.
+    - right; exists rsh, v; split; first done. by rewrite E23.
+    - exfalso. rewrite E2 in E2'.
+      inversion E2' as [?? Hc|]; subst. by destruct Hc.   (* ε (a NO) ≢ YES *)
+  Qed.
+  
+  Lemma free_decay_resource_decay nb σ σ' :
+    rmap_bound nb σ → free_decay σ σ' → resource_decay nb σ σ'.
+  Proof.
+    intros Hb Hf; split; first done.
+    intros l; destruct (Hf l) as [E | (rsh & v & E1 & E2)].
+    - apply (decay_equiv _ _ _ (σ !! l) (σ !! l)); [done | apply decay_same | by symmetry].
+    - eapply (decay_equiv _ _ _ _ _ _ E1); [apply decay_free | by symmetry].
+  Qed.
+
+  (* the full own-share is maximal *)
+
+  Lemma top_included_eq (dq : dshare.dfrac) :
+    ✓ dq → dshare.DfracOwn (share_alg.Share share_top) ≼ dq →
+    dq = dshare.DfracOwn (share_alg.Share share_top).
+  Proof.
+    intros Hv [z ->].
+    destruct z as [q|q].
+    - change (dshare.DfracOwn (share_alg.Share share_top) ⋅ dshare.DfracOwn q)
+        with (dshare.DfracOwn (share_alg.Share share_top ⋅ q)) in Hv |- *.
+      destruct (share_alg.Share share_top ⋅ q) as [s|] eqn:Hop; last by destruct Hv.
+      apply share_alg.share_op_join in Hop as (? & ? & [= <-] & _ & J).
+      apply share_op_is_join, join_Tsh in J as [-> _]; done.
+    - change (dshare.DfracOwn (share_alg.Share share_top) ⋅ dshare.DfracBoth q)
+        with (dshare.DfracBoth (share_alg.Share share_top ⋅ q)) in Hv.
+      destruct Hv as (s & Hop & Hnw).
+      apply share_alg.share_op_join in Hop as (? & ? & [= <-] & _ & J).
+      apply share_op_is_join, join_Tsh in J as [-> _].
+      by contradiction Hnw; apply (@writable_top _ share_instance).
+  Qed.
+
+  Definition alloc_decay (nb : Values.block) (σ σ' : rmap) : Prop :=
+    (∀ l, σ' !! l ≡ σ !! l ∨
+            (σ !! l ≡ None ∧ (l.1 >= nb)%positive ∧ σ' !! l ≡ Some (full_VAL Undef)))%type.
+
+  Lemma alloc_decay_refl nb σ : alloc_decay nb σ σ.
+  Proof. intros l; left; done. Qed.
+
+  Lemma alloc_decay_trans nb nb' σ1 σ2 σ3 :
+    alloc_decay nb σ1 σ2 → alloc_decay nb' σ2 σ3 → (nb <= nb')%positive →
+    alloc_decay nb σ1 σ3.
+  Proof.
+    intros H12 H23 Hle l.
+    destruct (H12 l) as [E12 | (E1 & Hl & E2)],
+        (H23 l) as [E23 | (E2' & Hl' & E3)].
+    - left; by rewrite E23 E12.
+    - right; split; first by rewrite -E12.
+      split; [lia | done].
+    - right; split; first done.
+      split; first done.
+      by rewrite E23.
+    - exfalso; rewrite E2 in E2'. inversion E2'.
+  Qed.
+  
+  Lemma alloc_decay_resource_decay nb σ σ' :
+    rmap_bound nb σ → alloc_decay nb σ σ' → resource_decay nb σ σ'.
+  Proof.
+    intros Hb Hf; split; first done.
+    intros l; destruct (Hf l) as [E | (E1 & Hl & E2)].
+    - apply (decay_equiv _ _ _ (σ !! l) (σ !! l)); [done | apply decay_same | by symmetry].
+    - eapply (decay_equiv _ _ _ _ _ _ E1); [by apply decay_alloc | by symmetry].
+  Qed.
+
+
   Implicit Types (f : rmap) (s : sharedR (leibnizO resource)) (r : prodO dfracO (optionO (leibnizO resource))).
 
   Lemma elem_of_agree_ne : forall {A} n (x y : agreeR A), ✓{n} x -> x ≡{n}≡ y -> proj1_sig (elem_of_agree x) ≡{n}≡ proj1_sig (elem_of_agree y).
@@ -1311,6 +1428,97 @@ Section mpred.
       subst; rewrite elem_of_to_agree perm_of_freeable; erewrite alloc_access_same; try done; last lia.
   Qed.
 
+  Lemma mapsto_alloc_decay {m σ} lo hi m' b (Halloc : Mem.alloc m lo hi = (m', b)) :
+    (⌜coherent m σ⌝ ∧
+       resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name gen_heapGS0) 1 σ) ==∗
+    ∃ σ', ⌜alloc_decay (Mem.nextblock m) σ σ'⌝ ∧
+      (⌜coherent m' σ'⌝ ∧
+         resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name gen_heapGS0) 1 σ') ∗
+      ([∗ list] i ∈ seq 0 (Z.to_nat (hi - lo)), adr_add (b, lo) (Z.of_nat i) ↦ VAL Undef).
+    Proof.
+    iIntros "(%H & Hm)".
+    pose proof (alloc_result _ _ _ _ _ Halloc) as ->.
+    assert (Hnd : NoDup (zip ((λ i : nat, adr_add (nextblock m, lo) (Z.of_nat i)) <$> seq 0 (Z.to_nat (hi - lo)))
+     (replicate (Z.to_nat (hi - lo)) (VAL Undef))).*1).
+    { rewrite fst_zip.
+      apply NoDup_fmap_2, NoDup_seq.
+      intros ??; inversion 1; lia.
+      { rewrite length_fmap seq_length length_replicate //. } }
+    iMod (mapsto_insert_big
+            (list_to_map (zip ((λ i : nat, adr_add (nextblock m, lo) (Z.of_nat i)) <$> seq 0 (Z.to_nat (hi - lo)))
+                              (replicate (Z.to_nat (hi - lo)) (VAL Undef))))
+          with "Hm") as "(Hm & Hlist)".
+    { rewrite dom_list_to_map_L fst_zip.
+      intros l (? & -> & ?)%elem_of_list_to_set%elem_of_list_fmap_2.
+      destruct (H (adr_add (nextblock m, lo) (Z.of_nat x))) as (Hnext & _).
+      rewrite elem_of_dom Hnext.
+      * intros (? & ?); done.
+      * rewrite /adr_add /=; lia.
+      * rewrite length_fmap seq_length length_replicate //. }
+    (* convert the map back to the list form, in a goal without binders *)
+    iAssert ([∗ list] i ∈ seq 0 (Z.to_nat (hi - lo)), adr_add (nextblock m, lo) (Z.of_nat i) ↦ VAL Undef)%I
+      with "[Hlist]" as "Hlist".
+    { rewrite -(big_sepL_fmap (λ i, adr_add (nextblock m, lo) (Z.of_nat i)) (λ _ i, i ↦ VAL Undef)).
+      rewrite -(big_sepL2_replicate_r _ _ (λ _ i v, i ↦ v)); last by rewrite length_fmap seq_length.
+      rewrite big_sepL2_alt length_fmap seq_length length_replicate bi.pure_True // bi.True_and.
+      rewrite -(big_sepM_list_to_map (λ x y, x ↦ y)) //. }
+    iModIntro; iExists _.
+    iSplit; last (iSplitL "Hm"; [iSplit; last iExact "Hm" | iExact "Hlist"]).
+    (* ---- alloc_decay ---- *)
+    { iPureIntro; intros l.
+      destruct (H l) as (Hnext & _).
+      assert ((((λ v : resource, (YES (V := leibnizO resource) (DfracOwn (Share Tsh)) readable_top (to_agree v))) <$>
+        list_to_map (zip ((λ i : nat, adr_add (nextblock m, lo) (Z.of_nat i)) <$> seq 0 (Z.to_nat (hi - lo)))
+             (replicate (Z.to_nat (hi - lo)) (VAL Undef)))) ∪ σ) !! l =
+        if eq_dec l.1 (nextblock m) then if adr_range_dec (nextblock m, lo) (hi - lo) l then
+        Some (YES (V := leibnizO resource) (DfracOwn (Share Tsh)) readable_top (to_agree (VAL Undef))) else None else σ !! l) as Hlookup.
+      { rewrite -{1}(length_replicate (Z.to_nat (hi - lo)) (VAL Undef)) update_map_lookup length_replicate nth_replicate.
+        if_tac.
+        * destruct l, H0 as [-> ?]; rewrite /= eq_dec_refl if_true //; lia.
+        * if_tac; last done.
+          rewrite if_false; first by apply Hnext; lia.
+          destruct l; intros [??]; simpl in *; subst; lia. }
+      rewrite Hlookup.
+      destruct (eq_dec l.1 (nextblock m)) as [Hl1 | Hl1]; last by left.
+      assert (Hnone : σ !! l = None) by (apply Hnext; rewrite Hl1; lia).
+      destruct (adr_range_dec (nextblock m, lo) (hi - lo) l).
+      - right; split; first by rewrite Hnone.
+        split; first (rewrite Hl1; lia).
+        rewrite /full_VAL; done.
+      - left; by rewrite Hnone. } 
+    iPureIntro.
+    intros l; specialize (H l); destruct H as (Hnext & Hcontents & Haccess).
+    unfold resource_at in *.
+    assert ((((λ v : resource, (YES (V := leibnizO resource) (DfracOwn (Share Tsh)) readable_top (to_agree v))) <$>
+     list_to_map (zip ((λ i : nat, adr_add (nextblock m, lo) (Z.of_nat i)) <$> seq 0 (Z.to_nat (hi - lo)))
+          (replicate (Z.to_nat (hi - lo)) (VAL Undef)))) ∪ σ) !! l =
+      if eq_dec l.1 (nextblock m) then if adr_range_dec (nextblock m, lo) (hi - lo) l then
+      Some (YES (V := leibnizO resource) (DfracOwn (Share Tsh)) readable_top (to_agree (VAL Undef))) else None else σ !! l) as Hlookup.
+    { rewrite -{1}(length_replicate (Z.to_nat (hi - lo)) (VAL Undef)) update_map_lookup length_replicate nth_replicate.
+      if_tac.
+      * destruct l, H as [-> ?]; rewrite /= eq_dec_refl if_true //; lia.
+      * if_tac; last done.
+        rewrite if_false; first by apply Hnext; lia.
+        destruct l; intros [??]; simpl in *; subst; lia. }
+    rewrite Hlookup; clear Hlookup.
+    split3.
+    - erewrite nextblock_alloc by done.
+      intros; rewrite Hnext; last lia.
+      if_tac; last done; if_tac; last done; lia.
+    - intros ?.
+      if_tac; last by rewrite /contents_at; erewrite AllocContentsOther by done; auto.
+      if_tac; last done.
+      rewrite /= elem_of_to_agree; inversion 1; subst.
+      rewrite -H in Halloc.
+      rewrite /contents_at; erewrite AllocContentsUndef; done.
+    - unfold access_cohere in *.
+      destruct l; if_tac; last by erewrite <- alloc_access_other; eauto.
+      if_tac; simpl in *; last first.
+      rewrite if_true //.
+      erewrite <- alloc_access_other; eauto; try apply nextblock_access_empty. lia. lia.
+      subst; rewrite elem_of_to_agree perm_of_freeable; erewrite alloc_access_same; try done; last lia.
+  Qed.
+
 
   (*
 
@@ -1400,6 +1608,69 @@ Section mpred.
     iExists _; iFrame; iPureIntro; split; last done.
     unfold coherent, resource_at in *; intros l. rewrite update_map_lookup.
     destruct (H l) as (Hnext & Hcontents & Haccess); clear H.
+    pose proof (free_range_perm _ _ _ _ _ Hfree) as Hperm.
+    split3.
+    - erewrite nextblock_free by done.
+      if_tac; last done.
+      destruct k, l as (?, ofs), H; simpl in *; subst.
+      specialize (Hperm ofs ltac:(lia)); apply perm_valid_block in Hperm; rewrite /valid_block /Plt in Hperm; lia.
+    - unfold contents_cohere in *.
+      intros ?; if_tac; try done.
+      destruct k, l; eapply free_nadr_range_eq in Hfree as [_ <-]; simpl in *; auto; lia.
+    - unfold access_cohere in *.
+      if_tac.
+      + rewrite /= eq_dec_refl.
+        destruct k as [bk ok], l as [bl ofs], H as [-> Hrng]; simpl in *.
+        subst.
+        apply free_access with (ofs := ofs) in Hfree; last lia.
+        destruct Hfree as [_ Hmax].
+        pose proof (Memory.access_cur_max m' (bl, ofs)) as Hcurmax.
+        rewrite Hmax in Hcurmax; simpl in Hcurmax.
+        destruct (access_at m' (bl, ofs) Cur); auto; contradiction.
+      + destruct k, l.
+        eapply free_nadr_range_eq in Hfree as [<- _]; simpl in *; auto; lia.
+  Qed.
+
+
+  Lemma mapsto_free_decay {m σ k} (vl : list memval) hi m'
+    (Hfree : Mem.free m k.1 k.2 hi = Some m') (Hlen : length vl = Z.to_nat (hi - k.2)) :
+    (⌜coherent m σ⌝ ∧
+       resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name gen_heapGS0) 1 σ) -∗
+    ([∗ list] i↦v ∈ vl, adr_add k (Z.of_nat i) ↦ VAL v) ==∗
+    ∃ σ', ⌜free_decay σ σ'⌝ ∧ ⌜coherent m' σ'⌝ ∧
+      resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name gen_heapGS0) 1 σ'.
+  Proof.
+    iIntros "(%Hcoh & Hm) H".
+    rewrite -(big_sepL_fmap VAL (λ i v, adr_add k (Z.of_nat i) ↦ v)).
+    rewrite big_sepL_seq2 -(big_sepL2_fmap_l (λ i, adr_add k (Z.of_nat i)) (λ _ i y, i ↦ y)).
+    rewrite length_fmap.
+    assert (Hnd : NoDup (zip ((λ i : nat, adr_add k (Z.of_nat i)) <$> seq 0 (length vl)) (VAL <$> vl)).*1).
+    { rewrite fst_zip. apply NoDup_fmap_2, NoDup_seq.
+      intros ??; inversion 1; lia. rewrite !length_fmap seq_length //. }
+    rewrite big_sepL2_alt -(big_sepM_list_to_map (λ x y, x ↦ y)) //.
+    iDestruct "H" as "(_ & H)".
+    iDestruct (gen_heap.mapsto_lookup_big with "Hm H") as %Hall.
+    iMod (mapsto_delete_big with "Hm H") as "Hm".
+    iModIntro; iExists _.
+    iSplit; last (iSplit; last iExact "Hm").
+    { (* free_decay *)
+      iPureIntro; intros l.
+      rewrite -(length_fmap VAL vl) update_map_lookup length_fmap.
+      if_tac; last by left.
+      right.
+      specialize (Hall l).
+      rewrite -(length_fmap VAL vl) list_to_map_lookup length_fmap if_true // in Hall.
+      destruct (Hall _ eq_refl) as (dq' & rsh' & Hv & Hinc & Heq).
+      pose proof (top_included_eq _ Hv Hinc) as Hdq; subst dq'.
+      rewrite map_nth in Heq.
+      exists rsh', (nth (Z.to_nat (l.2 - k.2)) vl Undef).
+      split; first exact Heq.
+      simpl; done.
+    }
+    iPureIntro.
+    unfold coherent, resource_at in *; intros l.
+    rewrite -(length_fmap VAL vl) update_map_lookup length_fmap.
+    destruct (Hcoh l) as (Hnext & Hcontents & Haccess).
     pose proof (free_range_perm _ _ _ _ _ Hfree) as Hperm.
     split3.
     - erewrite nextblock_free by done.
@@ -1571,6 +1842,167 @@ Section mpred.
       rewrite -> Mem.setN_other, Maps.ZMap.gss by lia; done.
     - rewrite IHl; last lia.
       replace (Z.to_nat (i - (z + 1))) with n by lia; done.
+  Qed.
+
+  Lemma writable_sub_dfrac_own sh dq :
+    writable0_share sh -> ✓ dq -> dshare.DfracOwn (share_alg.Share sh) ≼ dq ->
+    ∃ sh', dq = dshare.DfracOwn (share_alg.Share sh') /\ writable0_share sh'.
+  Proof.
+    intros Hwrite Hvalid Hsub.
+    destruct dq as [q | q].
+    - destruct q as [sh' |]; try done.
+      exists sh'; split; first done.
+      rewrite dshare.dfrac_included_eq /= in Hsub.
+      destruct Hsub as [qf Hqf].
+      destruct qf as [shf |]; simpl in Hqf; try done.
+      destruct (share_op sh shf) eqn:Hop; inversion Hqf; subst; try done.
+      all: rewrite share_op_eq Hop in H0; inversion H0; subst; apply share_op_is_join in Hop;
+      eapply join_writable01; eauto.
+  - destruct q as [sh' |].
+    + exfalso.
+      rewrite dshare.dfrac_included_eq /= in Hsub.
+      destruct Hsub as [qf Hqf].
+      destruct qf as [shf |]; simpl in Hqf; try done.
+      destruct (share_op sh shf) eqn:Hop; inversion Hqf; subst.
+      assert (Hv : ✓ (dshare.DfracOwn (share_alg.Share s) ⋅ dshare.DfracDiscarded)).
+      { rewrite dshare.dfrac_op_own_discarded.
+        replace s with sh'; auto.
+        rewrite share_op_eq Hop in H0.
+        congruence. }
+      * pose proof
+          (proj1
+             (dshare.dfrac_valid_own_discarded
+                (share_alg.Share s))
+             Hv) as Hv'.
+
+        destruct Hv' as (sh0 & Hsh0 & Hnot).
+        injection Hsh0 as Hss.
+        rewrite <- Hss in Hnot.
+        apply Hnot.
+        apply share_op_is_join in Hop.
+        eapply join_writable01; eauto.
+      * rewrite share_op_eq Hop in H0.
+        inversion H0.
+    + rewrite dshare.dfrac_included_eq /= in Hsub.
+      exfalso.
+      assert (Hv : ✓ (dshare.DfracOwn share_alg.ShareBot ⋅ dshare.DfracDiscarded)).
+      { rewrite dshare.dfrac_op_own_discarded; auto. }
+      pose proof (proj1 (dshare.dfrac_valid_own_discarded share_alg.ShareBot) Hv) as Hv'.
+      destruct Hv' as (sh' & Hbad & _).
+      inversion Hbad.
+  Qed.
+
+  Lemma coherent_rmap_bound m σ : coherent m σ → rmap_bound (Mem.nextblock m) σ.
+  Proof. intros Hcoh l Hl; apply (proj1 (Hcoh l) Hl). Qed.
+
+  Theorem mapsto_storebytes_decay {m σ} m' k vl bl
+    (Hlen : length vl = length bl)
+    sh (Hsh : writable0_share sh)
+    (Hstore : Mem.storebytes m k.1 k.2 bl = Some m') :
+    (⌜coherent m σ⌝ ∧
+       resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG))(gen_heap_name gen_heapGS0) 1 σ) -∗ ([∗ list] i ↦ v ∈ vl, adr_add k (Z.of_nat i) ↦{#sh} VAL v) -∗
+    ∃ σ', ⌜resource_decay (Mem.nextblock m) σ σ'⌝ ∧                                                     |==> (⌜coherent m' σ'⌝ ∧ resource_map.resource_map_auth (H1 := gen_heapGpreS_heap (gen_heapGpreS := gen_heap_inG)) (gen_heap_name gen_heapGS0) 1 σ') ∗ [∗ list] i ↦ v ∈ bl, adr_add k (Z.of_nat i) ↦{#sh} VAL v%I.
+  Proof.
+    iIntros "(%Hcoh & Hm) Hpts".
+    rewrite -(big_sepL_fmap VAL (λ i v, adr_add k (Z.of_nat i) ↦{#sh} v)).
+    rewrite big_sepL_seq2 -(big_sepL2_fmap_l (λ i : nat, adr_add k (Z.of_nat i)) (λ _ i y, i ↦{#sh} y)).
+    rewrite length_fmap.
+    assert (Hnodup_vl : NoDup (zip ((λ i : nat, adr_add k (Z.of_nat i)) <$> seq 0 (length vl)) (VAL <$> vl)).*1).
+    { rewrite fst_zip. apply NoDup_fmap_2, NoDup_seq.
+      intros ??. inversion 1. lia. rewrite !length_fmap seq_length //. }
+    rewrite big_sepL2_alt -(big_sepM_list_to_map (λ x y, x ↦{#sh} y)) //.
+    iDestruct "Hpts" as "(_ & Hpts)".
+    iDestruct (gen_heap.mapsto_lookup_big with "Hm Hpts") as %Hall.
+    assert (Hnodup_bl : NoDup (zip ((λ i : nat, adr_add k (Z.of_nat i)) <$> seq 0 (length bl)) (VAL <$> bl)).*1).
+    { rewrite fst_zip. apply NoDup_fmap_2, NoDup_seq.
+      intros ??. inversion 1. lia. rewrite !length_fmap seq_length //. }
+    iDestruct (resource_map_auth_valid with "Hm") as %(_ & Hvalid).
+    set (new_cells := (list_to_map (zip ((λ i : nat, adr_add k (Z.of_nat i)) <$> seq 0 (length bl)) (VAL <$> bl)) : gmap address resource)).
+    set (σ' := (union (Union := map_union)
+          (map_imap (λ l v, match σ !! l with
+                            | Some (shared.YES dq rsh _) =>
+                                Some (shared.YES (V := leibnizO resource) dq rsh (to_agree v))
+                            | _ => None
+                            end) new_cells) σ : rmap)).
+    assert (Hsh' : @share_writable share share_instance sh) by (by change (writable0_share sh)).
+ 
+    (* ---- NEW ORDER: choose σ' and prove decay first ---- *)
+    iExists σ'.
+    iSplit.
+    { (* same decay block as before *)
+      iPureIntro; split; first by intros l' Hl'; apply (proj1 (Hcoh l') Hl').
+      intros l.
+      rewrite /σ' lookup_union map_lookup_imap /new_cells
+              -(length_fmap VAL bl) list_to_map_lookup length_fmap.
+      if_tac; simpl; last by rewrite left_id; apply decay_same.
+      specialize (Hall l).
+      rewrite -(length_fmap VAL vl) list_to_map_lookup length_fmap Hlen if_true // in Hall.
+      destruct (Hall _ eq_refl) as (dq' & rsh' & Hv & Hinc & Heq).
+      inversion Heq as [x y Hx Hσl|]; subst.
+      rewrite -Hσl /=.
+      destruct x as [dqx rshx ax | shx nrshx]; last by inv Hx.
+      destruct Hx as [Hdq Hax]; subst dqx.
+      destruct (writable_sub_dfrac_own _ _ Hsh Hv Hinc) as (sh'' & Hdq' & Hsh''); subst dq'.
+      rewrite map_nth in Hax |- *.
+      apply (decay_equiv _ _ _
+        (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh'')) rshx
+                 (to_agree (VAL (nth (Z.to_nat (l.2 - k.2)) vl Undef)))))
+        (Some (shared.YES (V := leibnizO resource) (dshare.DfracOwn (share_alg.Share sh'')) rshx
+                 (to_agree (VAL (nth (Z.to_nat (l.2 - k.2)) bl Undef)))))).
+      - by rewrite Hax.
+      - by apply decay_store.
+      - rewrite union_Some_l map_nth //. }
+ 
+    (* ---- then the ghost update, coherence, list (as before) ---- *)
+    iMod (mapsto_update_big (H := share_instance) sh Hsh'
+            (list_to_map (zip ((λ i : nat, adr_add k (Z.of_nat i)) <$> seq 0 (length vl)) (VAL <$> vl)))
+            new_cells with "Hm Hpts") as "(Hm & Hpts)".
+    { unfold new_cells.
+      rewrite Hlen !dom_list_to_map_L !fst_zip //; rewrite !length_fmap seq_length //; lia. }
+    iDestruct (resource_map_auth_valid with "Hm") as %(_ & Hvalid').
+    iModIntro.
+    iSplitL "Hm".
+    { iSplit; last iExact "Hm".
+      iPureIntro.
+      rewrite /σ' /new_cells in Hvalid' |- *.
+      unfold coherent, resource_at in *; intros l.
+      destruct (Hcoh l) as (Hnext & Hcontents & Haccess).
+      pose proof (storebytes_range_perm _ _ _ _ _ Hstore) as Hperm.
+      specialize (Hvalid l); specialize (Hvalid' l).
+      rewrite lookup_union map_lookup_imap -(length_fmap VAL bl) list_to_map_lookup length_fmap
+        in Hvalid' |- *.
+      split3.
+      - erewrite nextblock_storebytes by done.
+        if_tac; last rewrite left_id //.
+        simpl in *; destruct (σ !! l) eqn: Hl; rewrite Hl // in Hvalid' |- *.
+        intros X; specialize (Hnext X); done.
+      - unfold contents_cohere, contents_at in *.
+        erewrite storebytes_mem_contents by done.
+        if_tac; simpl in *.
+        + destruct (σ !! l) as [[|]|] eqn: Hl; rewrite Hl // /= in Hvalid' |- *.
+          rewrite elem_of_to_agree map_nth; inversion 1; subst.
+          destruct l, k, H; simpl in *; subst.
+          rewrite Maps.PMap.gss get_setN //.
+        + rewrite left_id; destruct (eq_dec l.1 k.1); [rewrite e Maps.PMap.gss | rewrite Maps.PMap.gso //].
+          rewrite -e setN_outside //.
+          destruct (zlt l.2 k.2); auto.
+          rewrite Z.ge_le_iff; destruct (zle (k.2 + Z.of_nat (length bl)) l.2); auto.
+          contradiction H; destruct l, k; simpl in *; subst; lia.
+      - unfold access_cohere in *.
+        erewrite <- Memory.storebytes_access by done.
+        if_tac; simpl in *; last rewrite left_id //.
+        specialize (Hall l).
+        rewrite -(length_fmap VAL vl) list_to_map_lookup length_fmap Hlen if_true // in Hall.
+        destruct (Hall _ eq_refl) as (dq' & rsh' & Hv & Hinc & Heq).
+        erewrite resR_to_resource_eq in Haccess by done.
+        inversion Heq as [r r' Hc Heq'|]; subst; rewrite -Heq'.
+        destruct r; inv Hc; simpl.
+        rewrite /= !elem_of_to_agree !map_nth // in Haccess |- *. }
+    rewrite big_sepL_seq2 -(big_sepL2_fmap_l (λ i, adr_add k (Z.of_nat i)) (λ _ i y, i ↦{#sh} VAL y)).
+    rewrite -(big_sepL2_fmap_r VAL (λ _ i y, i ↦{#sh} y)).
+    rewrite big_sepL2_alt -(big_sepM_list_to_map (λ x y, x ↦{#sh} y)) //.
+    rewrite !length_fmap seq_length bi.pure_True // bi.True_and.
+    iExact "Hpts".
   Qed.
 
   Theorem mapsto_storebytes {m} m' k vl bl (Hlen : length vl = length bl) sh (Hsh : writable0_share sh)

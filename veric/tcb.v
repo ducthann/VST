@@ -13,26 +13,27 @@ Require Import VST.veric.SequentialClight.
 Require Import VST.veric.NullExtension.
 Import Axioms.
 
-Theorem VST_sound: 
+Theorem VST_sound:
   forall (CS: compspecs) `(!VSTGpreS unit Σ)
-     (prog: Clight.program) (initial_oracle: unit)
-     (V : mpred.varspecs) (G : mpred.funspecs) (m: mem),
-     (forall `{semax.VSTGS unit Σ}, semax_prog extspec prog initial_oracle V G) ->
-     Genv.init_mem prog = Some m ->
-     exists b, exists q, exists m',
-       Genv.find_symbol (Genv.globalenv prog) (prog_main prog) = Some b /\
-       semantics.initial_core  (Clight_core.cl_core_sem (Clight.globalenv prog))
-           0 m q m' (Vptr b Ptrofs.zero) nil /\
-       forall n,
-        @dry_safeN _ _ _ unit (semax.genv_symb_injective)
-          (Clight_core.cl_core_sem (Clight.globalenv prog)) extspec
-           (Clight.genv_genv 
-            (Clight.Build_genv (Genv.globalenv prog) (Ctypes.prog_comp_env prog)) )
-             n tt q m'.
+         (prog: Clight.program) (initial_oracle: unit)
+         (V : mpred.varspecs) (G : mpred.funspecs) (m: mem),
+    (forall {HH : semax.VSTGS unit Σ},
+        @semax_prog unit Σ HH (null_Jextspec (Σ := Σ)) CS prog initial_oracle V G) ->
+    Genv.init_mem prog = Some m ->
+    exists b, exists q, exists m',
+      Genv.find_symbol (Genv.globalenv prog) (prog_main prog) = Some b /\
+        semantics.initial_core  (Clight_core.cl_core_sem (Clight.globalenv prog))
+          0 m q m' (Vptr b Ptrofs.zero) nil /\
+        forall n,
+          @dry_safeN _ _ _ unit (semax.genv_symb_injective)
+            (Clight_core.cl_core_sem (Clight.globalenv prog)) extspec
+            (Clight.genv_genv
+               (Clight.Build_genv (Genv.globalenv prog) (Ctypes.prog_comp_env prog)) )
+            n tt q m'.
 Proof.
-intros.
-destruct initial_oracle.
-eapply NullExtension_whole_program_sequential_safety; eassumption.
+  intros.
+  destruct initial_oracle.
+  eapply NullExtension_whole_program_sequential_safety; eassumption.
 Qed.
 
 Print Assumptions VST_sound.

@@ -1041,12 +1041,18 @@ Proof.
     by inversion 1; constructor.
   - iApply jsafe_step.
     rewrite /jstep_ex.
-    iIntros (m ?) "? !>".
-    iExists _, m, _; iFrame; iPureIntro; split; auto; constructor.
+    iIntros (m ?) "Hstate !>".
+    iDestruct "Hstate" as "((%Hcoh & Hauth) & Hext)".
+    iExists (State f s k ve te), m, σ; iFrame; try iPureIntro; split; auto; constructor.
+    + constructor.
+    + apply coherent_resource_decay_refl; auto.
   - iApply jsafe_step.
     rewrite /jstep.
-    iIntros (m ?) "? !>".
-    iExists _, m, _; iFrame; iPureIntro; split; auto; constructor.
+    iIntros (m ?) "Hstate !>".
+    iDestruct "Hstate" as "((%Hcoh & Hauth) & Hext)".
+    iExists (State f (Sloop s s0) k ve te), m, σ; iFrame; try iPureIntro; split; auto; constructor.
+    + constructor.
+    + apply coherent_resource_decay_refl; auto.
   - iApply (convergent_controls_jsafe with "H"); simpl; try congruence.
     by inversion 1; constructor.
 Qed.

@@ -83,7 +83,7 @@ Proof.
     iDestruct (Hexit with "Hexit") as %?.
     iApply step_fupd_intro; first done; iApply step_fupdN_intro; first done.
     iPureIntro; eapply safeN_halted; eauto.
-  - iDestruct "Hsafe_core" as ">(%c' & %m' & % & % & s_interp & ▷jsafe)".
+  - iDestruct "Hsafe_core" as ">(%c' & %m' & %σ' & (%Hstep & %Hdecay) & s_interp & ▷jsafe)".
     iApply fupd_mask_intro; first done.
     iIntros "Hclose !>"; iMod "Hclose" as "_".
     iSpecialize ("IH" with "[$] [$]").

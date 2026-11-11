@@ -168,14 +168,22 @@ Proof.
   rewrite /guard' /_guard /assert_safe.
   iIntros (? _).
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (??) "(Hm & ?) !>".
-  destruct HGG as [CSUB ?]; iDestruct (eval_expr_relate with "[$Hm Q]") as %?; [done.. | |].
-  { inversion Htc as [->]; rewrite tc_expr_cenv_sub //. }
-  iExists _, _, _; iSplit.
-  { iPureIntro; econstructor; try done.
-    erewrite (eval_expr_cenv_sub_Vint CSUB) by done.
-    rewrite Hta //. }
+  iIntros (m σ) "(Hm & Hext) !>".
+  destruct HGG as [CSUB HCSUB].
+  iDestruct (eval_expr_relate with "[$Hm Q]") as %Heval; [done.. | |].
+  { inversion Htc as [->].
+    rewrite tc_expr_cenv_sub //. }
+  iDestruct "Hm" as "(%Hcoh & Hauth)".
+  iExists (State f (seq_of_labeled_statement (select_switch (Int.unsigned n) sl)) (Kswitch k) vx tx), m, σ.
+  iSplit.
+  { iPureIntro.
+    split.
+    - econstructor; try done.
+      erewrite (eval_expr_cenv_sub_Vint CSUB) by done.
+      rewrite Hta //.
+    - by apply coherent_resource_decay_refl. }
   iFrame.
+  iSplit; auto.
   iApply ("Hcase" with "[-]"); last by iPureIntro.
   monPred.unseal; iFrame; auto.
 Qed.

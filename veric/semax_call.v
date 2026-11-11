@@ -473,6 +473,60 @@ Proof.
     - auto.
 Qed.
 
+Lemma VALspec_range_free_decay: forall m σ b lo hi m',
+    Mem.free m b lo hi = Some m' ->
+    mem_rmap_auth m σ ∗ VALspec_range (hi - lo) share_top (b, lo) ⊢
+      |==> ∃ σ', ⌜free_decay σ σ'⌝ ∧ mem_rmap_auth m' σ'.
+Proof.
+  intros m σ b lo hi m' Hfree.
+  iIntros "[Hm H]".
+  rewrite /mem_rmap_auth /VALspec_range /VALspec.
+  rewrite big_sepL_seq_exist.
+  iDestruct "H" as (vl Hlen) "H".
+  iMod (mapsto_free_decay (σ := σ) (k := (b, lo)) vl hi m' Hfree Hlen with "Hm H")
+    as (σ') "(%Hfd & %Hc & Hm)".
+  iModIntro; iExists σ'.
+  iSplit; first by iPureIntro.
+  iSplit; first by iPureIntro.
+  iExact "Hm".
+Qed.
+
+Lemma mem_rmap_auth_mem_auth m σ : mem_rmap_auth m σ ⊢ mem_auth m.
+Proof. iIntros "H"; rewrite /mem_auth; iExists σ; iFrame. Qed.
+ 
+Lemma free_stackframe_decay :
+  forall {CS'} Delta f m σ ge ve te
+  (NOREP: list_norepet (map (@fst _ _) (fn_vars f)))
+  (COMPLETE: Forall (fun it => complete_type (@cenv_cs CS') (snd it) = true) (fn_vars f))
+  (HGG: cenv_sub (@cenv_cs CS') (genv_cenv ge)),
+   guard_environ (func_tycontext' f Delta) f
+        (construct_rho (filter_genv ge) ve te) ->
+   mem_rmap_auth m σ ∗ stackframe_of f (construct_rho (filter_genv ge) ve te) ⊢
+   |==> ∃ m2 σ2, ⌜free_list m (blocks_of_env ge ve) = Some m2 ∧ free_decay σ σ2⌝ ∧
+                 mem_rmap_auth m2 σ2.
+Proof.
+  intros.
+  iIntros "(Hm & stack)".
+  rewrite stackframe_of_freeable_blocks //.
+  clear.
+  forget (blocks_of_env ge ve) as el.
+  iInduction el as [|] "IHel" forall (m σ).
+  { iModIntro; iExists m, σ.
+    iSplit; last iExact "Hm".
+    iPureIntro; split; [done | apply free_decay_refl]. }
+  destruct a as ((id, b), t); simpl.
+  iDestruct "stack" as "(H & stack)".
+  iDestruct (VALspec_range_can_free with "[Hm $H]") as %(m' & Hfr).
+  { iApply (mem_rmap_auth_mem_auth with "Hm"). }
+  rewrite /= Zplus_minus in Hfr; rewrite Hfr.
+  iMod (VALspec_range_free_decay with "[$Hm $H]") as (σ1) "(%Hd1 & Hm)"; first done.
+  iMod ("IHel" with "Hm stack") as (m2 σ2) "((%Hfl & %Hd2) & Hm)".
+  iModIntro; iExists m2, σ2.
+  iSplit; last iExact "Hm".
+  iPureIntro; split; first done.
+  by eapply free_decay_trans.
+Qed.
+
 Lemma free_stackframe :
   forall {CS'} Delta f m ge ve te
   (NOREP: list_norepet (map (@fst _ _) (fn_vars f)))
@@ -544,9 +598,13 @@ Lemma assert_safe_for_external_call {psi E curf vx ret ret0 tx k z'} :
 Proof.
   iIntros "H".
   iApply jsafe_step; rewrite /jstep_ex.
-  iIntros (??) "? !>".
-  iExists _, _, _; iSplit; first by iPureIntro; constructor.
+  iIntros (??) "Hstate !>".
+  iDestruct "Hstate" as "((%Hcoh & Hauth) & Hext)".
+  iExists (State curf Sskip k vx (set_opttemp ret (force_val ret0) tx)), m, σ.
+  iSplit.
+  { iPureIntro; split; constructor; apply coherent_resource_decay_refl; auto. }
   iFrame.
+  iSplit; auto.
   by iApply assert_safe_jsafe'.
 Qed.
 
@@ -749,6 +807,107 @@ Proof.
   rewrite /VALspec_range Nat2Z.id.
   iApply (big_sepL_mono with "H"); intros.
   rewrite address_mapsto_VALspec_range /= VALspec1 //.
+Qed.
+
+Lemma mapsto_alloc_bytes_decay: forall m σ lo hi m' b,
+    Mem.alloc m lo hi = (m', b) ->
+    mem_rmap_auth m σ ⊢
+      |==> ∃ σ', ⌜alloc_decay (Mem.nextblock m) σ σ'⌝ ∧ mem_rmap_auth m' σ' ∗
+                                                          [∗ list] i ∈ seq 0 (Z.to_nat (hi - lo)), address_mapsto Mint8unsigned Vundef Tsh (b, lo + Z.of_nat i).
+Proof.
+  intros m σ lo hi m' b Halloc.
+  rewrite /mem_rmap_auth.
+  iIntros "Hm".
+  iMod (mapsto_alloc_decay lo hi m' b Halloc with "Hm") as (σ') "(%Hd & Hm & H)".
+  iModIntro; iExists σ'.
+  iSplit; first by iPureIntro.
+  iSplitL "Hm"; first iExact "Hm".
+  rewrite /address_mapsto.
+  iApply (big_sepL_mono with "H"); intros ?? [-> ?]%lookup_seq.
+  iIntros "?"; iExists [Undef]; simpl.
+  rewrite /adr_add Z.add_0_r; iFrame.
+  iPureIntro; repeat split; auto.
+  apply Z.divide_1_l.
+Qed.
+
+Lemma alloc_block_decay:
+  forall m σ n m' b (Halloc : Mem.alloc m 0 n = (m', b))
+         (Hn : 0 <= n < Ptrofs.modulus),
+    mem_rmap_auth m σ ⊢
+      |==> ∃ σ', ⌜alloc_decay (Mem.nextblock m) σ σ'⌝ ∧
+                   mem_rmap_auth m' σ' ∗ memory_block Share.top n (Vptr b Ptrofs.zero).
+Proof.
+  intros.
+  iIntros "Hm".
+  iMod (mapsto_alloc_bytes_decay with "Hm") as (σ') "(%Hd & Hm & H)"; first done.
+  iModIntro; iExists σ'.
+  iSplit; first by iPureIntro.
+  iSplitL "Hm"; first iExact "Hm".
+  rewrite /memory_block Ptrofs.unsigned_zero.
+  iSplit; first by iPureIntro; lia.
+  rewrite Z.sub_0_r memory_block'_eq; [| lia..].
+  rewrite /memory_block'_alt if_true; last auto.
+  rewrite /VALspec_range Nat2Z.id.
+  iApply (big_sepL_mono with "H"); intros.
+  rewrite address_mapsto_VALspec_range /= VALspec1 //.
+Qed.
+
+Lemma alloc_stackframe_decay {CS'}:
+  forall m σ f (ge: genv) te
+      (HGG: cenv_sub (@cenv_cs CS') (genv_cenv ge))
+      (COMPLETE: Forall (fun it => complete_type (@cenv_cs CS') (snd it) = true) (fn_vars f))
+      (Hsize: Forall (fun var => @Ctypes.sizeof ge (snd var) <= Ptrofs.max_unsigned) (fn_vars f)),
+      list_norepet (map fst (fn_vars f)) ->
+      mem_rmap_auth m σ ⊢
+      |==> ∃ m' ve σ', ⌜Clight.alloc_variables ge empty_env m (fn_vars f) ve m' ∧
+                        match_venv (make_venv ve) (fn_vars f) ∧
+                        alloc_decay (Mem.nextblock m) σ σ'⌝ ∧
+        mem_rmap_auth m' σ' ∗ stackframe_of f (construct_rho (filter_genv ge) ve te).
+Proof.
+  intros.
+  cut (mem_rmap_auth m σ ⊢ |==> ∃ (m' : Memory.mem) (ve : env) σ',
+    ⌜(∀i, sub_option (empty_env !! i)%maps (ve !! i)%maps) ∧
+      alloc_variables ge empty_env m (fn_vars f) ve m' ∧
+      alloc_decay (Mem.nextblock m) σ σ'⌝
+    ∧ mem_rmap_auth m' σ' ∗ stackframe_of f (construct_rho (filter_genv ge) ve te)).
+  { intros Hgen; rewrite Hgen; iIntros ">(% & % & % & (% & % & %) & ?) !>".
+    iExists _, _, _; iFrame; iPureIntro; repeat (split; auto).
+    eapply alloc_vars_match_venv; eauto. }
+  rewrite /stackframe_of.
+  forget (fn_vars f) as vars. clear f.
+  assert (forall i, In i (map fst vars) -> empty_env !! i = None) as Hout.
+  { intros; apply Maps.PTree.gempty. }
+  forget empty_env as ve0.
+  revert ve0 m σ Hout Hsize; induction vars; intros; simpl; iIntros "Hm".
+  - iExists m, ve0, σ; iFrame; monPred.unseal; iPureIntro.
+    repeat split.
+    all: first [ intros; apply sub_option_refl | apply alloc_decay_refl | constructor | done ].
+    all: try reflexivity.
+  - destruct a as (id, ty).
+    destruct (Mem.alloc m 0 (sizeof ty)) as (m', b) eqn: Halloc.
+    pose proof (Mem.nextblock_alloc _ _ _ _ _ Halloc) as Hnb.
+    inv COMPLETE; inv Hsize; inv H.
+    rewrite cenv_sub_sizeof // in H4.
+    iMod (alloc_block_decay with "Hm") as (σ1) "(%Hd1 & Hm & block)"; first done.
+    { pose proof sizeof_pos ty; unfold sizeof, Ptrofs.max_unsigned in *; simpl in *; lia. }
+    unshelve iMod (IHvars _ _ (Maps.PTree.set id (b,ty) ve0) with "Hm")
+      as (?? σ2 (Hsub & ? & Hd2)) "(Hm & ?)"; try done.
+    { intros; rewrite Maps.PTree.gso //; last by intros ->.
+      apply Hout; simpl; auto. }
+    iIntros "!>"; iExists _, _, σ2; monPred.unseal; iFrame.
+    rewrite /var_block /eval_lvar; monPred.unseal; simpl.
+    replace (Map.get _ _) with (Some (b, ty)).
+    rewrite eqb_type_refl; iFrame; iPureIntro; simpl.
+    + split; last done; split.
+      * intros i; specialize (Hsub i).
+        destruct (eq_dec i id); last by rewrite Maps.PTree.gso in Hsub.
+        subst; rewrite Hout //; simpl; auto.
+      * split.
+        -- econstructor; eauto.
+           rewrite cenv_sub_sizeof //.
+        -- eapply alloc_decay_trans; [exact Hd1 | exact Hd2 | rewrite Hnb; lia].
+    + rewrite /Map.get /=.
+      specialize (Hsub id); rewrite Maps.PTree.gss // in Hsub.
 Qed.
 
 Lemma alloc_stackframe {CS'}:
@@ -959,14 +1118,22 @@ Proof.
     iAssert ⌜∃ v' : val, Clight.eval_expr psi ve te m e v' ∧ Cop.sem_cast v' (typeof e) (fn_return f) m = Some v⌝ as %(v1 & ? & ?).
     { iDestruct "H" as "[H _]"; iApply ("H" with "[$Hm]"). }
     iDestruct "H" as "(_ & stack & ?)".
-    iMod (free_stackframe with "[$Hm $stack]") as (???) "Hm"; [done..|].
-    iIntros "!>"; iExists _, _, _; iSplit; last iFrame.
-    iPureIntro; rewrite {1}Hcont; econstructor; done.
+    iDestruct "Hm" as "(%Hcoh & Hm)".
+    iMod (free_stackframe_decay with "[Hm $stack]") as (m2 σ2) "((%Hfl & %Hfd) & Hm)"; [done.. | |].
+    { rewrite /mem_rmap_auth; iSplit; [by iPureIntro | iExact "Hm"]. }
+    iIntros "!>"; iExists _, m2, σ2; iSplit; last iFrame.
+    iPureIntro; split.
+    + rewrite {1}Hcont; econstructor; done.
+    + apply free_decay_resource_decay; [by apply coherent_rmap_bound | done].
   - iApply jsafe_step; rewrite /jstep_ex.
     iIntros (??) "(Hm & ?)".
-    iMod (free_stackframe with "[$Hm $stack]") as (???) "Hm"; [done..|].
-    iIntros "!>"; iExists _, _, _; iSplit; last iFrame.
-    iPureIntro; rewrite {1}Hcont; econstructor; done.
+    iDestruct "Hm" as "(%Hcoh & Hm)".
+    iMod (free_stackframe_decay with "[Hm $stack]") as (m2 σ2) "((%Hfl & %Hfd) & Hm)"; [done.. | |].
+    { rewrite /mem_rmap_auth; iSplit; [by iPureIntro | iExact "Hm"]. }
+    iIntros "!>"; iExists _, m2, σ2; iSplit; last iFrame.
+    iPureIntro; split.
+    + rewrite {1}Hcont; econstructor; done.
+    + apply free_decay_resource_decay; [by apply coherent_rmap_bound | done].
 Qed.
 
 Lemma tc_eval_exprlist:
@@ -1180,14 +1347,20 @@ Proof.
     iIntros (??) "(Hm & ?)".
     destruct (build_call_temp_env f args) as (te & Hte).
     { rewrite /= in H18; rewrite H18 map_length // in Hlen. }
-    iMod (alloc_stackframe with "[$Hm]") as (?? [??]) "((% & Hm) & stack)"; [try done.. |].
+    iDestruct "Hm" as "(%Hcoh & Hm)".
+    iAssert (mem_rmap_auth m σ) with "[Hm]" as "Hm".
+    { rewrite /mem_rmap_auth; iSplit; [by iPureIntro | iExact "Hm"]. }
+    iMod (alloc_stackframe_decay with "Hm") as (m' ve σ' (? & ? & Hd)) "(Hm & stack)"; [try done.. |].
     { unfold var_sizes_ok in Hvars.
       rewrite !Forall_forall in Hvars, COMPLETE |- *.
       intros v H0. specialize (COMPLETE v H0). specialize (Hvars v H0).
       rewrite (cenv_sub_sizeof CSUB); auto. }
-    iIntros "!>"; iExists _, _, _; iSplit.
+    iIntros "!>"; iExists _, _, σ'; iSplit.
     { apply list_norepet_append_inv in H17 as (? & ? & ?).
-      iPureIntro; constructor; constructor; done. }
+      iPureIntro; split.
+      - constructor; constructor; done.
+      - apply alloc_decay_resource_decay; [by apply coherent_rmap_bound | done].
+    }
     iFrame.
     iApply ("guard" with "[-]"); last by iIntros "!> !>"; iPureIntro.
     iSplit.
@@ -1256,20 +1429,41 @@ Proof.
   iDestruct (believe_exists_fundef with "Bel") as %[ff [H16 H16']]; [done..|].
   rewrite <- Genv.find_funct_find_funct_ptr in H16.
   rewrite /jsafeN jsafe_unfold /jsafe_pre.
-  iIntros "!>" (??) "(Hm & ?)".
+  iIntros "!>" (m σ) "(Hm & ?)".
   iRight; iLeft.
-  rewrite (add_and (_ ∧ ▷ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "((_ & H) & _)"; destruct GuardEnv; iApply (tc_eval_exprlist with "H").
-  iDestruct "H" as "(H & >%TC8)".
-  iAssert (mem_auth m) with "[$Hm]" as "Hm".
-  iCombine "Hm H" as "H".
-  rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & (H & _) & _)"; destruct GuardEnv; iApply (eval_expr_relate with "[$Hm $H]").
-  iDestruct "H" as "[H >%EvalA']".
-  rewrite -(@TTL5 clientparams); rewrite (add_and (mem_auth m ∗ _) (▷_)); last by iIntros "H"; iNext; iDestruct "H" as "(Hm & (_ & H) & _)"; destruct GuardEnv; iApply (eval_exprlist_relate' with "[$Hm $H]").
-  iDestruct "H" as "[H >%Hargs]".
-  rewrite TTL5 in Hargs |- *; iDestruct "H" as "((% & Hm) & H)".
-  iIntros "!>"; iExists _, _, _; iSplit.
-  { iPureIntro; eapply step_call with (vargs:=args); subst; eauto.
-    rewrite EvalA //. }
+  destruct GuardEnv as [TYENV GuardEnv'].
+
+  (* pure facts, without consuming Hm / H *)
+  iAssert (▷ ⌜tc_vals clientparams (eval_exprlist clientparams bl rho)⌝)%I as "#HTC8".
+  { iNext; iDestruct "H" as "((_ & Hb) & _)".
+    by iApply (tc_eval_exprlist with "Hb"). }
+  iDestruct "HTC8" as ">%TC8".
+
+  iAssert (▷ ⌜Clight.eval_expr psi vx tx m a (eval_expr a rho)⌝)%I as "#HEvalA".
+  { iNext; iDestruct "H" as "((Ha & _) & _)".
+    iApply (eval_expr_relate with "[Hm Ha]").
+    all: first [ done
+               | iSplitL "Hm"; [iApply (mem_rmap_auth_mem_auth with "Hm") | iExact "Ha"] ]. }
+  iDestruct "HEvalA" as ">%EvalA'".
+
+  iAssert (▷ ⌜Clight.eval_exprlist psi vx tx m bl (typelist_of_type_list clientparams)
+                 (eval_exprlist clientparams bl rho)⌝)%I as "#HArgs".
+  { iNext; iDestruct "H" as "((_ & Hb) & _)".
+    iApply (eval_exprlist_relate' _ Delta (typelist_of_type_list clientparams) with "[Hm Hb]").
+    all: first [ by rewrite TTL5
+               | done
+               | iSplitL "Hm"; [iApply (mem_rmap_auth_mem_auth with "Hm") | rewrite TTL5; iExact "Hb"] ]. }
+  iDestruct "HArgs" as ">%Hargs".
+
+  iAssert ⌜coherent m σ⌝%I as "#%Hcoh".
+  { iDestruct "Hm" as "[$ _]". }
+
+  (* the call step does not touch memory: m' = m, σ' = σ *)
+  iIntros "!>"; iExists _, m, σ; iSplit.
+  { iPureIntro; split.
+    - eapply step_call with (vargs:=args); subst; eauto.
+      rewrite EvalA //.
+    - apply coherent_resource_decay_refl; auto. }
   iDestruct "H" as "(_ & F0 & P)".
   iFrame.
   rewrite closed_wrt_modvars_Scall in Closed.
@@ -1278,7 +1472,8 @@ Proof.
   - iNext; iFrame.
 Qed.
 
-Lemma eval_exprlist_length : forall lt le rho, length lt = length le -> length (eval_exprlist lt le rho) = length le.
+Lemma eval_exprlist_length : forall lt le rho,
+    length lt = length le -> length (eval_exprlist lt le rho) = length le.
 Proof.
   induction lt; simpl; auto; intros.
   destruct le; inv H; simpl.
